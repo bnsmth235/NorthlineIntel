@@ -14,32 +14,31 @@
 
                     <h2 class="logo-label">MOFFAT INTEL</h2>
 
-                    <nav role="navigation">
-                        <div id="menuToggle">
-                        <input type="checkbox">
-
-                            <span></span>
-                            <span></span>
-                            <span></span>
-
-                            <ul id="menu">
-                                <a href="#"><li>Home</li></a>
-                                <a href="#"><li>Build Report</li></a>
-                                <a href="#"><li>Previous Reports</li></a>
-                                <a href="#"><li>Input Data</li></a>
-                            </ul>
-                        </div>
-                    </nav>
-
                     <a href="/reports/log_out" class="logout">
                         <img style="width: 20px;" src="{% static 'reports/images/logout_icon.png' %}">
                         <span style="margin-top: 3px; font-size: 12px;">LOG OUT</span>
                     </a>
+                    <hr color="#560200" width="100%" size="10" style="margin-top: -10px; margin-bottom: 20px;">
+
+                </div>
+
+                <div>
+                    <nav role="navigation">
+                        <div id="menuToggle">
+                            <ul id="menu">
+                                <a class="menu-icon" href="/reports/home"><img style="width: 60px; height: auto; margin-left:-5px; margin-bottom: -5px" src="{% static 'reports/images/home.png' %}"><li>Home</li>
+                                </a><br><br><br>
+                                <a class="menu-icon" href="#"><img style="width: 50px; height: auto;" src="{% static 'reports/images/paper.png' %}"><li>Build Report</li></a><br><br><br><br>
+                                <a class="menu-icon" href="#"><img style="width: 52px; height: auto;" src="{% static 'reports/images/files.png' %}"><li style="margin-left:-25px">Previous Reports</li></a><br><br><br><br>
+                                <a class="menu-icon" href="#"><img style="width: 52px; height: auto;" src="{% static 'reports/images/pencil.png' %}"><li>Input Data</li></a><br><br><br><br>
+                            </ul>
+                        </div>
+                    </nav>
+                    <div class="vl"></div>
                 </div>
 
             </div>
         </div>
-        <hr color="#560200" width="100%" size="10" style="margin-top: -15px; margin-bottom: 20px;">
         <div>
         {% block content %}
 
