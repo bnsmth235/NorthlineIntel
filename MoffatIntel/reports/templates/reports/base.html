@@ -5,6 +5,7 @@
         <title>{% block title %}{{ section.title}}{% endblock %} </title>
         {% load static %}
         <link rel="stylesheet" href="{% static 'reports/style.css' %}">
+        <script src="{% static 'reports/csrf.js' %}"></script>
     </head>
     <body>
         <div>
@@ -39,10 +40,9 @@
 
             </div>
         </div>
-        <div>
-        {% block content %}
-
-        {% endblock %}
+        <div class="content-block">
+            {% block content %}
+            {% endblock %}
         </div>
     </body>
 </html>

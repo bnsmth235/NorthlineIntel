@@ -171,3 +171,22 @@ body{
   background: #23232330;
   color: #323232;
 }
+
+.reports-list-div{
+    padding: 30px;
+    margin: 30px 30px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    border: 2px solid #7c0300;
+}
+
+.reports-list-div .report-item{
+    margin: 5px 5px 5px;
+    background-color: #ffffff;
+}
+
+.content-block{
+    margin-left: 115px;
+    margin-top: -425px;
+}
+
