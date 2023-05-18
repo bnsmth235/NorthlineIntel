@@ -30,13 +30,18 @@
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.edited_by }}</a></td>
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.last_edit_date }}</a></td>
                     <td><a href="{% url 'reports:edit_proj' project.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="10px" width="auto"> Edit</a></td>
-                    <td><form id="delete-form" action="{% url 'reports:delete_proj' project.id %}" method="post">
+                    <td>
+                      <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_proj' project.id%}">
                         {% csrf_token %}
-                        <input type="hidden" name="username">
-                        <input type="hidden" name="password">
-                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation()">
-                        <img src="{% static 'reports/images/trash.png' %}" height="10px" width="auto"> Delete</button></form></td>
-                </tr>
+                        <input type="hidden" name="project_id" value="{{ project.id }}">
+                        <input type="hidden" name="username" id="username">
+                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'reports/images/trash.png' %}" height="10px" width="auto"> Delete
+                        </button>
+                      </form>
+                    </td>
+
+</tr>
         {% endfor %}
         </table>
     </div>

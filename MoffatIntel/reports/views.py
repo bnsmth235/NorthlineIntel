@@ -177,15 +177,20 @@ def edit_proj(request, project_id):
 
 @login_required(login_url='reports:login')
 def delete_proj(request, project_id):
+  if request.method == 'POST':
+    project_id = request.POST.get('project_id')
     username = request.POST.get('username')
+    print("Attempting to delete")
 
-    if(username == request.user.username):
-        cur_proj = get_object_or_404(Project, pk=project_id)
-        cur_proj.delete()
-        return redirect('reports:home')
+    if username == request.user.username:
+      cur_proj = get_object_or_404(Project, pk=project_id)
+      cur_proj.delete()
+      print("Project deleted")
+    else:
+      print("Username incorrect")
 
-    print("Username incorrect")
-    return redirect('reports:home')
+  return redirect('reports:home')
+
 
 @login_required(login_url='reports:login')
 def project_view(request, project_id):
