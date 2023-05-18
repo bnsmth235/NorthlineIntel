@@ -1,27 +1,47 @@
 from django.db import models
 
 class Project(models.Model):
-    title = models.CharField(max_length=200)
+    name = models.CharField(max_length=200)
     last_edit_date = models.DateTimeField('Last Modified')
     edited_by = models.CharField(max_length=20)
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=1, choices=[("I", "In Progress"), ("C", "Completed"), ("O", "On Hold")])
     address = models.CharField(max_length=200)
+
+    @classmethod
+    def create(cls, name, last_edit_date, edited_by, status, address):
+        proj = cls(name=name, last_edit_date=last_edit_date, edited_by=edited_by, status=status, address=address)
+        return proj
+
+    def __str__(self):
+        return self.name
+
+    def get_status_display_long(self):
+        for choice in self._meta.get_field("status").choices:
+            if choice[0] == self.status:
+                return choice[1]
+        return ""
 
 
 class Contract(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.name
 
 class Proposal(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     contract_id = models.ForeignKey(Contract, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.name
 
 class SWO(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     contract_id = models.ForeignKey(Contract, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.name
 
 class Exhibit(models.Model):
     name = models.CharField(max_length=100)
@@ -33,12 +53,16 @@ class Exhibit(models.Model):
     trade = models.CharField(max_length=100)
     subcontractor = models.CharField(max_length=100)
 
+    def __str__(self):
+        return self.name
 
 class Draw(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
 
+    def __str__(self):
+        return self.name
 class Invoice(models.Model):
     draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
 
@@ -49,3 +73,6 @@ class Invoice(models.Model):
     description = models.TextField()
     lien_release_type = models.CharField(max_length= 20, choices=[("F","Final"),("C","Conditional"),("N","N/A")])
     w9 = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.name
