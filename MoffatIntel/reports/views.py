@@ -127,7 +127,7 @@ def create_proj(request):
             return render(request, 'reports/new_proj.html', {'error_message': "Zip code incorrect",
                                                              'state_choices': STATE_CHOICES})
 
-        cur_proj = Project(name=name, last_edit_date=last_edit_date, edited_by=edited_by, status=status, address=address + ", " + city + ", " + state + "," + zip)
+        cur_proj = Project(name=name, last_edit_date=last_edit_date, edited_by=edited_by, status=status, address=address + ", " + city + ", " + state + ", " + zip)
         cur_proj.save()
         print("Project " + cur_proj.name + " has been saved")
 

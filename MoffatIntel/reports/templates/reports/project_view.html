@@ -1,9 +1,14 @@
 {% extends "reports/base.html" %}
 
 {% block title %}{{cur_proj.name}}{% endblock %}
-
+{% load static %}
 {% block content %}
-    <h1 style="text-align: center">{{cur_proj.name}}</h1>
+    <h1 style="text-align: center; font-size: 50px">{{cur_proj.name|upper}}</h1>
     <hr color="#560200" width="90%" size="4">
-    
+    <div>
+        <a class="pick-icon" href="#"><img style="width: 225px; height: auto;" src="{% static 'reports/images/contract.png' %}"><li>Contracts</li></a>
+        <a class="pick-icon" href="#"><img style="width: 225px; height: auto;" src="{% static 'reports/images/draws.png' %}"><li>Draws</li></a>
+        <a class="pick-icon" href="#"><img style="width: 225px; height: auto;" src="{% static 'reports/images/plans.png' %}"><li>Plans</li></a>
+
+    </div>
 {% endblock %}

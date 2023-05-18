@@ -54,8 +54,15 @@
     text-decoration: none;
     color: #232323;
     float: right;
-    padding: 20px;
-    margin-top: 20px;
+    padding: 5px;
+    margin-top: 40px;
+    margin-right: 20px;
+    border-radius: 8px;
+    transition: background-color 0.5s ease;
+}
+
+.logout:hover{
+    background-color: #B8B8B8;
 }
 
 .form-input{
@@ -145,11 +152,10 @@ hr{
 }
 
 .menu-icon{
+    display: block;
     position: relative;
     text-align: center;
     margin-left: 25px;
-    text-decoration: none;
-    width: fit-content;
 }
 
 .menu-icon li{
@@ -158,6 +164,7 @@ hr{
     margin-left: -23px;
     top: 101%;
     left: 50%;
+
 }
 
 #menu{
@@ -244,4 +251,37 @@ td a {
     display: block;
     text-decoration: none;
     color: black;
+}
+
+#pick{
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    width: fit-content;
+    overflow: hidden;
+    text-decoration: none;
+}
+
+.pick-icon{
+    display: block;
+    position: relative;
+    text-align: center;
+    float: left;
+    text-decoration: none;
+    color: black;
+    left: 17.5%;
+    padding: 2em;
+    margin: 3em 3em 3em 3em;
+    transition: background-color 0.3s ease;
+    border-radius: 8px;
+}
+
+.pick-icon:hover{
+    background-color: #B8B8B8;
+}
+
+.pick-icon li{
+    list-style-type: none;
+    font-size: 28px;
+    margin:
 }
