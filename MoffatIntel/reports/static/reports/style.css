@@ -298,7 +298,11 @@ button{
     background-color: transparent;
     font-family: inherit;
     text-decoration: none;
-    color: white;
+    color: black;
     font-size: 18px;
     font-weight: 300;
+}
+
+.center-content-block{
+
 }

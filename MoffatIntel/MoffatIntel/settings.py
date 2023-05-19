@@ -124,3 +124,6 @@ LOGIN_URL = 'index/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Session expires after one day
+SESSION_COOKIE_AGE = 86400

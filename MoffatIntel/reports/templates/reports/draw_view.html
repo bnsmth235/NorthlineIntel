@@ -1,0 +1,26 @@
+{% extends "reports/base.html" %}
+
+{% block title %}Draw {{draw.name}} View{% endblock %}
+
+{% block content %}
+    <div>
+        <h1 class="center-content-block">Moffat Construction</h1>
+        <h2 class="center-content-block">Draw Control Tracker</h2>
+        <p class="center-content-block">Job Name: {{project.name}}</p>
+        <p class="center-content-block">Updated: {{draw.date}}</p>
+        <p class="center-content-block">Draw: #{{draw.id}}</p>
+    </div>
+
+    <div class="reports-list-div">
+        <table>
+            <tr>
+                <th>Invoice Date</th>
+                <th>Invoice Number</th>
+                <th>Division Code</th>
+                <th>Subcontractor</th>
+                <th></th>
+            </tr>
+
+        </table>
+    </div>
+{% endblock %}
