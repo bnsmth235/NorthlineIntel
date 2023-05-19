@@ -1,5 +1,5 @@
 function deleteConfirmation(button) {
-  var confirmed = confirm('Are you sure you want to delete this project?');
+  var confirmed = confirm('Are you sure you want to delete this item?');
   if (confirmed) {
     var username = prompt('Enter your username:');
 
@@ -14,7 +14,6 @@ function deleteConfirmation(button) {
       alert('Username confirmation is required.');
     }
   } else {
-    // User cancelled the delete operation
-    window.location.href = '/reports/home/';
+    //ignore
   }
 }

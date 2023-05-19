@@ -192,7 +192,7 @@ body{
 }
 
 .report-item{
-    margin: 5px 5px 5px;
+    margin: 10px;
     transition: background-color 0.3s ease;
 }
 
@@ -200,16 +200,14 @@ body{
   background-color: #7c0300ba;
 }
 
-
-
 .content-block{
-    margin-left: 115px;
-    margin-top: -450px;
+    margin-left: 150px;
+    margin-top: -475px;
+    margin-right: 30px;
 }
 
 .fieldset{
     padding-left: 30px;
-    padding-top: 10px;
     padding-bottom: 30px;
     margin-left: 30px;
     margin-right: 30px;
@@ -283,5 +281,24 @@ td a {
 .pick-icon li{
     list-style-type: none;
     font-size: 28px;
-    margin:
+}
+
+.add-plans-button{
+    float: right;
+    margin-top: -15px;
+    padding: 6px;
+    margin-right: 31px;
+    border-radius:8px;
+    border: 2px solid #7c0300;
+    background-color: #7c0300
+}
+
+button{
+    border:none;
+    background-color: transparent;
+    font-family: inherit;
+    text-decoration: none;
+    color: white;
+    font-size: 18px;
+    font-weight: 300;
 }

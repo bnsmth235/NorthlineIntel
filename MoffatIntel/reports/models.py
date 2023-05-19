@@ -1,4 +1,6 @@
 from django.db import models
+from django.forms import forms
+
 
 class Project(models.Model):
     name = models.CharField(max_length=200)
@@ -26,6 +28,16 @@ class Contract(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.name
+
+class Plan(models.Model):
+    name = models.CharField(max_length=100)
+    date = models.DateTimeField('Last Modified')
+    edited_by = models.CharField(max_length=20)
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    pdf = models.FileField(upload_to='static/reports/plans/')
+
     def __str__(self):
         return self.name
 
@@ -57,15 +69,13 @@ class Exhibit(models.Model):
         return self.name
 
 class Draw(models.Model):
-    name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-
+    edited_by = models.CharField(max_length=20)
     def __str__(self):
-        return self.name
+        return str(self.id)
 class Invoice(models.Model):
     draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
-
     invoice_date = models.DateTimeField('Invoice Date')
     invoice_num = models.IntegerField(default=0)
     subcontractor = models.CharField(max_length=50)
