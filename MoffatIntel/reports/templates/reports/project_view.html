@@ -1,14 +1,14 @@
 {% extends "reports/base.html" %}
 
-{% block title %}{{cur_proj.name}}{% endblock %}
+{% block title %}{{project.name}}{% endblock %}
 {% load static %}
 {% block content %}
-    <h1 style="text-align: center; font-size: 50px">{{cur_proj.name|upper}}</h1>
+    <h1 style="text-align: center; font-size: 50px">{{project.name|upper}}</h1>
     <hr color="#560200" width="90%" size="4">
     <div>
         <a class="pick-icon" href="#"><img style="width: 225px; height: auto;" src="{% static 'reports/images/contract.png' %}"><li>Contracts</li></a>
-        <a class="pick-icon" href="{% url 'reports:all_draws' cur_proj.id %}"><img style="width: 225px; height: auto;" src="{% static 'reports/images/draws.png' %}"><li>Draws</li></a>
-        <a class="pick-icon" href="{% url 'reports:all_plans' cur_proj.id %}"><img style="width: 225px; height: auto;" src="{% static 'reports/images/plans.png' %}"><li>Plans</li></a>
+        <a class="pick-icon" href="{% url 'reports:all_draws' project.id %}"><img style="width: 225px; height: auto;" src="{% static 'reports/images/draws.png' %}"><li>Draws</li></a>
+        <a class="pick-icon" href="{% url 'reports:all_plans' project.id %}"><img style="width: 225px; height: auto;" src="{% static 'reports/images/plans.png' %}"><li>Plans</li></a>
 
     </div>
 {% endblock %}

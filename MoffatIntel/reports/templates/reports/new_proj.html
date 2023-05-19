@@ -1,12 +1,12 @@
 {% extends "reports/base.html" %}
 
-{% block title %}Create Project{% endblock %}
+{% block title %}New Project{% endblock %}
 
 {% block content %}
-    <form action="{% url 'reports:create_proj' %}" method="post">
+    <form action="{% url 'reports:new_proj' %}" method="post">
         {% csrf_token %}
         <fieldset class="fieldset">
-            <legend><h1>Create Project</h1></legend>
+            <legend><h1>New Project</h1></legend>
             <label for="name" style="font-size: 20px">Project Name:</label>
             <input type="text" name="name" id="name" class="input-field">
 

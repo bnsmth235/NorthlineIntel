@@ -1,0 +1,84 @@
+{% extends "reports/base.html" %}
+
+{% block title %}New Invoice{% endblock %}
+
+{% block content %}
+    <form action="{% url 'reports:new_invoice' project.id draw.id%}" enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
+            <legend><h1>New Invoice</h1></legend>
+
+            {% if error_message %}
+                <p><strong style="color: Red; margin-left: 80px; margin-top: -20px">{{ error_message }}</strong></p>
+            {% endif %}
+
+            <label for="invoice_date" style="font-size: 20px">Invoice Date:</label>
+            <input type="date" name="invoice_date" id="invoice_date" class="input-field" value="{{invoice.invoice_date}}">
+
+            <label for="invoice_num" style="font-size: 20px">Invoice Number:</label>
+            <input type="text" name="invoice_num" id="invoice_num" class="input-field" value="{{invoice.invoice_num}}">
+
+            <label for="division_code" style="font-size: 20px">Division Code:</label>
+            <input type="text" name="division_code" id="division_code" class="input-field" value="{{invoice.division_code}}">
+
+            <label for="method" style="font-size: 20px">Method:</label>
+            <select name="method" id="method" class="input-field">
+                {% for choice in method_choices %}
+                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                {% endfor %}
+                <option selected="selected">
+                        {{invoice.method}}
+                </option>
+            </select>
+            <br><br>
+            <label for="sub" style="font-size: 20px">Subcontractor: </label>
+            <select name="sub" id="sub" class="input-field">
+                {% for sub in subs %}
+                    <option value="{{ sub.name }}">{{ sub.name }}</option>
+                {% endfor %}
+                <option selected="selected">
+                    {{invoice.sub.name}}
+                </option>
+            </select>
+
+            <label for="invoice_total" style="font-size: 20px">Invoice Total: $</label>
+            <input type="number" min="0" step=".01" name="invoice_total" id="invoice_total" value="{{invoice.invoice_total}}" class="input-field">
+
+            <label for="lien_release_type" style="font-size: 20px">Lien Release Type: </label>
+            <select name="lien_release_type" id="lien_release_type" class="input-field">
+                {% for choice in lien_release_type_choices %}
+                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                {% endfor %}
+                <option selected="selected">
+                    {{invoice.lien_release_type}}
+                </option>
+            </select>
+
+            <label for="w9" style="font-size: 20px">W9: </label>
+            <input type="text" name="w9" id="w9" class="input-field" value="{{invoice.w9}}">
+            <br><br>
+            <label for="description" style="font-size: 20px">Description:</label>
+            <input type="text" name="description" id="description" class="input-field" value="{{invoice.description}}" style="width: 800px">
+
+            <br><br>
+            <div class="form-field">
+                <label style="font-size: 20px; position: relative">Invoice PDF: </label>
+                <input type="file" name="invoice_pdf" id="invoice_pdf" class="input-field">
+                {% if invoice.invoice_pdf %}
+                    <p>Current File: {{ invoice.invoice_pdf.name }}</p>
+                {% endif %}
+            </div>
+
+            <div class="form-field">
+                <label style="font-size: 20px; position: relative">Lien Release PDF: </label>
+                <input type="file" name="lien_release_pdf" id="lien_release_pdf">
+                {% if invoice.lien_release_pdf %}
+                    <p>Current File: {{ invoice.lien_release_pdf.name }}</p>
+                {% endif %}
+            </div>
+
+            <input class="input-field" style="float: right; margin-left: 5px; height: 35px; color: white;border: 2px solid #7c0300; background-color: #7c0300" type="submit" name="submit" value="Save">
+
+        </fieldset>
+    </form>
+{% endblock %}

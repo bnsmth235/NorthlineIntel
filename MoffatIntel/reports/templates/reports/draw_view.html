@@ -1,9 +1,11 @@
 {% extends "reports/base.html" %}
 
 {% block title %}Draw {{draw.name}} View{% endblock %}
-
+{% load static %}
 {% block content %}
-    <div>
+<script src="{% static 'reports/deleteConfirm.js' %}"></script>
+    <div style="text-align: center">
+        <br>
         <h1 class="center-content-block">Moffat Construction</h1>
         <h2 class="center-content-block">Draw Control Tracker</h2>
         <p class="center-content-block">Job Name: {{project.name}}</p>
@@ -11,16 +13,66 @@
         <p class="center-content-block">Draw: #{{draw.id}}</p>
     </div>
 
-    <div class="reports-list-div">
-        <table>
-            <tr>
-                <th>Invoice Date</th>
-                <th>Invoice Number</th>
-                <th>Division Code</th>
-                <th>Subcontractor</th>
+    <div style="float: right; margin-top: -50px; padding: 6px; margin-right: 31px; border-radius:8px; border: 2px solid #7c0300; background-color: #7c0300">
+        <a href="{% url 'reports:new_invoice' project.id draw.id %}" style="text-decoration: none; color: white;  font-size: 18px; font-weight: 300">+ Add Invoice</a>
+    </div>
+    <div class="reports-list-div" style="margin-top: 10px;">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers" style="background-color: initial;">
                 <th></th>
+                <th>Invoice <br>Date</th>
+                <th>Invoice <br>Number</th>
+                <th>Division <br>Code</th>
+                <th>Sub</th>
+                <th>Method</th>
+                <th>Invoice/Exhibit <br>Total</th>
+                <th>W-9</th>
+                <th>Description</th>
+                <th>LR</th>
+                <th>Lien <br>Release Type</th>
             </tr>
-
+            {% for invoice in invoices %}
+                <tr class="report-item zebra" >
+                    {% if invoice.invoice_pdf %}
+                    <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% else %}
+                    <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% endif %}
+                    <td width="6%" style="text-align: center"><a href="">{{invoice.invoice_date|date:"m/d/y"}}</a></td>
+                    <td width="8%" style="text-align: center"><a href="">{{invoice.invoice_num}}</a></td>
+                    <td width="8%" style="text-align: center"><a href="">{{invoice.division_code}}</a></td>
+                    <td width="10%"><a href="">{{invoice.sub_name}}</a></td>
+                    <td width="6%" style="text-align: center"><a href="">{{invoice.get_method_display}}</a></td>
+                    <td width="10%"><a href="">${{invoice.invoice_total}}</a></td>
+                    <td width="8%" style="text-align: center"><a href="">{{invoice.w9}}</a></td>
+                    <td width="25%">{{invoice.description}}</td>
+                    {% if invoice.lien_release_pdf %}
+                    <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% else %}
+                    <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% endif %}
+                    <td width="7.8%" style="text-align: center"><a href="">{{ invoice.get_lien_release_type_display }}</a></td>
+                    <td width="fit-content" style="text-align: center"><a href=""><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
+                    <td width="fit-content" style="text-align: center">
+                      <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_invoice' project.id draw.id invoice.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="draw_id" value="{{ draw.id }}">
+                        <input type="hidden" name="username" id="username">
+                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+            {% endfor %}
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2" style="text-align: right;">Draw Total: </td>
+                    <td style="text-align: left; background-color: #7c0300ba; color: white; font-weight: bold; font-size: 20px">${{ total_invoice_amount|default:0 }}</td>
+                </tr>
         </table>
     </div>
 {% endblock %}

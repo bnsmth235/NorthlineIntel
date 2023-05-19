@@ -7,7 +7,7 @@ from django.forms import forms
 
 class Project(models.Model):
     name = models.CharField(max_length=200)
-    last_edit_date = models.DateTimeField('Last Modified')
+    date = models.DateTimeField('Last Modified')
     edited_by = models.CharField(max_length=20)
     status = models.CharField(max_length=1, choices=[("I", "In Progress"), ("C", "Completed"), ("O", "On Hold")])
     address = models.CharField(max_length=200)
@@ -31,6 +31,15 @@ class Contract(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.name
+
+class Subcontractor(models.Model):
+    name = models.CharField(max_length=50)
+    address = models.CharField(max_length=200)
+    phone = models.CharField(max_length=11)
+    email = models.EmailField()
+
     def __str__(self):
         return self.name
 
@@ -64,9 +73,8 @@ class Exhibit(models.Model):
     contract_id = models.ForeignKey(Contract, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
 
-
     trade = models.CharField(max_length=100)
-    subcontractor = models.CharField(max_length=100)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, default="")
 
     def __str__(self):
         return self.name
@@ -80,25 +88,30 @@ class Draw(models.Model):
     def __str__(self):
         return str(self.id)
 
-class Subcontractor(models.Model):
-    name = models.CharField(max_length=50)
-    addresss = models.CharField(max_length=200)
-    phone = models.CharField(max_length=11)
-    email = models.EmailField()
 
-    def __str__(self):
-        return self.name
 class Invoice(models.Model):
+    date = models.DateTimeField('Last Modified', default=datetime.datetime.now())
     draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
     invoice_date = models.DateTimeField('Invoice Date', default=datetime.datetime.now())
-    invoice_num = models.IntegerField(default=0)
+    invoice_num = models.CharField(default="", max_length=20)
     division_code = models.CharField(max_length=20)
-    method = models.CharField(max_length=1, default="I",choices=[("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")])
-    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, default="")
-    invoice_total = models.FloatField(0.00)
+    method = models.CharField(max_length=1, default="I", choices=[("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")])
+    sub = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    invoice_total = models.FloatField(default=0.00)
     description = models.TextField()
-    lien_release_type = models.CharField(max_length= 20, choices=[("F","Final"),("C","Conditional"),("N","N/A")])
+    lien_release_type = models.CharField(max_length=20, default="N", choices=[("F", "Final"), ("C", "Conditional"), ("N", "N/A")])
     w9 = models.CharField(max_length=20)
+    invoice_pdf = models.FileField(default=None, upload_to='static/reports/invoices/')
+    lien_release_pdf = models.FileField(default=None, upload_to='static/reports/lien_releases')
 
     def __str__(self):
-        return self.name
+        return self.invoice_num
+
+
+
+    def get_sub_choices(self):
+        # Retrieve the dynamic choices from the database or any other source
+        # For example, you can query the Subcontractor model to get the choices
+        subs = Subcontractor.objects.all()
+        choices = [(sub.id, sub.name) for sub in subs]
+        return choices
