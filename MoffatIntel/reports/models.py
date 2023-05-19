@@ -103,7 +103,7 @@ class Invoice(models.Model):
     w9 = models.CharField(max_length=20)
     invoice_pdf = models.FileField(default=None, upload_to='static/reports/invoices/')
     lien_release_pdf = models.FileField(default=None, upload_to='static/reports/lien_releases')
-
+    signed = models.BooleanField(default=False)
     def __str__(self):
         return self.invoice_num
 

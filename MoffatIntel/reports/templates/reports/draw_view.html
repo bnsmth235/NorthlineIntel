@@ -46,11 +46,15 @@
                     <td width="10%"><a href="">${{invoice.invoice_total}}</a></td>
                     <td width="8%" style="text-align: center"><a href="">{{invoice.w9}}</a></td>
                     <td width="25%">{{invoice.description}}</td>
+
                     {% if invoice.lien_release_pdf %}
                     <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% elif not invoice.signed %}
+                    <td width="fit-content"><a href=""><img src="{% static 'reports/images/unsigned.png' %}" height="20px" width="auto" style="margin-bottom: 0px;margin-left:4px"></a></td>
                     {% else %}
                     <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
                     {% endif %}
+
                     <td width="7.8%" style="text-align: center"><a href="">{{ invoice.get_lien_release_type_display }}</a></td>
                     <td width="fit-content" style="text-align: center"><a href=""><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
                     <td width="fit-content" style="text-align: center">

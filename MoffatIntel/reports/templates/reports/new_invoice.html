@@ -55,11 +55,12 @@
             <div class="form-field">
                 <label style="font-size: 20px; position: relative">Invoice PDF: </label>
                 {{ form.invoice_pdf }}
-            </div>
 
-             <div class="form-field">
                 <label style="font-size: 20px; position: relative">Lien Release PDF: </label>
                 <input type="file" name="lien_release_pdf" id="lien_release_pdf">
+
+                <label for="signed" style="font-size: 20px; position: relative">Is Lien Release Signed? </label>
+                <input type="checkbox" name="signed" id="signed">
             </div>
 
             <input class="input-field" style="float: right; margin-left: 5px; height: 35px; color: white;border: 2px solid #7c0300; background-color: #7c0300" type="submit" name="submit" value="Save">

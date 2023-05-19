@@ -261,6 +261,7 @@ def new_invoice(request, project_id, draw_id):
         description = request.POST.get('description')
         lien_release_type = request.POST.get('lien_release_type')
         w9 = request.POST.get('w9')
+        signed = request.POST.get('signed')
 
         if not invoice_date or not invoice_num or not division_code or not method or not sub or not invoice_total or not description or not lien_release_type or not w9:
             context.update({'error_message': "Please fill out all fields"})
@@ -278,6 +279,7 @@ def new_invoice(request, project_id, draw_id):
             invoice.description = description
             invoice.lien_release_type = lien_release_type
             invoice.w9 = w9
+            invoice.signed = signed
 
             # Handle invoice PDF
             if 'invoice_pdf' in request.FILES:
