@@ -1,0 +1,216 @@
+{% extends "reports/base.html" %}
+
+{% block title %}Contract {{contract.name}}{% endblock %}
+{% load static %}
+{% block content %}
+<script src="{% static 'reports/deleteConfirm.js' %}"></script>
+
+<h1 style="text-align: center; font-size: 50px">{{project.name|upper}}</h1>
+<hr color="#560200" width="90%" size="4" style="margin-bottom: 350px">
+
+<div style="margin-top: -400px; text-align: center">
+    <div style="display:inline-block"><a class="pick-icon" href="#"><img style="width: 225px; height: auto;" src="{% static 'reports/images/contract.png' %}"><li>Charge Order</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="#"><img style="width: 225px; height: auto;" src="{% static 'reports/images/draws.png' %}"><li>Deductive<br>Charge Order</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="#"><img style="width: 225px; height: auto;" src="{% static 'reports/images/plans.png' %}"><li>Purchase Order</li></a></div>
+</div>
+
+<div display="block">
+
+<div name="section-header">
+    <h1 style="margin-left: 45px; margin-bottom: -12px;">Proposals</h1>
+    <div style="float: right; margin-top: -25px; padding: 6px; margin-right: 31px; border-radius:8px; border: 2px solid #7c0300; background-color: #7c0300">
+        <a href="#" style="text-decoration: none; color: white;  font-size: 18px; font-weight: 300">+ Add Proposal</a>
+    </div>
+</div>
+{% if proposals %}
+    <div class="reports-list-div" style="margin-top: 10px;">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers" style="background-color: initial;">
+                <th></th>
+                <th>Proposal <br>Date</th>
+                <th>Description</th>
+            </tr>
+            {% for proposal in proposals %}
+                <tr class="report-item zebra" >
+                    {% if proposal.proposal_pdf %}
+                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% else %}
+                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% endif %}
+
+                    <td width="6%" style="text-align: center"><a href="#">{{proposal.name}}</a></td>
+                    <td width="6%" style="text-align: center"><a href="#">{{proposal.date|date:"m/d/y"}}</a></td>
+
+                    <td width="fit-content" style="text-align: center"><a href="#"><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
+                    <td width="fit-content" style="text-align: center">
+                      <form id="delete-form" method="post" data-delete-url="">
+                        {% csrf_token %}
+                        <input type="hidden" name="contract_id" value="{{ contract.id }}">
+                        <input type="hidden" name="username" id="username">
+                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr class="report-item">
+                <td>There are currently no proposals available.</td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
+
+
+<h1 style="margin-left: 45px; margin-bottom: -12px;">SWOs</h1>
+<div style="float: right; margin-top: -25px; padding: 6px; margin-right: 31px; border-radius:8px; border: 2px solid #7c0300; background-color: #7c0300">
+    <a href="#" style="text-decoration: none; color: white;  font-size: 18px; font-weight: 300">+ Add SWO</a>
+</div>
+{% if SWO %}
+    <div class="reports-list-div" style="margin-top: 10px;">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers" style="background-color: initial;">
+                <th></th>
+                <th>Proposal <br>Date</th>
+                <th>Description</th>
+            </tr>
+            {% for SWO in SWOs %}
+                <tr class="report-item zebra" >
+                    {% if SWO.proposal_pdf %}
+                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% else %}
+                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% endif %}
+
+                    <td width="6%" style="text-align: center"><a href="#">{{SWO.name}}</a></td>
+                    <td width="6%" style="text-align: center"><a href="#">{{SWO.date|date:"m/d/y"}}</a></td>
+
+                    <td width="fit-content" style="text-align: center"><a href="#"><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
+                    <td width="fit-content" style="text-align: center">
+                      <form id="delete-form2" method="post" data-delete-url="">
+                        {% csrf_token %}
+                        <input type="hidden" name="contract_id" value="{{ contract.id }}">
+                        <input type="hidden" name="username2" id="username2">
+                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr class="report-item">
+                <td>There are currently no SWOs available.</td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
+
+
+<h1 style="margin-left: 45px; margin-bottom: -12px;">Exhibits</h1>
+<div style="float: right; margin-top: -25px; padding: 6px; margin-right: 31px; border-radius:8px; border: 2px solid #7c0300; background-color: #7c0300">
+    <a href="#" style="text-decoration: none; color: white;  font-size: 18px; font-weight: 300">+ Add Exhibit</a>
+</div>
+{% if exhibits %}
+    <div class="reports-list-div" style="margin-top: 10px;">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers" style="background-color: initial;">
+                <th></th>
+                <th>Proposal <br>Date</th>
+                <th>Description</th>
+            </tr>
+            {% for exhibit in exhibits %}
+                <tr class="report-item zebra" >
+                    {% if exhibit.proposal_pdf %}
+                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% else %}
+                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% endif %}
+
+                    <td width="6%" style="text-align: center"><a href="#">{{exhibit.name}}</a></td>
+                    <td width="6%" style="text-align: center"><a href="#">{{exhibit.date|date:"m/d/y"}}</a></td>
+
+                    <td width="fit-content" style="text-align: center"><a href="#"><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
+                    <td width="fit-content" style="text-align: center">
+                      <form id="delete-form3" method="post" data-delete-url="">
+                        {% csrf_token %}
+                        <input type="hidden" name="contract_id" value="{{ contract.id }}">
+                        <input type="hidden" name="username3" id="username3">
+                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr class="report-item">
+                <td>There are currently no exhibits available.</td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
+
+
+<h1 style="margin-left: 45px; margin-bottom: -12px;">Contracts</h1>
+<div style="float: right; margin-top: -25px; padding: 6px; margin-right: 31px; border-radius:8px; border: 2px solid #7c0300; background-color: #7c0300">
+    <a href="#" style="text-decoration: none; color: white;  font-size: 18px; font-weight: 300">+ Add Contract</a>
+</div>
+{% if contracts %}
+    <div class="reports-list-div" style="margin-top: 10px;">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers" style="background-color: initial;">
+                <th></th>
+                <th>Proposal <br>Date</th>
+                <th>Description</th>
+            </tr>
+            {% for contract in contracts %}
+                <tr class="report-item zebra" >
+                    {% if contract.pdf %}
+                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% else %}
+                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    {% endif %}
+
+                    <td width="6%" style="text-align: center"><a href="#">{{contract.name}}</a></td>
+                    <td width="6%" style="text-align: center"><a href="#">{{contract.date|date:"m/d/y"}}</a></td>
+
+                    <td width="fit-content" style="text-align: center"><a href="#"><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
+                    <td width="fit-content" style="text-align: center">
+                      <form id="delete-form4" method="post" data-delete-url="">
+                        {% csrf_token %}
+                        <input type="hidden" name="contract_id" value="{{ contract.id }}">
+                        <input type="hidden" name="username4" id="username4">
+                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr class="report-item">
+                <td>There are currently no contracts available.</td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
+</div>
+{% endblock %}

@@ -208,7 +208,7 @@ def new_proj(request):
         city = request.POST.get('city')
         state = request.POST.get('state')
         zip = request.POST.get('zip')
-        date = datetime.now()
+        date = datetime.datetime.now()
         edited_by = request.user.username
         status = "I"
 
@@ -255,13 +255,11 @@ def new_invoice(request, project_id, draw_id):
         sub = get_object_or_404(Subcontractor, name=sub_name)
 
         invoice_total = request.POST.get('invoice_total')
-        formatted_invoice_total = formats.currency(invoice_total)
-        invoice_total = formatted_invoice_total
 
         description = request.POST.get('description')
         lien_release_type = request.POST.get('lien_release_type')
         w9 = request.POST.get('w9')
-        signed = request.POST.get('signed')
+        signed = request.POST.get('signed', False)
 
         if not invoice_date or not invoice_num or not division_code or not method or not sub or not invoice_total or not description or not lien_release_type or not w9:
             context.update({'error_message': "Please fill out all fields"})
@@ -295,6 +293,9 @@ def new_invoice(request, project_id, draw_id):
                     context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
                     return render(request, 'reports/new_invoice.html', context)
 
+            else:
+                invoice.signed = None;
+
             # Save invoice and related objects
             project.edited_by = request.user.username
             project.date = datetime.datetime.now()
@@ -319,16 +320,36 @@ def new_invoice(request, project_id, draw_id):
 def new_draw(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.edited_by = request.user.username
 
-    cur_draw = Draw(date=datetime.now(), project_id=project, edited_by=request.user.username)
+    cur_draw = Draw(date=datetime.datetime.now(), project_id=project, edited_by=request.user.username)
 
     cur_draw.save()
     project.save()
 
     return all_draws(request, project_id)
 
+
+@login_required(login_url='reports:login')
+def todo(request):
+    invoices = Invoice.objects.order_by("-invoice_date").filter(signed=False)
+
+    context = {
+        'invoices': invoices
+    }
+
+    return render(request, 'reports/todo.html', context)
+
+
+
+@login_required(login_url='reports:login')
+def add_signature(request, invoice_id):
+    invoice = get_object_or_404(Invoice, pk=invoice_id)
+    draw = get_object_or_404(Draw, pk=invoice.draw_id.id)
+    project = get_object_or_404(Project, pk=draw.project_id.id)
+
+    return edit_invoice(request, project.id, draw.id, invoice_id)
 
 @login_required(login_url='reports:login')
 def all_draws(request, project_id):
@@ -350,7 +371,7 @@ def edit_proj(request, project_id):
         state = request.POST.get('state')
         zip = request.POST.get('zip')
         status = request.POST.get('status')
-        date = datetime.now()
+        date = datetime.datetime.now()
         edited_by = request.user.username
 
         if not name or not address or not city or not state or not zip:
@@ -430,9 +451,6 @@ def all_plans(request, project_id):
     return render(request, 'reports/all_plans.html', context)
 
 
-
-
-
 @login_required(login_url='reports:login')
 def upload_plan(request, project_id):
     if request.method == 'POST':
@@ -451,7 +469,7 @@ def upload_plan(request, project_id):
 
             plan.name = name;
             plan.edited_by = request.user.username
-            plan.date = datetime.now()
+            plan.date = datetime.datetime.now()
             plan.project_id = get_object_or_404(Project, pk=project_id)
             plan.save()
             form.save_m2m()
@@ -482,6 +500,82 @@ def delete_plan(request, project_id):
 
     return render(request, 'reports/all_plans.html', {'error_message': "Document could not be deleted."})
 
+
+@login_required(login_url='reports:login')
+def edit_invoice(request, project_id, draw_id, invoice_id):
+    project = get_object_or_404(Project, pk=project_id)
+    draw = get_object_or_404(Draw, pk=draw_id)
+    invoice = get_object_or_404(Invoice, pk=invoice_id)
+    subs = Subcontractor.objects.order_by('name')
+
+    context = {
+        'subs': subs,
+        'project': project,
+        'invoice': invoice,
+        'draw': draw,
+        'method_choices': METHOD_OPTIONS,
+        'lien_release_type_choices': LIEN_RELEASE_OPTIONS
+    }
+
+    if request.method == 'POST':
+        invoice_date = request.POST.get('invoice_date')
+        invoice_num = request.POST.get('invoice_num')
+        division_code = request.POST.get('division_code')
+        method = request.POST.get('method')
+        sub_name = request.POST.get('sub')
+        sub = get_object_or_404(Subcontractor, name=sub_name)
+        invoice_total = request.POST.get('invoice_total')
+        description = request.POST.get('description')
+        lien_release_type = request.POST.get('lien_release_type')
+        w9 = request.POST.get('w9')
+        signed = request.POST.get('signed', False)
+
+        if not invoice_date or not invoice_num or not division_code or not method or not sub or not invoice_total or not description or not lien_release_type or not w9:
+            context.update({'error_message': "Please fill out all fields"})
+            return render(request, 'reports/edit_invoice.html', context)
+
+        invoice.invoice_date = invoice_date
+        invoice.invoice_num = invoice_num
+        invoice.division_code = division_code
+        invoice.method = method
+        invoice.sub = sub
+        invoice.invoice_total = invoice_total
+        invoice.description = description
+        invoice.lien_release_type = lien_release_type
+        invoice.w9 = w9
+        invoice.signed = signed
+
+        # Handle invoice PDF
+        if 'invoice_pdf' in request.FILES:
+            invoice.invoice_pdf = request.FILES['invoice_pdf']
+            if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
+                return render(request, 'reports/edit_invoice.html', context)
+
+        # Handle lien release PDF
+        if 'lien_release_pdf' in request.FILES:
+            invoice.lien_release_pdf = request.FILES['lien_release_pdf']
+            if not invoice.lien_release_pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
+                return render(request, 'reports/edit_invoice.html', context)
+
+        else:
+            invoice.signed = None
+
+        # Save invoice and related objects
+        project.edited_by = request.user.username
+        project.date = datetime.datetime.now()
+        project.save()
+
+        draw.edited_by = request.user.username
+        draw.date = datetime.datetime.now()
+        draw.save()
+
+        invoice.save()
+
+        return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
+
+    return render(request, 'reports/edit_invoice.html', context)
 
 @login_required(login_url='reports:login')
 def draw_view(request, project_id, draw_id):
@@ -524,12 +618,22 @@ def delete_invoice(request, project_id, draw_id, invoice_id):
 
     return render(request, 'reports/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
 
-    project.date = datetime.now()
-    draw.date = datetime.now()
+    project.date = datetime.datetime.now()
+    draw.date = datetime.datetime.now()
 
 
 @login_required(login_url='reports:login')
-def invoice_view(request, project_id, draw_id, invoice_id):
+def contract_view(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    context = {
+        'project': project
+    }
+
+    return render(request, 'reports/contract_view.html', context)
+
+
+@login_required(login_url='reports:login')
+def invoice_view(request, invoice_id):
     invoice = get_object_or_404(Invoice, pk=invoice_id)
     pdf_bytes = invoice.invoice_pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')

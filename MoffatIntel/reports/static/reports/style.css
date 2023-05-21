@@ -143,12 +143,13 @@ hr{
 }
 
 .vl {
-  border-left: 6px solid #560200;
-  height: 100%;
-  position: absolute;
-  left: 110px;
-  margin-left: -3px;
-  top: 105px;
+    position: absolute;
+    left: 110px;
+    top: 105px;
+    height: 100%;
+    margin-left: -3px;
+    width: 6px;
+    background: linear-gradient(#560200, #d5d5d5);
 }
 
 .menu-icon{
@@ -178,6 +179,7 @@ hr{
 body{
   margin: 0;
   padding: 0;
+  height: 100%;
   background: #23232330;
   color: #323232;
   font-family: system-ui;
@@ -267,7 +269,6 @@ td a {
     float: left;
     text-decoration: none;
     color: black;
-    left: 17.5%;
     padding: 2em;
     margin: 3em 3em 3em 3em;
     transition: background-color 0.3s ease;
@@ -306,3 +307,10 @@ button{
 .center-content-block{
     margin: 2px;
 }
+
+.section-header{
+    margin-left: 45px;
+    margin-bottom: -12px;
+}
+
+

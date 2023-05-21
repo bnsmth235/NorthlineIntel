@@ -1,19 +1,19 @@
 {% extends "reports/base.html" %}
 
-{% block title %}New Invoice{% endblock %}
+{% block title %}Edit Invoice{% endblock %}
 
 {% block content %}
-    <form action="{% url 'reports:new_invoice' project.id draw.id%}" enctype="multipart/form-data" method="post">
+    <form action="{% url 'reports:edit_invoice' project.id draw.id invoice.id%}" enctype="multipart/form-data" method="post">
         {% csrf_token %}
         <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
-            <legend><h1>New Invoice</h1></legend>
+            <legend><h1>Edit Invoice {{invoice.invoice_num}}</h1></legend>
 
             {% if error_message %}
                 <p><strong style="color: Red; margin-left: 80px; margin-top: -20px">{{ error_message }}</strong></p>
             {% endif %}
 
             <label for="invoice_date" style="font-size: 20px">Invoice Date:</label>
-            <input type="date" name="invoice_date" id="invoice_date" class="input-field" value="{{invoice.invoice_date}}">
+            <input type="date" name="invoice_date" id="invoice_date" class="input-field" value='{{invoice.invoice_date|date:"Y-m-d"}}'>
 
             <label for="invoice_num" style="font-size: 20px">Invoice Number:</label>
             <input type="text" name="invoice_num" id="invoice_num" class="input-field" value="{{invoice.invoice_num}}">
@@ -27,7 +27,7 @@
                     <option value="{{ choice.0 }}">{{ choice.1 }}</option>
                 {% endfor %}
                 <option selected="selected">
-                        {{invoice.method}}
+                        {{invoice.get_method_display_long}}
                 </option>
             </select>
             <br><br>
@@ -50,7 +50,7 @@
                     <option value="{{ choice.0 }}">{{ choice.1 }}</option>
                 {% endfor %}
                 <option selected="selected">
-                    {{invoice.lien_release_type}}
+                    {{invoice.get_LR_type_display_long}}
                 </option>
             </select>
 
@@ -63,19 +63,19 @@
             <br><br>
             <div class="form-field">
                 <label style="font-size: 20px; position: relative">Invoice PDF: </label>
-                <input type="file" name="invoice_pdf" id="invoice_pdf" class="input-field">
+                <input type="file" name="invoice_pdf" id="invoice_pdf" class="input-field" value="{{invoice.invoice_pdf}}">
                 {% if invoice.invoice_pdf %}
-                    <p>Current File: {{ invoice.invoice_pdf.name }}</p>
+                    <p>Current file: {{invoice.invoice_pdf.name}}</p>
                 {% endif %}
+                <label style="font-size: 20px; position: relative">Lien Release PDF: </label>
+                <input type="file" name="lien_release_pdf" id="lien_release_pdf" value="{{invoice.lien_release_pdf}}">
+                {% if invoice.lien_release_pdf %}
+                    <p>Current file: {{invoice.lien_release_pdf.name}}</p>
+                {% endif %}
+                <label for="signed" style="font-size: 20px; position: relative">Is Lien Release Signed? </label>
+                <input type="checkbox" name="signed" id="signed">
             </div>
 
-            <div class="form-field">
-                <label style="font-size: 20px; position: relative">Lien Release PDF: </label>
-                <input type="file" name="lien_release_pdf" id="lien_release_pdf">
-                {% if invoice.lien_release_pdf %}
-                    <p>Current File: {{ invoice.lien_release_pdf.name }}</p>
-                {% endif %}
-            </div>
 
             <input class="input-field" style="float: right; margin-left: 5px; height: 35px; color: white;border: 2px solid #7c0300; background-color: #7c0300" type="submit" name="submit" value="Save">
 

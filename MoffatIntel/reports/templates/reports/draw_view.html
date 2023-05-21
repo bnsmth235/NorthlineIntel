@@ -1,6 +1,6 @@
 {% extends "reports/base.html" %}
 
-{% block title %}Draw {{draw.name}} View{% endblock %}
+{% block title %}Draw {{draw.name}}{% endblock %}
 {% load static %}
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
@@ -34,7 +34,7 @@
             {% for invoice in invoices %}
                 <tr class="report-item zebra" >
                     {% if invoice.invoice_pdf %}
-                    <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    <td width="fit-content"><a href="{% url 'reports:invoice_view' invoice.id%}"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
                     {% else %}
                     <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
                     {% endif %}
@@ -47,16 +47,16 @@
                     <td width="8%" style="text-align: center"><a href="">{{invoice.w9}}</a></td>
                     <td width="25%">{{invoice.description}}</td>
 
-                    {% if invoice.lien_release_pdf %}
+                    {% if invoice.lien_release_pdf and invoice.signed %}
                     <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
-                    {% elif not invoice.signed %}
+                    {% elif invoice.lien_release_pdf and not invoice.signed %}
                     <td width="fit-content"><a href=""><img src="{% static 'reports/images/unsigned.png' %}" height="20px" width="auto" style="margin-bottom: 0px;margin-left:4px"></a></td>
                     {% else %}
                     <td width="fit-content"><a href=""><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
                     {% endif %}
 
                     <td width="7.8%" style="text-align: center"><a href="">{{ invoice.get_lien_release_type_display }}</a></td>
-                    <td width="fit-content" style="text-align: center"><a href=""><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
+                    <td width="fit-content" style="text-align: center"><a href="{% url 'reports:edit_invoice' project.id draw.id invoice.id%}"><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
                     <td width="fit-content" style="text-align: center">
                       <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_invoice' project.id draw.id invoice.id %}">
                         {% csrf_token %}
@@ -77,6 +77,16 @@
                     <td colspan="2" style="text-align: right;">Draw Total: </td>
                     <td style="text-align: left; background-color: #7c0300ba; color: white; font-weight: bold; font-size: 20px">${{ total_invoice_amount|default:0 }}</td>
                 </tr>
+
+        {% else %}
+            <div class="reports-list-div zebra no-hover">
+                <table>
+                    <tr class="report-item">
+                        <td>There are currently no invoices available.</td>
+                    </tr>
+                </table>
+            </div>
+        {% endif %}
         </table>
     </div>
 {% endblock %}

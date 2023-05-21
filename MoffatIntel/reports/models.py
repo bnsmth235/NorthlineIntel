@@ -1,7 +1,6 @@
 import datetime
 
 from django.db import models
-from django.forms import forms
 
 
 
@@ -31,6 +30,7 @@ class Contract(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    pdf = models.FileField(upload_to='static/reports/contracts')
     def __str__(self):
         return self.name
 
@@ -48,7 +48,7 @@ class Plan(models.Model):
     date = models.DateTimeField('Last Modified')
     edited_by = models.CharField(max_length=20)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    pdf = models.FileField(upload_to='static/reports/plans/')
+    pdf = models.FileField(upload_to='static/reports/plans/', default=None)
 
     def __str__(self):
         return self.name
@@ -56,7 +56,7 @@ class Plan(models.Model):
 class Proposal(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
-    contract_id = models.ForeignKey(Contract, on_delete=models.CASCADE)
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     def __str__(self):
         return self.name
 
@@ -64,6 +64,7 @@ class SWO(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
     contract_id = models.ForeignKey(Contract, on_delete=models.CASCADE)
+    pdf = models.FileField(upload_to='static/reports/SWOs', default=None)
     def __str__(self):
         return self.name
 
@@ -103,10 +104,21 @@ class Invoice(models.Model):
     w9 = models.CharField(max_length=20)
     invoice_pdf = models.FileField(default=None, upload_to='static/reports/invoices/')
     lien_release_pdf = models.FileField(default=None, upload_to='static/reports/lien_releases')
-    signed = models.BooleanField(default=False)
+    signed = models.BooleanField(default=None)
     def __str__(self):
         return self.invoice_num
 
+    def get_method_display_long(self):
+        for choice in self._meta.get_field("method").choices:
+            if choice[0] == self.method:
+                return choice[1]
+        return ""
+
+    def get_LR_type_display_long(self):
+        for choice in self._meta.get_field("lien_release_type").choices:
+            if choice[0] == self.lien_release_type:
+                return choice[1]
+        return ""
 
 
     def get_sub_choices(self):
