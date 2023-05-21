@@ -13,12 +13,13 @@
         <p class="center-content-block">Draw: #{{draw.id}}</p>
     </div>
 
-    <div style="float: right; margin-top: -50px; padding: 6px; margin-right: 31px; border-radius:8px; border: 2px solid #7c0300; background-color: #7c0300">
-        <a href="{% url 'reports:new_invoice' project.id draw.id %}" style="text-decoration: none; color: white;  font-size: 18px; font-weight: 300">+ Add Invoice</a>
+    <div class="add-new">
+        <a href="{% url 'reports:new_invoice' project.id draw.id %}">+ Add Invoice</a>
     </div>
-    <div class="reports-list-div" style="margin-top: 10px;">
+{% if invoices %}
+    <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
-            <tr class="report-item headers" style="background-color: initial;">
+            <tr class="report-item headers">
                 <th></th>
                 <th>Invoice <br>Date</th>
                 <th>Invoice <br>Number</th>
@@ -62,7 +63,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="draw_id" value="{{ draw.id }}">
                         <input type="hidden" name="username" id="username">
-                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
+                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
                           <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
                         </button>
                       </form>

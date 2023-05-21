@@ -5,14 +5,18 @@
 
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
-<br>
-<h1 style="margin-left: 45px; margin-bottom: -12px;">Todo</h1>
-<br>
-{% if invoices %}
-    <h2 style="margin-left: 65px; margin-bottom: 0px;">Lien Release Signings</h2>
-    <div class="reports-list-div" style="margin-top: 10px;">
+
+<div class="multi-option-header">
+    <h1>Todo</h1>
+    <hr color="#560200" width="90%" size="4">
+</div>
+
+<div style="display: block; margin-top: 100px;">
+    {% if invoices %}
+    <h2 class="section-header">Lien Release Signings</h2>
+    <div class="reports-list-div" style="margin-top: 30px;">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
-            <tr class="report-item headers" style="background-color: initial;">
+            <tr class="report-item headers">
                 <th></th>
                 <th>Invoice <br>Date</th>
                 <th>Invoice <br>Number</th>
@@ -62,6 +66,8 @@
     </div>
 
 {% endif %}
+</div>
+
 
 </table>
 

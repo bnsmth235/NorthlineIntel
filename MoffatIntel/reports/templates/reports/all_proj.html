@@ -6,15 +6,15 @@
 
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
-<h2 style="margin-left: 45px; margin-bottom: -12px;">All Projects</h2>
-<div style="float: right; margin-top: -15px; padding: 6px; margin-right: 31px; border-radius:8px; border: 2px solid #7c0300; background-color: #7c0300">
-    <a href="/reports/create_proj/" style="text-decoration: none; color: white;  font-size: 18px; font-weight: 300">+ Create Project</a>
+<h2 class="section-header">All Projects</h2>
+<div class="add-new">
+    <a href="/reports/create_proj/">+ Create Project</a>
 </div>
 
 {% if projects %}
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
-            <tr class="report-item headers" style="background-color: initial;">
+            <tr class="report-item headers">
                 <th>Name</th>
                 <th>Address</th>
                 <th>Status</th>
@@ -28,13 +28,13 @@
                      <td><a href="{% url 'reports:project_view' project.id %}">{{ project.get_status_display_long }}</a></td>
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.edited_by }}</a></td>
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.last_edit_date }}</a></td>
-                    <td><a href="{% url 'reports:edit_proj' project.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="10px" width="auto">Edit</a></td>
-                    <td>
+                    <td width="5%" class="inline-edit-button"><a href="{% url 'reports:edit_proj' project.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="15px" width="auto">Edit</a></td>
+                    <td width="6%">
                       <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_proj' project.id%}">
                         {% csrf_token %}
                         <input type="hidden" name="project_id" value="{{ project.id }}">
                         <input type="hidden" name="username" id="username">
-                        <button style="border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
+                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
                           <img src="{% static 'reports/images/trash.png' %}" height="10px" width="auto"> Delete
                         </button>
                       </form>

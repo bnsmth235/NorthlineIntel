@@ -10,14 +10,14 @@
 
 <div id="app">
 
-<h1 style="margin-left: 45px; margin-bottom: -12px;">Subcontractors</h1>
+<h1 class="section-header">Subcontractors</h1>
 
-<div class="add-plans-button" v-on:click="showDiv()" v-if="!isDivVisible">
-    <button style="color: white">+ New Sub</button>
+<div class="add-button" v-on:click="showDiv()" v-if="!isDivVisible">
+    <button>+ New Sub</button>
 </div>
 
-<div class="add-plans-button" v-on:click="showDiv()" v-if="isDivVisible">
-    <button style="color: white;"> Cancel</button>
+<div class="add-button" v-on:click="showDiv()" v-if="isDivVisible">
+    <button> Cancel</button>
 </div>
 
 {% if error_message %}
@@ -30,26 +30,26 @@
 
 
   <div v-if="isDivVisible">
-      <form method="post" action="{% url 'reports:all_subs'%}" style="margin-left: 250px; margin-right:250px;">
-        <fieldset class="fieldset" style="margin-top: 20px; position: relative;">
+      <form method="post" action="{% url 'reports:all_subs'%}" >
+        <fieldset class="fieldset-table">
             <legend><h2>New Subcontractor</h2></legend>
             {% csrf_token %}
-            <label for="name" style="margin-right: 10px">Sub name:</label>
+            <label for="name">Sub name:</label>
             <input type="text" name="name" id="name" class="input-field">
 
-            <label for="address" style="margin-right: 10px">Address:</label>
+            <label for="address">Address:</label>
             <input type="text" name="address" id="address" class="input-field">
 
-            <label for="phone" style="margin-right: 10px">Phone:</label>
+            <label for="phone">Phone:</label>
             <input type="tel" name="phone" id="phone" class="input-field">
 
-            <label for="email" style="margin-right: 10px">Email:</label>
+            <label for="email">Email:</label>
             <input type="email" name="email" id="email" class="input-field">
 
-            <input class="input-field" style="margin-left: 5px; height: 35px; color: white;border: 2px solid #7c0300; background-color: #7c0300; float: right" type="submit" name="submit" value="Save">
+            <input class="input-field-save" type="submit" name="submit" value="Save">
 
             {% if error_message %}
-                <p><strong style="color: Red; margin-left: 80px; margin-top: -20px">{{ error_message }}</strong></p>
+                <p><strong class="error">{{ error_message }}</strong></p>
             {% endif %}
 
         </fieldset>
@@ -59,7 +59,7 @@
 {% if subs %}
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
-            <tr class="report-item headers" style="background-color: initial;">
+            <tr class="report-item headers">
                 <th>Name</th>
                 <th>Address</th>
                 <th>Phone</th>
@@ -71,14 +71,14 @@
                     <td>{{ sub.address }}</td>
                     <td>{{ sub.phone }}</td>
                     <td>{{ sub.email }}</td>
-                    <td style="width: 5%; text-align: center"><a href="{% url 'reports:edit_sub' sub.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="10px" width="auto"> Edit</a></td>
+                    <td class="inline-edit-button"><a href="{% url 'reports:edit_sub' sub.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="10px" width="auto">Edit</a></td>
                     <td style="width: 6%; text-align: center">
                       <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_sub' sub.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="sub_id" value="{{ sub.id }}">
                         <input type="hidden" name="username" id="username">
-                        <button style="color: black; border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
-                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto"> Delete
+                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">Delete
                         </button>
                       </form>
                     </td>

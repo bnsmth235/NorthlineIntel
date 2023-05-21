@@ -8,13 +8,13 @@
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 <div id="app">
 
-<h1 style="margin-left: 45px; margin-bottom: -12px;">Plans for {{project.name}}</h1>
+<h1 class="section-header">Plans for {{project.name}}</h1>
 
-<div class="add-plans-button" v-on:click="showDiv()" v-if="!isDivVisible">
+<div class="add-button" v-on:click="showDiv()" v-if="!isDivVisible">
     <button>+ Upload Plan</button>
 </div>
 
-<div class="add-plans-button" v-on:click="showDiv()" v-if="isDivVisible">
+<div class="add-button" v-on:click="showDiv()" v-if="isDivVisible">
     <button>Cancel</button>
 </div>
 
@@ -29,12 +29,12 @@
 
   <div v-if="isDivVisible">
       <form method="post" enctype="multipart/form-data" action="{% url 'reports:upload_plan' project.id %}">
-        <fieldset class="fieldset" style="margin-top: 20px; margin-left: 250px; margin-right: 250px; position: relative;">
+        <fieldset class="fieldset-table">
             <legend><h2>Upload Plan</h2></legend>
             {% csrf_token %}
 
             {% if error_message %}
-                <p><strong style="color: Red; margin-left: 80px; margin-top: -20px">{{ error_message }}</strong></p>
+                <p><strong class="error">{{ error_message }}</strong></p>
             {% endif %}
             <div class="form-field">
                 <label>PDF:  </label>
@@ -64,13 +64,13 @@
                     <td><a href="{% url 'reports:plan_view' plan.project_id.id plan.id%}">{{plan.name}}</a></td>
                     <td><a href="">{{ plan.edited_by }}</a></td>
                     <td><a href="">{{ plan.date }}</a></td>
-                    <td style="width: 6%; text-align: center">
+                    <td style="width: 5%; text-align: center">
                       <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_plan' project.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="plan_id" value="{{ plan.id }}">
                         <input type="hidden" name="username" id="username">
-                        <button style="color: black; border:none; background-color: transparent; font-family: inherit; font-size: inherit; cursor: pointer" type="button" onclick="deleteConfirmation(this)">
-                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto"> Delete
+                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                            Delete
                         </button>
                       </form>
                     </td>
