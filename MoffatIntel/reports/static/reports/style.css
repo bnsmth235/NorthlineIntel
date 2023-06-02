@@ -295,8 +295,13 @@ body{
   background-color: initial;
 }
 
+
 .headers{
     text-align: center;
+    background-color: initial;
+}
+
+.headers:hover{
     background-color: initial;
 }
 
