@@ -18,13 +18,16 @@
 
             <label for="state">State:</label>
             <select name="state" id="state" class="input-field">
-                {% for choice in state_choices %}
-                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                {% for choice in state_options %}
+                    <option value="{{ choice.0 }}">{{ choice.0 }}</option>
                 {% endfor %}
+                    <option selected="selected">
+                        UT
+                    </option>
             </select>
 
             <label for="zip">Zip Code:</label>
-            <input type="number" name="zip" id="zip" class="input-field">
+            <input type="number" name="zip" id="zip" class="input-field" width="50px">
 
             <input class="input-field-save" type="submit" name="submit" value="Save">
 

@@ -227,7 +227,7 @@ def new_proj(request):
 
         return redirect('reports:home')
 
-    return render(request, 'reports/new_proj.html', {"STATE_OPTIONS": STATE_OPTIONS})
+    return render(request, 'reports/new_proj.html', {"state_options": STATE_OPTIONS})
 
 
 @login_required(login_url='reports:login')
