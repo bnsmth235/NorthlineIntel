@@ -6,7 +6,7 @@
     <h1 style="text-align: center; font-size: 50px">{{project.name|upper}}</h1>
     <hr color="#560200" width="90%" size="4">
     <div style="text-align: center">
-        <div style="display: inline-block"><a class="pick-icon" href="{% url 'reports:contract_view' project.id %}"><img style="width: 225px; height: auto;" src="{% static 'reports/images/contract.png' %}"><li>Contracts</li></a></div>
+        <div style="display: inline-block"><a class="pick-icon" href="{% url 'reports:sub_select' project.id %}"><img style="width: 225px; height: auto;" src="{% static 'reports/images/contract.png' %}"><li>Contracts</li></a></div>
         <div style="display: inline-block"><a class="pick-icon" href="{% url 'reports:all_draws' project.id %}"><img style="width: 225px; height: auto;" src="{% static 'reports/images/draws.png' %}"><li>Draws</li></a></div>
         <div style="display: inline-block"><a class="pick-icon" href="{% url 'reports:all_plans' project.id %}"><img style="width: 225px; height: auto;" src="{% static 'reports/images/plans.png' %}"><li>Plans</li></a></div>
     </div>

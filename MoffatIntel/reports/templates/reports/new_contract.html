@@ -1,0 +1,70 @@
+{% extends "reports/base.html" %}
+
+{% block title %}New Contract{% endblock %}
+
+{% block content %}
+    <form action="{% url 'reports:new_contract' project.id draw.id%}" enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
+            <legend><h1>New Contract</h1></legend>
+
+            {% if error_message %}
+                <p><strong class="error">{{ error_message }}</strong></p>
+            {% endif %}
+
+            <label for="Contract_date">Contract Date:</label>
+            <input type="date" name="Contract_date" id="Contract_date" class="input-field">
+
+            <label for="Contract_num">Contract Number:</label>
+            <input type="text" name="Contract_num" id="Contract_num" class="input-field">
+
+            <label for="division_code">Division Code:</label>
+            <input type="text" name="division_code" id="division_code" class="input-field">
+
+            <label for="method">Method:</label>
+            <select name="method" id="method" class="input-field">
+                {% for choice in method_choices %}
+                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                {% endfor %}
+            </select>
+            <br><br>
+            <label for="sub">Subcontractor: </label>
+            <select name="sub" id="sub" class="input-field">
+                {% for sub in subs %}
+                    <option value="{{ sub.name }}">{{ sub.name }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="Contract_total">Contract Total: $</label>
+            <input type="number" min="0" step=".01" name="Contract_total" id="Contract_total" class="input-field">
+
+            <label for="lien_release_type">Lien Release Type: </label>
+            <select name="lien_release_type" id="lien_release_type" class="input-field">
+                {% for choice in lien_release_type_choices %}
+                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="w9">W9: </label>
+            <input type="text" name="w9" id="w9" class="input-field">
+            <br><br>
+            <label for="description">Description:</label>
+            <input type="text" name="description" id="description" class="input-field" style="width: 800px">
+
+            <br><br>
+            <div class="form-field">
+                <label style="position: relative">Contract PDF: </label>
+                {{ form.Contract_pdf }}
+
+                <label style="position: relative">Lien Release PDF: </label>
+                <input type="file" name="lien_release_pdf" id="lien_release_pdf">
+
+                <label for="signed" style="font-size: 20px; position: relative">Is Lien Release Signed? </label>
+                <input type="checkbox" name="signed" id="signed">
+            </div>
+
+            <input class="input-field-save" type="submit" name="submit" value="Save">
+
+        </fieldset>
+    </form>
+{% endblock %}

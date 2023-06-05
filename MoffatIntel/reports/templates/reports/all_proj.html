@@ -24,7 +24,7 @@
         {% for project in projects %}
                 <tr class="report-item zebra">
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.name }}</a></td>
-                    <td><a href="{% url 'reports:project_view' project.id %}">{{ project.address }}</a></td>
+                    <td><a href="{% url 'reports:project_view' project.id %}">{{ project.address }}, {{project.city}} {{project.state}}, {{project.zip}}</a></td>
                      <td><a href="{% url 'reports:project_view' project.id %}">{{ project.get_status_display_long }}</a></td>
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.edited_by }}</a></td>
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.last_edit_date }}</a></td>

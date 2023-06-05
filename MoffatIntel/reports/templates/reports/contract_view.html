@@ -4,16 +4,24 @@
 {% load static %}
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
+<script src="{% static 'reports/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<div id="app">
 
 <div class="multi-option-header">
-    <h1>{{project.name|upper}}</h1>
+    <h1>{{project.name|upper}} : {{sub.name|upper}}</h1>
     <hr color="#560200" width="90%" size="4">
 </div>
 
+{% if error_message %}
+    <p><strong class="error">{{ error_message }}</strong></p>
+{% endif %}
+
+{% if contract %}
 <div style="text-align: center">
-    <div style="display:inline-block"><a class="pick-icon" href="#"><img src="{% static 'reports/images/change_order.png' %}"><li>Change Order</li></a></div>
-    <div style="display:inline-block"><a class="pick-icon" href="#"><img src="{% static 'reports/images/deductive_change_order.png' %}"><li>Deductive Change Order</li></a></div>
-    <div style="display:inline-block"><a class="pick-icon" href="#"><img src="{% static 'reports/images/purchase_order.png' %}"><li>Purchase Order</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="{% url 'reports:change_orders' project.id sub.id %}"><img src="{% static 'reports/images/change_order.png' %}"><li>Change Orders</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="#"><img src="{% static 'reports/images/deductive_change_order.png' %}"><li>Deductive Change Orders</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="#"><img src="{% static 'reports/images/purchase_order.png' %}"><li>Purchase Orders</li></a></div>
 </div>
 
 <div display="block">
@@ -61,7 +69,7 @@
 {% else %}
     <div class="reports-list-div">
         <table>
-            <tr class="report-item">
+            <tr>
                 <td>There are currently no proposals available.</td>
             </tr>
         </table>
@@ -110,7 +118,7 @@
 {% else %}
     <div class="reports-list-div">
         <table>
-            <tr class="report-item">
+            <tr>
                 <td>There are currently no SWOs available.</td>
             </tr>
         </table>
@@ -159,18 +167,28 @@
 {% else %}
     <div class="reports-list-div">
         <table>
-            <tr class="report-item">
+            <tr>
                 <td>There are currently no exhibits available.</td>
             </tr>
         </table>
     </div>
 {% endif %}
 
+{% endif %}
+{% if not contract %}
+    <br><br>
+{% endif %}
+<h1 class="section-header">Contract</h1>
 
-<h1 class="section-header">Contracts</h1>
-<div class="add-new">
-    <a href="#">+ Add Contract</a>
+
+<div class="add-button" v-on:click="showContract()" v-if="!isContractVisible">
+    <button>+ Upload Contract</button>
 </div>
+
+<div class="add-button" v-on:click="showContract()" v-if="isContractVisible">
+    <button>Cancel</button>
+</div>
+
 {% if contracts %}
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
@@ -206,13 +224,53 @@
         </table>
     </div>
 {% else %}
+
+    <div v-if="isContractVisible">
+      <form method="post" enctype="multipart/form-data" action="{% url 'reports:contract_view' project.id sub.id%}">
+        <fieldset class="fieldset-table">
+            <legend><h2>Upload Contract</h2></legend>
+            {% csrf_token %}
+            <input hidden="hidden" name="form-type" value="contract">
+
+            <label for="contract_pdf">PDF: </label>
+            <input type="file" name="contract_pdf" id="contract_pdf" class="input-field" required="required">
+
+            <label for="total">Contract Total: $</label>
+            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+
+            <div class="add-button"><button type="submit">Upload</button></div>
+        </fieldset>
+    </form>
+  </div>
+
     <div class="reports-list-div">
         <table>
-            <tr class="report-item">
+            <tr>
                 <td>There are currently no contracts available.</td>
             </tr>
         </table>
     </div>
 {% endif %}
 </div>
+
+</div>
+
+<script>
+    const app = Vue.createApp({
+  data() {
+    return {
+      isContractVisible: false,
+    };
+  },
+
+  methods: {
+    showContract() {
+      this.isContractVisible = !this.isContractVisible;
+    },
+  },
+});
+
+const vm = app.mount("#app");
+</script>
+
 {% endblock %}

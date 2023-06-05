@@ -160,6 +160,13 @@ def delete_sub(request, sub_id):
 
 
 @login_required(login_url='reports:login')
+def sub_select(request, project_id):
+    subs = Subcontractor.objects.order_by("name")
+    project = get_object_or_404(Project, pk=project_id)
+
+    return render(request, 'reports/sub_select.html', {'subs': subs, 'project': project})
+
+@login_required(login_url='reports:login')
 def all_subs(request):
     subs = Subcontractor.objects.order_by("name")
     if request.method == 'POST':
@@ -221,13 +228,15 @@ def new_proj(request):
                                                              'state_options': STATE_OPTIONS})
 
         project = Project(name=name, date=date, edited_by=edited_by, status=status,
-                           address=address + ", " + city + ", " + state + ", " + zip)
+                           address=address, city=city, state=state, zip=zip)
         project.save()
         print("Project " + project.name + " has been saved")
 
         return redirect('reports:home')
 
     return render(request, 'reports/new_proj.html', {"state_options": STATE_OPTIONS})
+
+
 
 
 @login_required(login_url='reports:login')
@@ -385,7 +394,10 @@ def edit_proj(request, project_id):
                                                                  'status_options': STATUS_OPTIONS})
 
         project.name = name
-        project.address = address + ", " + city + ", " + state + ", " + zip
+        project.address = address
+        project.city = city
+        project.state = state
+        project.zip = zip
         project.status = status
         project.date = date
         project.edited_by = edited_by
@@ -595,6 +607,7 @@ def plan_view(request, plan_id, project_id):
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'reports/plan_view.html', {'pdf_data': pdf_data, 'plan': plan})\
 
+
 @login_required(login_url='reports:login')
 def delete_invoice(request, project_id, draw_id, invoice_id):
     project = get_object_or_404(Project, pk=project_id)
@@ -623,11 +636,141 @@ def delete_invoice(request, project_id, draw_id, invoice_id):
 
 
 @login_required(login_url='reports:login')
-def contract_view(request, project_id):
+def purchase_orders(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
+    sub = get_object_or_404(Subcontractor, pk=sub_id)
+    if request.method == 'POST':
+        pass
+
+    else:
+        return render(request, 'reports/purchase_orders.html', {'project': project, 'sub': sub})
+
+@login_required(login_url='reports:login')
+def new_purchase_order(request, project_id, sub_id):
+    project = get_object_or_404(Project, pk=project_id)
+    sub = get_object_or_404(Subcontractor, pk=sub_id)
+    if request.method == 'POST':
+        pass
+    else:
+        return render(request, 'reports/new_purchase_order.html', {'project': project, 'sub': sub})
+
+
+@login_required(login_url='reports:login')
+def deductive_change_orders(request, project_id, sub_id):
+    project = get_object_or_404(Project, pk=project_id)
+    sub = get_object_or_404(Subcontractor, pk=sub_id)
+    if request.method == 'POST':
+        pass
+
+    else:
+        return render(request, 'reports/deductive_change_orders.html', {'project': project, 'sub': sub})
+
+@login_required(login_url='reports:login')
+def new_deductive_change_order(request, project_id, sub_id):
+    project = get_object_or_404(Project, pk=project_id)
+    sub = get_object_or_404(Subcontractor, pk=sub_id)
+    if request.method == 'POST':
+        pass
+    else:
+        return render(request, 'reports/new_deductive_change_order.html', {'project':project, 'sub': sub})
+
+@login_required(login_url='reports:login')
+def change_orders(request, project_id, sub_id):
+    project = get_object_or_404(Project, pk=project_id)
+    sub = get_object_or_404(Subcontractor, pk=sub_id)
+    cos = ChangeOrder.objects.order_by('-date')
+
+    if request.method == 'POST':
+        for key, value in request.POST.items():
+            if key.startswith('scope'):
+                # Handle scope field
+                scope_index = key.replace('scope', '')
+                scope_value = value
+                # Process the scope value
+
+                # Get corresponding qty, unitprice, and totalprice values
+                qty_key = f'qty{scope_index}'
+                unitprice_key = f'unitprice{scope_index}'
+                totalprice_key = f'totalprice{scope_index}'
+
+                qty_value = request.POST.get(qty_key)
+                unitprice_value = request.POST.get(unitprice_key)
+                totalprice_value = request.POST.get(totalprice_key)
+
+                if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
+                    return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub, 'error_message': "All fields need to be filled."})
+
+                try:
+                    qty_value = int(qty_value)
+                    unitprice_value = float(unitprice_value)
+                except ValueError:
+                    return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub, 'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
+
+                co = ChangeOrder()
+                co.order_number = f"{project.name} CO {datetime.datetime.now().year % 100}{len(ChangeOrder.objects.all())+1}{datetime.datetime.now().month}"
+                co.date = datetime.datetime.now()
+                co.sub_id = sub
+                co.project_id = project
+
+                co.save()
+                #create PDF HERE
+
+        return redirect('reports:change_orders', project_id=project_id, sub_id=sub_id)
+    else:
+        return render(request, 'reports/change_orders.html', {'project': project, 'sub': sub, 'cos': cos})
+
+
+@login_required(login_url='reports:login')
+def new_change_order(request, project_id, sub_id):
+    project = get_object_or_404(Project, pk=project_id)
+    sub = get_object_or_404(Subcontractor, pk=sub_id)
+
+    return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub})
+
+
+@login_required(login_url='reports:login')
+def delete_change_order(request, co_id):
+    co = get_object_or_404(ChangeOrder, pk=co_id)
+
+    file_path = co.pdf.path
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        co.delete()
+
+    return redirect('reports:change_orders', project_id=co.project_id, sub_id=co.sub_id)
+
+
+@login_required(login_url='reports:login')
+def contract_view(request, project_id, sub_id):
+    project = get_object_or_404(Project, pk=project_id)
+    sub = get_object_or_404(Subcontractor, pk=sub_id)
     context = {
-        'project': project
+        'project': project,
+        'sub': sub
     }
+
+    if request.method == 'POST':
+        form_type = request.POST.get('form-type')
+        if form_type == 'contract':
+            contract = Contract()
+            contract.date = datetime.datetime.now()
+            contract.total = request.POST.get('total')
+            contract.sub_id = sub
+            contract.project_id = project
+            contract.pdf = request.POST.get('contract_pdf')
+
+            try:
+                contract.total = float(contract.total)
+                if contract.total <= 0:
+                    context.update({'error_message': "Total must be a positive number and not 0"})
+                    return render(request, 'reports/contract_view.html', context)
+            except:
+                context.update({'error_message': "Total must be a number"})
+                return render(request, 'reports/contract_view.html', context)
+
+            if not contract.pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the PDF"})
+                return render(request, 'reports/contract_view.html', context)
 
     return render(request, 'reports/contract_view.html', context)
 
