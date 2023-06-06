@@ -33,6 +33,7 @@ class Subcontractor(models.Model):
     address = models.CharField(max_length=200)
     phone = models.CharField(max_length=11)
     email = models.EmailField()
+    w9 = models.CharField(max_length=20)
 
     def __str__(self):
         return self.name
@@ -83,13 +84,14 @@ class Exhibit(models.Model):
 
 class Contract(models.Model):
     date = models.DateTimeField('Last Modified')
+    description = models.CharField(max_length=200, default="")
     total = models.FloatField()
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     pdf = models.FileField(upload_to='static/reports/contracts')
 
     def __str__(self):
-        return self.name
+        return self.pdf.name
 
 
 class ChangeOrder(models.Model):
@@ -146,7 +148,6 @@ class Invoice(models.Model):
     description = models.TextField()
     lien_release_type = models.CharField(max_length=20, default="N",
                                          choices=[("F", "Final"), ("C", "Conditional"), ("N", "N/A")])
-    w9 = models.CharField(max_length=20)
     invoice_pdf = models.FileField(default=None, upload_to='static/reports/invoices/')
     lien_release_pdf = models.FileField(default=None, upload_to='static/reports/lien_releases')
     signed = models.BooleanField(default=None)

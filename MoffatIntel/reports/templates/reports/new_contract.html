@@ -3,7 +3,7 @@
 {% block title %}New Contract{% endblock %}
 
 {% block content %}
-    <form action="{% url 'reports:new_contract' project.id draw.id%}" enctype="multipart/form-data" method="post">
+    <form action="{% url 'reports:new_contract'%}" method="post">
         {% csrf_token %}
         <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
             <legend><h1>New Contract</h1></legend>
@@ -12,58 +12,113 @@
                 <p><strong class="error">{{ error_message }}</strong></p>
             {% endif %}
 
-            <label for="Contract_date">Contract Date:</label>
-            <input type="date" name="Contract_date" id="Contract_date" class="input-field">
-
-            <label for="Contract_num">Contract Number:</label>
-            <input type="text" name="Contract_num" id="Contract_num" class="input-field">
-
-            <label for="division_code">Division Code:</label>
-            <input type="text" name="division_code" id="division_code" class="input-field">
-
-            <label for="method">Method:</label>
-            <select name="method" id="method" class="input-field">
-                {% for choice in method_choices %}
-                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
-                {% endfor %}
-            </select>
-            <br><br>
-            <label for="sub">Subcontractor: </label>
-            <select name="sub" id="sub" class="input-field">
-                {% for sub in subs %}
-                    <option value="{{ sub.name }}">{{ sub.name }}</option>
-                {% endfor %}
-            </select>
-
-            <label for="Contract_total">Contract Total: $</label>
-            <input type="number" min="0" step=".01" name="Contract_total" id="Contract_total" class="input-field">
-
-            <label for="lien_release_type">Lien Release Type: </label>
-            <select name="lien_release_type" id="lien_release_type" class="input-field">
-                {% for choice in lien_release_type_choices %}
-                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
-                {% endfor %}
-            </select>
-
-            <label for="w9">W9: </label>
-            <input type="text" name="w9" id="w9" class="input-field">
-            <br><br>
-            <label for="description">Description:</label>
-            <input type="text" name="description" id="description" class="input-field" style="width: 800px">
-
-            <br><br>
-            <div class="form-field">
-                <label style="position: relative">Contract PDF: </label>
-                {{ form.Contract_pdf }}
-
-                <label style="position: relative">Lien Release PDF: </label>
-                <input type="file" name="lien_release_pdf" id="lien_release_pdf">
-
-                <label for="signed" style="font-size: 20px; position: relative">Is Lien Release Signed? </label>
-                <input type="checkbox" name="signed" id="signed">
+            <div style="display: inline-block">
+                <label for="project">Project: </label>
+                <select name="project" required="required" id="project" class="input-field">
+                    {% for project in projects %}
+                        <option value="{{ project.id }}">{{ project.name }}</option>
+                    {% endfor %}
+                    <option selected="selected" {% if failure %}value="{{projectselect.id}}"{% endif %}>{% if failure %}{{projectselect.name}}{% endif %}</option>
+                </select>
             </div>
 
-            <input class="input-field-save" type="submit" name="submit" value="Save">
+            <div style="display: inline-block">
+                <label for="sub">Subcontractor: </label>
+                <select name="sub" id="sub" required="required" class="input-field">
+                    {% for sub in subs %}
+                        <option value="{{ sub.id }}">{{ sub.name }}</option>
+                    {% endfor %}
+                    <option selected="selected" {% if failure %}value="{{subselect.id}}"{% endif %}>{% if failure %}{{subselect.name}}{% endif %}</option>
+                </select>
+            </div>
+
+            <label for="contract_date">Contract Date:</label>
+            <input type="date" name="contract_date" id="contract_date" class="input-field" {% if failure %}value="{{contract_date}}"{% endif %}>
+
+            <div style="display: inline-block">
+                <label for="contract_total">Contract Total: $</label>
+                <input type="number" required='required' min="0" step=".01" name="contract_total" id="contract_total" class="input-field" {% if failure %}value="{{contract_total}}"{% endif %}>
+            </div>
+
+            <br><br>
+
+            <div style="display: block; text-align: left;">
+                <label for="description" style="display: block; margin-bottom: 5px;">Description of Work:</label>
+                <div style="display: flex; justify-content: center;">
+                    <textarea id="description" name="description" rows="4" style="width: 80%; height: 80px;" class="input-field">{% if failure %}{{description}}{% endif %}</textarea>
+                </div>
+            </div>
+
+
+
+
+            <br><br>
+            <div style="display: inline-block; padding-right: 2em">
+                <label for="p_and_p">P&P Bonds Required?</label>
+                <input type="checkbox" name="p_and_p" id="p_and_p" {% if failure %}{% if p_and_p %}checked{% endif %}{% endif %}>
+            </div>
+
+            <div style="display: inline-block; padding-right: 2em">
+                <label for="guarantor">Guarantor(s) Required?</label>
+                <input type="checkbox" name="guarantor" id="guarantor" {% if failure %}{% if guarantor %}checked{% endif %}{% endif %}>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="payroll_cert">Certified Payrolls Required?</label>
+                <input type="checkbox" name="payroll_cert" id="payroll_cert" {% if failure %}{% if payroll_cert %}checked{% endif %}{% endif %}>
+            </div>
+
+            <br><br>
+
+            <div style="display: inline-block">
+                <label>Shop Drawings, etc: (Select all applicable)</label>
+                <div style="display: block">
+                    <input type="checkbox" name="complete_drawings" id="complete_drawings" {% if failure %}{% if complete_drawings %}checked{% endif %}{% endif %}>
+                    <label for="complete_drawings" style="font-size: 14px">Complete shop drawings, catalog cuts, samples, etc. shall be submitted in 3 copies, plus 1 reproducible
+copy, of shop drawings to william@moffatcompany.com</label>
+                    <br>
+                    <input type="checkbox" name="o_and_m" id="o_and_m">
+                    <label for="o_and_m" style="font-size:14px">Submit O & M manuals prior to submitting an invoice (application) for payment greater than 50% of the
+Contract.</label>
+                    <br>
+                    <input type="checkbox" name="as_built" id="as_built" {% if failure %}{% if as_built %}checked{% endif %}{% endif %}>
+                    <label for="as_built" style="font-size: 14px">As-built drawings must be approved prior to payment of more than 75% of Contract Amount.</label>
+                    <br>
+                     <input type="checkbox" name="manuals" id="manuals" {% if failure %}{% if manuals %}checked{% endif %}{% endif %}>
+                    <label for="manuals" style="font-size: 14px">Warranty / Guarantee / Training manuals must be submitted/ completed prior to release of 90% of the
+Contract Amount.</label>
+
+                </div>
+            </div>
+            <br><br>
+            <div style="display: inline-block">
+                <label>Drawings and specifications applicable hereto are: (Check One)</label>
+                <br>
+                <input type="checkbox" name="listed_in_subcontract" id="listed_in_subcontract" {% if failure %}{% if listed_in_subcontract %}checked{% endif %}{% endif %}>
+                    <label for="listed_in_subcontract" style="font-size: 14px">Listed in the Subcontract Documents</label>
+                    <br>
+                    <input type="checkbox" name="listed_in_exhibit" id="listed_in_exhibit" {% if failure %}{% if listed_in_exhibit %}checked{% endif %}{% endif %}>
+                    <label for="listed_in_exhibit" style="font-size: 14px">Listed in Exhibit attached</label>
+            </div>
+            <br><br>
+            <div style="display: block">
+                <label>Subcontractor shall transport all such debris and rubbish to: (Check one)</label>
+                <br>
+                <input type="checkbox" name="offsite_disposal" id="offsite_disposal" {% if failure %}{% if offsite_disposal %}checked{% endif %}{% endif %}>
+                    <label for="offsite_disposal" style="font-size: 14px">An off-site disposal site selected and paid for by Subcontractor.</label>
+                    <br>
+                <input type="checkbox" name="onsite_dumpster_sub_pay" id="onsite_dumpster_sub_pay" {% if failure %}{% if onsite_dumpster_sub_pay %}checked{% endif %}{% endif %}>
+                    <label for="onsite_dumpster_sub_pay" style="font-size: 14px">Contractor’s on-site dumpster. Subcontractor shall pay its pro rata share of the costs of the dumpster
+and dump fees.</label>
+                    <br>
+                <input type="checkbox" name="onsite_dumpster" id="onsite_dumpster" {% if failure %}{% if onsite_dumpster %}checked{% endif %}{% endif %}>
+                    <label for="onsite_dumpster" style="font-size: 14px">Contractor’s on-site dumpster. Contractor shall pay the costs of the dumpster and dump fees.</label>
+                    <br>
+            </div>
+
+            <div style="display: block">
+                <input class="input-field-save" type="submit" name="submit" value="Save">
+            </div>
 
         </fieldset>
     </form>

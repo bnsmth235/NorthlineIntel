@@ -64,6 +64,7 @@
                 <th>Address</th>
                 <th>Phone</th>
                 <th>Email</th>
+                <th>W9</th>
             </tr>
         {% for sub in subs %}
                 <tr class="report-item zebra">
@@ -71,6 +72,7 @@
                     <td>{{ sub.address }}</td>
                     <td>{{ sub.phone }}</td>
                     <td>{{ sub.email }}</td>
+                    <td>{{ sub.w9 }}</td>
                     <td class="inline-edit-button"><a href="{% url 'reports:edit_sub' sub.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="10px" width="auto">Edit</a></td>
                     <td style="width: 6%; text-align: center">
                       <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_sub' sub.id %}">

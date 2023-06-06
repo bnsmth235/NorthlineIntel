@@ -1,19 +1,24 @@
 import os
+from io import BytesIO
 
+from PyPDF2.generic import NameObject
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.files import File
 from django.db.models import Sum
 from django.shortcuts import render, redirect, resolve_url, get_object_or_404
 from django.contrib.auth import authenticate, logout, login
 import base64
-
+import PyPDF2
 from django.urls import reverse
-from django.utils import formats
 from django.views.decorators.csrf import ensure_csrf_cookie
 from datetime import datetime
 from django.core.files.uploadedfile import UploadedFile
 
 from .forms import DocumentForm, InvoiceForm
 from .models import *
+
+
 
 STATE_OPTIONS = [
     ("AL", "Alabama"),
@@ -125,6 +130,7 @@ def edit_sub(request, sub_id):
         address = request.POST.get('address')
         phone = request.POST.get('phone')
         email = request.POST.get('email')
+        w9 = request.POST.get('w9')
         if not name:
             return render(request, 'reports/edit_sub.html', {'error_message': "Please enter the subcontractor name. (Less than 50 characters)", 'sub': sub})
 
@@ -135,6 +141,7 @@ def edit_sub(request, sub_id):
         sub.addresss = address
         sub.phone = phone
         sub.email = email
+        sub.w9 = w9
 
         sub.save()
 
@@ -174,6 +181,7 @@ def all_subs(request):
         address = request.POST.get('address')
         phone = request.POST.get('phone')
         email = request.POST.get('email')
+        w9 = request.POST.get('w9')
 
         if not name:
             return render(request, 'reports/all_subs.html', {'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
@@ -186,6 +194,7 @@ def all_subs(request):
         sub.address = address
         sub.phone = phone
         sub.email = email
+        sub.w9 = w9
         sub.save()
 
         return redirect(reverse('reports:all_subs'))
@@ -236,7 +245,170 @@ def new_proj(request):
 
     return render(request, 'reports/new_proj.html', {"state_options": STATE_OPTIONS})
 
+@login_required(login_url='reports:login')
+def new_contract(request):
+    projects = Project.objects.order_by('name')
+    subs = Subcontractor.objects.order_by('name')
 
+    context = {'projects': projects, 'subs': subs}
+
+    if request.method == 'POST':
+        project = get_object_or_404(Project, pk=request.POST.get('project'))
+        sub = get_object_or_404(Subcontractor, pk=request.POST.get('sub'))
+        contract_date = request.POST.get('contract_date')
+        description = request.POST.get('description')
+        contract_total = request.POST.get('contract_total')
+        p_and_p = bool(request.POST.get('p_and_p'))
+        guarantor = bool(request.POST.get('guarantor'))
+        payroll_cert = bool(request.POST.get('payroll_cert'))
+        complete_drawings = bool(request.POST.get('complete_drawings'))
+        o_and_m = bool(request.POST.get('o_and_m'))
+        as_built = bool(request.POST.get('as_built'))
+        manuals = bool(request.POST.get('manuals'))
+        listed_in_subcontract = bool(request.POST.get('listed_in_subcontract'))
+        listed_in_exhibit = bool(request.POST.get('listed_in_exhibit'))
+        offsite_disposal = bool(request.POST.get('offsite_disposal'))
+        onsite_dumpster_sub_pay = bool(request.POST.get('onsite_dumpster_sub_pay'))
+        onsite_dumpster = bool(request.POST.get('onsite_dumpster'))
+
+        context.update({
+            'failure': True,
+            'projectselect': project,
+            'subselect': sub,
+            'contract_date': contract_date,
+            'description': description,
+            'contract_total': contract_total,
+            'p_and_p': p_and_p,
+            'guarantor': guarantor,
+            'payroll_cert': payroll_cert,
+            'complete_drawings': complete_drawings,
+            'o_and_m': o_and_m,
+            'as_built': as_built,
+            'manuals': manuals,
+            'listed_in_subcontract': listed_in_subcontract,
+            'listed_in_exhibit': listed_in_exhibit,
+            'offsite_disposal': offsite_disposal,
+            'onsite_dumpster_sub_pay': onsite_dumpster_sub_pay,
+            'onsite_dumpster': onsite_dumpster,
+        })
+
+        if not project or not sub or not description or not contract_total or not contract_date:
+            context.update({'error_message': "Please fill out all fields as specified (missing req data)"})
+            return render(request, 'reports/new_contract.html', context)
+
+        if listed_in_exhibit == listed_in_subcontract:
+            context.update({'error_message': "Please fill out all fields as specified (sub/exhibit)"})
+            return render(request, 'reports/new_contract.html', context)
+
+        if (offsite_disposal + onsite_dumpster + onsite_dumpster_sub_pay) != 1:
+            context.update({'error_message': "Please fill out all fields as specified (disposal)"})
+            return render(request, 'reports/new_contract.html', context)
+
+        if not project in projects or not sub in subs:
+            context.update({'error_message': "Please pick an existing Project and Subcontractor"})
+            return render(request, 'reports/new_contract.html', context)
+
+        try:
+            contract_total = float(contract_total)
+            if contract_total < 0:
+                raise
+        except:
+            context.update({'error_message': "Contract total must be a positive number"})
+            return render(request, 'reports/new_contract.html', context)
+
+        contract = Contract()
+        contract.date = contract_date
+        contract.total = contract_total
+        contract.sub_id = sub
+        contract.description = description[:196]+"..."
+        contract.project_id = project
+
+        file_path = os.path.join(settings.STATIC_ROOT, 'reports\pdf_templates\contract_template.pdf')
+
+        output_path = sub.name + " Contract " + contract_date
+
+        if os.path.exists(output_path + ".pdf"):
+            counter = 1
+            while os.path.exists(output_path + "("+str(counter)+")" + ".pdf"):
+                counter += 1
+            output_path += "("+str(counter)+")"
+
+        output_path += ".pdf"
+
+        if os.path.exists(file_path):
+            with open(file_path, 'rb') as file:
+                input_pdf = PyPDF2.PdfReader(file)
+                output_pdf = PyPDF2.PdfWriter()
+
+                fields = input_pdf.get_fields()
+                print(fields)
+
+                for field in fields:
+                    default = ''
+                    try:
+                        if fields[field]['/DV'] != "":
+                            default = fields[field]['/DV']
+                        fields[field] = default
+                    except:
+                        fields[field] = ''
+
+                fields['sub_name'] = sub.name
+                fields['sub_address'] = sub.address
+                fields['job_number'] = project.id
+                fields['contract_date'] = contract_date
+                fields['project_name'] = project.name
+                fields['project_address'] = project.address
+                fields['project_city_state_zip'] = project.city + ", " + project.state + ", " + str(project.zip)
+                fields['contract_num'] = len(Contract.objects.all()) + 1
+                fields['sub_w9'] = sub.w9
+                fields['description'] = description
+                fields['contract_total'] = "$" + "{:.2f}".format(contract_total)
+
+                fields['p_and_p_req'] = NameObject("/0") if p_and_p else "/Off"
+                fields['p_and_p_no_req'] = NameObject("/0") if not p_and_p else "/Off"
+                fields['guarantor_req'] = NameObject("/0") if guarantor else "/Off"
+                fields['guarantor_no_req'] = NameObject("/0") if not guarantor else "/Off"
+                fields['payroll_cert_req'] = NameObject("/0") if payroll_cert else "/Off"
+                fields['payroll_cert_no_req'] = NameObject("/0") if not payroll_cert else "/Off"
+                fields['complete_drawings'] = NameObject("/0") if complete_drawings else "/Off"
+                fields['o_and_m'] = NameObject("/0") if o_and_m else "/Off"
+                fields['as_built'] = NameObject("/0") if as_built else "/Off"
+                fields['manuals'] = NameObject("/0") if manuals else "/Off"
+                fields['drawings_no_req'] = NameObject("/0") if not complete_drawings and not o_and_m and not as_built and not manuals else "\Off"
+                fields['listed_in_subcontract'] = NameObject("/0") if listed_in_subcontract else "/Off"
+                fields['listed_in_exhibit'] = NameObject("/0") if listed_in_exhibit else "/Off"
+                fields['offsite_disposal'] = NameObject("/0") if offsite_disposal else "/Off"
+                fields['onsite_dumpster_sub_pay'] = NameObject("/0") if onsite_dumpster_sub_pay else "/Off"
+                fields['onsite_dumpster'] = NameObject("/0") if onsite_dumpster else "/Off"
+
+                for page_num in range(input_pdf._get_num_pages()):
+                    page = input_pdf._get_page(page_num)
+                    output_pdf.add_page(page)
+                    output_pdf.update_page_form_field_values(output_pdf.get_page(page_num), fields)
+
+                with BytesIO() as output_buffer:
+                    output_pdf.write(output_buffer)
+
+                    # Set the file pointer to the beginning of the BytesIO object
+                    output_buffer.seek(0)
+
+                    # Create a Django File object from the BytesIO object
+                    contract_pdf = File(output_buffer, name=output_path)
+
+                    # Assign the File object to the pdf field of the Contract model
+                    contract.pdf = contract_pdf
+                    contract.save()
+
+                project.date = datetime.datetime.now()
+                project.edited_by = request.user.username
+                project.save()
+
+        else:
+            print("file path :" + file_path +"does not exist")
+
+        return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
+
+    return render(request, 'reports/new_contract.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -601,11 +773,20 @@ def draw_view(request, project_id, draw_id):
 
 
 @login_required(login_url='reports:login')
+def contract_pdf_view(request, contract_id):
+    contract = get_object_or_404(Contract, pk=contract_id)
+    pdf_bytes = contract.pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'contract': contract})
+
+
+@login_required(login_url='reports:login')
 def plan_view(request, plan_id, project_id):
     plan = get_object_or_404(Plan, pk=plan_id)
     pdf_bytes = plan.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/plan_view.html', {'pdf_data': pdf_data, 'plan': plan})\
+    return render(request, 'reports/plan_view.html', {'pdf_data': pdf_data, 'plan': plan})
+
 
 
 @login_required(login_url='reports:login')
@@ -744,9 +925,12 @@ def delete_change_order(request, co_id):
 def contract_view(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
     sub = get_object_or_404(Subcontractor, pk=sub_id)
+    contracts = Contract.objects.order_by("-date").filter(sub_id=sub)
+    print(contracts)
     context = {
         'project': project,
-        'sub': sub
+        'sub': sub,
+        'contracts': contracts
     }
 
     if request.method == 'POST':

@@ -356,7 +356,7 @@ td a {
     margin-right: 31px;
     border-radius:8px;
     border: 2px solid #7c0300;
-    background-color: #7c0300
+    background-color: #7c0300;
 }
 
 button{
@@ -366,7 +366,7 @@ button{
     text-decoration: none;
     color: white;
     font-size: 18px;
-    font-weight: 300;
+    font-weight: bold;
 }
 
 .center-content-block{
@@ -392,7 +392,7 @@ button{
     text-decoration: none;
     color: white;
     font-size: 18px;
-    font-weight: bold;f
+    font-weight: bold;
 }
 
 .inline-edit-button{
