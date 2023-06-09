@@ -3,9 +3,11 @@
 {% block title %}New Contract{% endblock %}
 
 {% block content %}
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<div id="app">
     <form action="{% url 'reports:new_contract'%}" method="post">
         {% csrf_token %}
-        <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
+        <fieldset class="fieldset">
             <legend><h1>New Contract</h1></legend>
 
             {% if error_message %}
@@ -97,7 +99,7 @@ Contract Amount.</label>
                 <input type="checkbox" name="listed_in_subcontract" id="listed_in_subcontract" {% if failure %}{% if listed_in_subcontract %}checked{% endif %}{% endif %}>
                     <label for="listed_in_subcontract" style="font-size: 14px">Listed in the Subcontract Documents</label>
                     <br>
-                    <input type="checkbox" name="listed_in_exhibit" id="listed_in_exhibit" {% if failure %}{% if listed_in_exhibit %}checked{% endif %}{% endif %}>
+                    <input type="checkbox" id="listed_in_exhibit" name="listed_in_exhibit" v-model="isChecked" @change="updateShowExhibit" {% if failure %}{% if listed_in_exhibit %}checked{% endif %}{% endif %}>
                     <label for="listed_in_exhibit" style="font-size: 14px">Listed in Exhibit attached</label>
             </div>
             <br><br>
@@ -116,10 +118,151 @@ and dump fees.</label>
                     <br>
             </div>
 
-            <div style="display: block">
-                <input class="input-field-save" type="submit" name="submit" value="Save">
-            </div>
+
+
 
         </fieldset>
+        <div v-if="showExhibit">
+            <fieldset class="fieldset">
+                <legend><h1>New Exhibit</h1></legend>
+                <input hidden="hidden" name="form-type" id="form-type" value="exhibit">
+                {% if error_message %}
+                    <p><strong class="error">{{ error_message }}</strong></p>
+                {% endif %}
+
+                {% verbatim %}
+                <div class="reports-list-div">
+                    <div v-for="(group, groupIndex) in groups" :key="groupIndex" class="zebra">
+                        <table width="98%" height="98%" align="center" cellpadding="10" border="0" style="margin-bottom:20px">
+                            <tr class="group-title">
+                                <th>Group Name:</th>
+                                <th><input type="text" v-model="group.group_name" name="groupTitle[]" class="input-field" style="margin: 0px; width: 100%"></th>
+                            </tr>
+                            <tr class="report-item headers">
+                                <th width="10%">Number</th>
+                                <th>Scope of Work</th>
+                                <th width="5%">Qty</th>
+                                <th width="15%">Unit Price</th>
+                                <th width="10%">Total</th>
+                            </tr>
+                            <tr v-for="(row, rowIndex) in group.rows" :key="rowIndex" class="report-item zebra" style="text-align: center">
+                                <td>{{ rowIndex + 1 }}</td>
+                                <td><div><input type="text" :name="`scope[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 90%"></div></td>
+                                <td><input type="number" v-model="row.qty" :name="`qty[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 90%" step="1"></td>
+                                <td>$<input type="number" v-model="row.unitPrice" :name="`unitprice[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 80%" step=".01"></td>
+                                <td>${{ totalPrices[groupIndex][rowIndex] }}</td>
+                                <input type="hidden" v-bind:value="totalPrices[groupIndex][rowIndex]" v-bind:name="`totalprice[${groupIndex}][${rowIndex}]`">
+                            </tr>
+                            <tr>
+                                <td colspan="5">
+                                    <br>
+                                    <button v-on:click="addRow(groupIndex)" type="button" class="add-button">+ Add Row</button>
+                                    <button v-on:click="removeRow(groupIndex)" type="button" class="add-button">- Remove Row</button>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <hr color="#560200" width="100%" size="3">
+                    <div style="padding-top: 1em; padding-bottom: 1em">
+                        <div>
+                            <button v-on:click="removeGroup(groupIndex)" type="button" class="add-button">- Remove Grouping</button>
+                        </div>
+                        <div  v-if="groups.length < maxGroups">
+                            <button v-on:click="addGroup()" type="button" class="add-button">+ Add Grouping</button>
+                        </div>
+                    </div>
+                </div>
+
+                {% endverbatim %}
+            </fieldset>
+        </div>
+        <br>
+        <div style="display: block">
+                <input class="input-field-save" type="submit" name="submit" value="Save">
+        </div>
     </form>
+</div>
+
+<script>
+        const app = Vue.createApp({
+        data() {
+            return {
+                groups: [
+                    {
+                        group_name: '',
+                        rows: [
+                            {
+                                scope: '',
+                                qty: '',
+                                unitPrice: '',
+                            },
+                        ],
+                    },
+                ],
+                maxGroups: 50, // Maximum number of groups allowed
+                isChecked: {% if failure %}{% if listed_in_exhibit %}true{% else %}false{% endif %}{% else %}false{% endif %},
+                showExhibit: {% if failure %}{% if listed_in_exhibit %}true{% else %}false{% endif %}{% else %}false{% endif %}
+
+            };
+        },
+        computed: {
+            rowIndexes() {
+                return this.groups.flatMap((group) => group.rows.map((_, index) => index));
+            },
+            totalPrices() {
+                return this.groups.map((group) =>
+                    group.rows.map((row) => {
+                        const qty = parseFloat(row.qty) || 0;
+                        const unitPrice = parseFloat(row.unitPrice) || 0;
+                        return (qty * unitPrice).toFixed(2);
+                    })
+                );
+            },
+        },
+        methods: {
+            updateShowExhibit() {
+                this.showExhibit = this.isChecked;
+            },
+            addRow(groupIndex) {
+                this.groups[groupIndex].rows.push({
+                    scope: '',
+                    qty: '',
+                    unitPrice: '',
+                });
+            },
+            removeRow(groupIndex) {
+                const rows = this.groups[groupIndex].rows;
+                if (rows.length > 1) {
+                    rows.pop();
+                }
+            },
+            addGroup() {
+                if (this.groups.length < this.maxGroups) {
+                    this.groups.push({
+                        group_name: '',
+                        rows: [
+                            {
+                                scope: '',
+                                qty: '',
+                                unitPrice: '',
+                            },
+                        ],
+                    });
+                }
+            },
+            removeGroup() {
+                if (this.groups.length > 1) {
+                    this.groups.pop();
+                }
+            },
+            handleFormKeyDown(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                }
+            },
+        },
+    });
+
+    const vm = app.mount("#app");
+    </script>
 {% endblock %}

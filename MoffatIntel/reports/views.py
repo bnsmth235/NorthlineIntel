@@ -5,6 +5,7 @@ from PyPDF2.generic import NameObject
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.files import File
+from django.core.files.base import ContentFile
 from django.db.models import Sum
 from django.shortcuts import render, redirect, resolve_url, get_object_or_404
 from django.contrib.auth import authenticate, logout, login
@@ -14,9 +15,10 @@ from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from datetime import datetime
 from django.core.files.uploadedfile import UploadedFile
-
+from fpdf import FPDF
 from .forms import DocumentForm, InvoiceForm
-from .models import *
+from .models import Project, Proposal, Plan, PurchaseOrder, Contract, ChangeOrder, Draw, DeductiveChangeOrder, SWO, Exhibit, Invoice, Subcontractor
+
 
 
 
@@ -183,11 +185,21 @@ def all_subs(request):
         email = request.POST.get('email')
         w9 = request.POST.get('w9')
 
+        context = {
+            'subs': subs,
+            'name': name,
+            'address': address,
+            'phone': phone,
+            'email': email,
+            'w9': w9
+        }
         if not name:
-            return render(request, 'reports/all_subs.html', {'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
+            context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
+            return render(request, 'reports/all_subs.html', context)
 
         if not address and not phone and not email:
-            return render(request, 'reports/all_subs.html', {'error_message': "Please enter at least one form of contact"})
+            context.update({'error_message': "Please enter at least one form of contact"})
+            return render(request, 'reports/all_subs.html', context)
 
         sub = Subcontractor()
         sub.name = name
@@ -224,7 +236,7 @@ def new_proj(request):
         city = request.POST.get('city')
         state = request.POST.get('state')
         zip = request.POST.get('zip')
-        date = datetime.datetime.now()
+        date = datetime.now()
         edited_by = request.user.username
         status = "I"
 
@@ -244,6 +256,23 @@ def new_proj(request):
         return redirect('reports:home')
 
     return render(request, 'reports/new_proj.html', {"state_options": STATE_OPTIONS})
+
+@login_required(login_url='reports:login')
+def new_exhibit(request, project_id, sub_id):
+    project = get_object_or_404(Project, pk=project_id)
+    sub = get_object_or_404(Subcontractor, pk=sub_id)
+
+    if request.method == 'POST':
+        exhibit = create_exhibit(request.POST, project, sub)
+        print(exhibit.pdf.path)
+        return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
+
+    print("*********Didn't work :(**************")
+    return render(request, 'reports/new_exhibit.html', {'project': project, 'sub': sub})
+
+def check_space(self, required_height):
+    if self.get_y() + required_height > self.page_break_trigger:
+        self.add_page()
 
 @login_required(login_url='reports:login')
 def new_contract(request):
@@ -316,12 +345,12 @@ def new_contract(request):
             context.update({'error_message': "Contract total must be a positive number"})
             return render(request, 'reports/new_contract.html', context)
 
-        contract = Contract()
-        contract.date = contract_date
-        contract.total = contract_total
-        contract.sub_id = sub
-        contract.description = description[:196]+"..."
-        contract.project_id = project
+        swo = SWO()
+        swo.date = contract_date
+        swo.total = contract_total
+        swo.sub_id = sub
+        swo.description = description[:196]+"..."
+        swo.project_id = project
 
         file_path = os.path.join(settings.STATIC_ROOT, 'reports\pdf_templates\contract_template.pdf')
 
@@ -363,6 +392,7 @@ def new_contract(request):
                 fields['sub_w9'] = sub.w9
                 fields['description'] = description
                 fields['contract_total'] = "$" + "{:.2f}".format(contract_total)
+                fields['contract_total_2'] = "$" + "{:.2f}".format(contract_total)
 
                 fields['p_and_p_req'] = NameObject("/0") if p_and_p else "/Off"
                 fields['p_and_p_no_req'] = NameObject("/0") if not p_and_p else "/Off"
@@ -396,10 +426,43 @@ def new_contract(request):
                     contract_pdf = File(output_buffer, name=output_path)
 
                     # Assign the File object to the pdf field of the Contract model
-                    contract.pdf = contract_pdf
-                    contract.save()
+                    swo.pdf = contract_pdf
+                    swo.save()
 
-                project.date = datetime.datetime.now()
+                    if listed_in_exhibit:
+                        print("***********LISTED IN EXHIBIT**************")
+                        exhibit = create_exhibit(request.POST, project, sub)
+
+                        merger = PyPDF2.PdfMerger()
+
+                        input_files = [swo.pdf.path, exhibit.pdf.path]
+
+                        for file in input_files:
+                            merger.append(file)
+
+                        temp_path = os.path.join(settings.STATIC_ROOT, "temp.pdf")
+
+                        merger.write(temp_path)
+                        merger.close()
+
+                        with open(temp_path, 'rb') as file:
+                            file_content = file.read()
+
+                        file_data = ContentFile(file_content)
+                        print("*************MERGED**************")
+
+                        contract = Contract()
+                        contract.date = contract_date
+                        contract.total = contract_total
+                        contract.sub_id = sub
+                        contract.description = description[:196] + "..."
+                        contract.project_id = project
+
+                        contract.pdf.delete(save=False)
+                        contract.pdf.save(output_path, file_data)
+                        contract.save()
+
+                project.date = datetime.now()
                 project.edited_by = request.user.username
                 project.save()
 
@@ -409,6 +472,290 @@ def new_contract(request):
         return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
 
     return render(request, 'reports/new_contract.html', context)
+
+def create_exhibit(POST, project, sub):
+    print("************METHOD CALLED************")
+    exhibits = Exhibit.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
+
+    exhibit = Exhibit()
+    exhibit.name = "Exhibit " + chr(len(exhibits) + 65)
+    exhibit.date = datetime.date.today()
+    exhibit.sub_id = sub
+    exhibit.project_id = project
+
+    group_data = []
+    total_total = 0.00
+
+    for group_index, group in enumerate(POST.getlist('groupTitle[]')):
+        print("**********Check 1***********")
+        group_name = POST.getlist("groupTitle[]")[group_index]
+
+        rows = []
+        row_index = 0
+
+        while f"scope[{group_index}][0]" in POST:
+            print("***********Check 2**********")
+            while f"scope[{group_index}][{row_index}]" in POST:
+                print("***********Check 3**********")
+                scope = POST.get(f"scope[{group_index}][{row_index}]")
+                qty = POST.get(f"qty[{group_index}][{row_index}]")
+                unit_price = POST.get(f"unitprice[{group_index}][{row_index}]")
+                total_price = POST.get(f"totalprice[{group_index}][{row_index}]")
+
+                rows.append({
+                    'scope': scope,
+                    'qty': qty,
+                    'unit_price': unit_price,
+                    'total_price': total_price
+                })
+                row_index += 1
+
+            group_index += 1
+
+        group_data.append({
+            'group_name': group_name,
+            'rows': rows
+        })
+
+    file_name = exhibit.name + " " + str(exhibit.date)
+
+    if os.path.exists(file_name + ".pdf"):
+        print("***********Check 4**********")
+        counter = 1
+        while os.path.exists(file_name + "(" + str(counter) + ")" + ".pdf"):
+            counter += 1
+        file_name += "(" + str(counter) + ")"
+
+    file_name += ".pdf"
+
+    pdf = FPDF()
+
+    # Set up the PDF document
+    pdf.set_title("Scope & Values - Exhibit")
+    pdf.set_author("Your Name")
+    pdf.set_font("Arial", size=10)
+
+    # Set margins (3/4 inch margins)
+    margin = 20
+    pdf.set_auto_page_break(auto=True, margin=margin)
+
+    # Add a new page
+    pdf.add_page()
+
+    # Add image at the top center
+    pdf.image(os.path.join(settings.STATIC_ROOT, 'reports\images\logo_onlyM.png'),
+              x=(pdf.w - 20) / 2, y=10, w=20, h=20)
+    pdf.ln(23)
+
+    pdf.set_font("Arial", style="B", size=10)
+    pdf.set_line_width(.75)
+    pdf.cell(pdf.w - 20, 5, f"SCOPE & VALUES - EXHIBIT {chr(len(exhibits) + 65)}", 1, 0, align="C")
+    pdf.ln(10)
+    x = (pdf.w - (pdf.w / 3)) / 2
+
+    pdf.set_font("Arial", size=10)
+
+    # Define table data
+    table_data = [
+        ["MOFFAT CONSTRUCTION", "Contract No.:"],
+        ["a Moffat Company", "Contract Date:"],
+        ["519 W. STATE STREET SUITE #202", "Subproject:"],
+        ["PLEASANT GROVE, UTAH 84062", ""]
+    ]
+
+    # Set column widths
+    col_width = pdf.w / 3
+
+    # Calculate total table width
+    table_width = col_width * 2
+
+    # Calculate x position to center the table
+    x = (pdf.w - table_width) / 2
+    pdf.set_line_width(.25)
+    # Loop through rows and columns to create table
+    for row in table_data:
+        print("***********Check 5**********")
+        for col, cell_data in enumerate(row):
+            # Apply formatting for "a Moffat Company" cell
+            if "a Moffat Company" in cell_data:
+                pdf.set_font("Arial", style="I", size=10)
+                pdf.set_text_color(255, 0, 0)
+
+            # Add cell without borders
+            pdf.set_xy(x + (col * col_width), pdf.get_y())
+            pdf.cell(col_width, 5, cell_data, 0, 0, "C")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    # Add gap
+    pdf.ln(3)
+
+    table_data = [
+        ["Trade:", "Schedule"],
+        [sub.name, "Start Date:"],
+        [sub.address, "End Date:                                         Duration:"],
+        ["Project: " + project.name, "Start Date Punch List Fixes:"],
+        ["Address: " + project.address, "End Date Punch List Fixes:              Duration:"],
+        ["City, State, Zip: " + project.city + ", " + project.state + ", " + str(project.zip),
+         "Final Sign Off:"]
+    ]
+
+    # Set column widths
+    col_width = pdf.w / 2 - 10
+
+    # Calculate total table width
+    table_width = col_width * 2
+
+    # Calculate x position to center the table
+    x = (pdf.w - table_width) / 2
+
+    # Loop through rows and columns to create table
+    for row in table_data:
+        print("***********Check 6**********")
+        for col, cell_data in enumerate(row):
+            if col == 0 and sub.name in cell_data or sub.address in cell_data or "Schedule" in cell_data:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", style="B", size=10)
+                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
+            else:
+                # Add cell without borders
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    pdf.ln(3)
+
+    # Add cell with light gray background
+    pdf.set_fill_color(192)
+    pdf.cell(pdf.w - 20, 5, "SCOPE & VALUES", 1, 1, "C", True)
+
+    # Add gap
+    pdf.ln(3)
+
+    for group in group_data:
+        print("***********Check 7**********")
+        group_subtotal = 0.00
+        pdf.set_fill_color(217, 225, 242)
+        pdf.set_font('Arial', style='B', size=10)
+        pdf.cell(pdf.w - 20, 5, group['group_name'], 1, 1, "C", True)
+
+        pdf.set_fill_color(255)
+        pdf.set_font('Arial', size=10)
+        pdf.cell((pdf.w - 20) * .075, 5, 'No.', 1, 0, 'C', True)
+        pdf.cell((pdf.w - 20) * .475, 5, 'Scope of Work', 1, 0, 'C', True)
+        pdf.cell((pdf.w - 20) * .15, 5, 'Unit Price', 1, 0, 'C', True)
+        pdf.cell((pdf.w - 20) * .1, 5, 'Qty', 1, 0, 'C', True)
+        pdf.cell((pdf.w - 20) * .2, 5, 'Total', 1, 1, 'C', True)
+
+        # Iterate over rows for the current group
+        for index, row in enumerate(group['rows']):
+            scope = row['scope']
+            qty = row['qty']
+            unit_price = row['unit_price']
+            total_price = row['total_price']
+
+            pdf.set_fill_color(255 if index % 2 == 0 else 240)
+            pdf.set_font('Arial', size=10)
+            pdf.cell((pdf.w - 20) * .075, 5, str(index + 1), 1, 0, 'C', True)
+            pdf.cell((pdf.w - 20) * .475, 5, scope, 1, 0, 'L', True)
+            pdf.cell((pdf.w - 20) * .15, 5, "$" + unit_price, 1, 0, 'L', True)
+            pdf.cell((pdf.w - 20) * .1, 5, qty, 1, 0, 'C', True)
+            pdf.cell((pdf.w - 20) * .2, 5, "$" + total_price, 1, 1, 'L', True)
+            group_subtotal += float(total_price[0:])
+
+        # Add a break after each group
+        pdf.set_fill_color(217, 225, 242)
+        pdf.set_font('Arial', style='B', size=10)
+        pdf.cell((pdf.w - 20) * .8, 5, group_name + " Subtotal: ", 1, 0, 'R', True)
+        pdf.cell((pdf.w - 20) * .2, 5, " $" + str(group_subtotal), 1, 1, 'L', True)
+        total_total += group_subtotal
+        pdf.ln(5)
+
+    # Add table with two columns and eight rows for signatures
+
+    pdf.set_fill_color(192)
+    pdf.set_font('Arial', style='B', size=10)
+    pdf.cell((pdf.w - 20) * .8, 5, group_name + " Total Contracted Amount: ", 1, 0, 'R', True)
+    pdf.cell((pdf.w - 20) * .2, 5, " $" + str(total_total), 1, 1, 'L', True)
+
+    pdf.ln(15)
+
+    if pdf.get_y() + 65 > pdf.page_break_trigger:
+        pdf.add_page()
+
+    pdf.set_fill_color(255)
+    pdf.cell(pdf.w - 20, 5, "Signatures", 1, 1, "C", True)
+
+    table_data = [
+        ["Moffat Construction", sub.name],
+        ["Signature", "Signature"],
+        ["Date", "Date"],
+        ["Printed Name", "Printed Name"],
+        ["Greg Moffat", ""],
+        ["Title/Position", "Title/Position"],
+        ["", ""]
+    ]
+
+    # Loop through rows and columns to create table
+    for row in table_data:
+        for col, cell_data in enumerate(row):
+            if table_data.index(row) == 0:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", size=8)
+                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
+            elif "Signature" in cell_data:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", size=8)
+                pdf.cell(col_width, 12, cell_data + " \n\n\n\n\n\n\n", 1, 0, "L")
+            elif cell_data == "" or cell_data == "Greg Moffat":
+                pdf.set_font("Arial", size=12)
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 12, cell_data, 1, 0, "C")
+            else:
+                # Add cell without borders
+                pdf.set_font("Arial", size=8)
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    exhibit.total = total_total
+
+    # Generate the full file path
+    ex_file_path = os.path.join(settings.STATIC_ROOT, file_name)
+    pdf.output(ex_file_path)
+    with open(ex_file_path, 'rb') as file:
+        file_content = file.read()
+
+    file_data = ContentFile(file_content)
+
+    exhibit.pdf.save(file_name, file_data)
+    print(exhibit.pdf.path)
+
+    # Delete the temporary file
+    os.remove(ex_file_path)
+
+    project.date = datetime.now()
+    project.save()
+    exhibit.save()
+    print("***********Check Final**********")
+    return exhibit
 
 
 @login_required(login_url='reports:login')
@@ -439,10 +786,21 @@ def new_invoice(request, project_id, draw_id):
 
         description = request.POST.get('description')
         lien_release_type = request.POST.get('lien_release_type')
-        w9 = request.POST.get('w9')
-        signed = request.POST.get('signed', False)
+        w9 = sub.w9
+        signed = bool(request.POST.get('signed', False))
 
-        if not invoice_date or not invoice_num or not division_code or not method or not sub or not invoice_total or not description or not lien_release_type or not w9:
+        context.update({
+            'invoice_date': invoice_date,
+            'invoice_num': invoice_num,
+            'division_code': division_code,
+            'methodselect': method,
+            'subselect': sub,
+            'invoice_total': invoice_total,
+            'lrtypeselect': lien_release_type,
+            'description': description
+        })
+
+        if not invoice_date or not invoice_num or not division_code or not method or not sub or not invoice_total or not description or not lien_release_type:
             context.update({'error_message': "Please fill out all fields"})
             return render(request, 'reports/new_invoice.html', context)
 
@@ -453,7 +811,7 @@ def new_invoice(request, project_id, draw_id):
             invoice.invoice_num = invoice_num
             invoice.division_code = division_code
             invoice.method = method
-            invoice.sub = sub
+            invoice.sub_id = sub
             invoice.invoice_total = invoice_total
             invoice.description = description
             invoice.lien_release_type = lien_release_type
@@ -475,15 +833,15 @@ def new_invoice(request, project_id, draw_id):
                     return render(request, 'reports/new_invoice.html', context)
 
             else:
-                invoice.signed = None;
+                invoice.signed = False;
 
             # Save invoice and related objects
             project.edited_by = request.user.username
-            project.date = datetime.datetime.now()
+            project.date = datetime.now()
             project.save()
 
             draw.edited_by = request.user.username
-            draw.date = datetime.datetime.now()
+            draw.date = datetime.now()
             draw.save()
 
             invoice.save()
@@ -501,15 +859,15 @@ def new_invoice(request, project_id, draw_id):
 def new_draw(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
-    project.date = datetime.datetime.now()
+    project.date = datetime.now()
     project.edited_by = request.user.username
 
-    cur_draw = Draw(date=datetime.datetime.now(), project_id=project, edited_by=request.user.username)
+    cur_draw = Draw(date=datetime.now(), project_id=project, edited_by=request.user.username)
 
     cur_draw.save()
     project.save()
 
-    return all_draws(request, project_id)
+    return redirect('reports:all_draws', project_id=project_id)
 
 
 @login_required(login_url='reports:login')
@@ -552,7 +910,7 @@ def edit_proj(request, project_id):
         state = request.POST.get('state')
         zip = request.POST.get('zip')
         status = request.POST.get('status')
-        date = datetime.datetime.now()
+        date = datetime.now()
         edited_by = request.user.username
 
         if not name or not address or not city or not state or not zip:
@@ -586,7 +944,6 @@ def edit_proj(request, project_id):
 @login_required(login_url='reports:login')
 def delete_proj(request, project_id):
     if request.method == 'POST':
-        project_id = request.POST.get('project_id')
         username = request.POST.get('username')
         print("Attempting to delete")
 
@@ -653,7 +1010,7 @@ def upload_plan(request, project_id):
 
             plan.name = name;
             plan.edited_by = request.user.username
-            plan.date = datetime.datetime.now()
+            plan.date = datetime.now()
             plan.project_id = get_object_or_404(Project, pk=project_id)
             plan.save()
             form.save_m2m()
@@ -712,7 +1069,7 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
         description = request.POST.get('description')
         lien_release_type = request.POST.get('lien_release_type')
         w9 = request.POST.get('w9')
-        signed = request.POST.get('signed', False)
+        signed = bool(request.POST.get('signed', False))
 
         if not invoice_date or not invoice_num or not division_code or not method or not sub or not invoice_total or not description or not lien_release_type or not w9:
             context.update({'error_message': "Please fill out all fields"})
@@ -748,11 +1105,11 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
 
         # Save invoice and related objects
         project.edited_by = request.user.username
-        project.date = datetime.datetime.now()
+        project.date = datetime.now()
         project.save()
 
         draw.edited_by = request.user.username
-        draw.date = datetime.datetime.now()
+        draw.date = datetime.now()
         draw.save()
 
         invoice.save()
@@ -765,11 +1122,12 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
 def draw_view(request, project_id, draw_id):
     project = get_object_or_404(Project, pk=project_id)
     draw = get_object_or_404(Draw, pk=draw_id)
-    invoices = Invoice.objects.order_by('-invoice_date').filter(draw_id=draw.id)
+    draws = Draw.objects.order_by('-date').filter(project_id=project.id)
+    invoices = Invoice.objects.order_by('-invoice_date').order_by('sub_id').filter(draw_id=draw.id)
 
     total_invoice_amount = invoices.aggregate(total=Sum('invoice_total'))['total']
 
-    return render(request, 'reports/draw_view.html', {'draw': draw, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project})
+    return render(request, 'reports/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project})
 
 
 @login_required(login_url='reports:login')
@@ -778,6 +1136,108 @@ def contract_pdf_view(request, contract_id):
     pdf_bytes = contract.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'contract': contract})
+
+@login_required(login_url='reports:login')
+def prop_pdf_view(request, prop_id):
+    prop = get_object_or_404(Proposal, pk=prop_id)
+    pdf_bytes = prop.pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/prop_pdf_view.html', {'pdf_data': pdf_data, 'contract': prop})
+
+
+@login_required(login_url='reports:login')
+def swo_pdf_view(request, swo_id):
+    swo = get_object_or_404(SWO, pk=swo_id)
+    pdf_bytes = swo.pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'contract': swo})
+
+@login_required(login_url='reports:login')
+def exhibit_pdf_view(request, exhibit_id):
+    exhibit = get_object_or_404(Exhibit, pk=exhibit_id)
+    pdf_bytes = exhibit.pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/exhibit_pdf_view.html', {'pdf_data': pdf_data, 'exhibit': exhibit})
+
+
+@login_required(login_url='reports:login')
+def delete_exhibit(request, exhibit_id):
+    exhibit = get_object_or_404(Exhibit, pk=exhibit_id)
+    project = exhibit.project_id
+    sub = exhibit.sub_id
+    project.edited_by = request.user.username
+    project.date = datetime.now()
+    project.save()
+
+    username = request.POST.get('username')
+    print("Attempting to delete")
+
+    if username == request.user.username:
+        if os.path.exists(exhibit.pdf.path):
+            os.remove(exhibit.pdf.path)
+            exhibit.delete()
+
+    return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
+
+@login_required(login_url='reports:login')
+def delete_contract(request, contract_id):
+    contract = get_object_or_404(Contract, pk=contract_id)
+    project = contract.project_id
+    sub = contract.sub_id
+    project.edited_by = request.user.username
+    project.date = datetime.now()
+    project.save()
+
+    username = request.POST.get('username')
+    print("Attempting to delete")
+
+    if username == request.user.username:
+        if os.path.exists(contract.pdf.path):
+            os.remove(contract.pdf.path)
+            contract.delete()
+
+    return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
+
+@login_required(login_url='reports:login')
+def delete_swo(request, swo_id):
+    swo = get_object_or_404(SWO, pk=swo_id)
+    project = swo.project_id
+    sub = swo.sub_id
+    project.edited_by = request.user.username
+    project.date = datetime.now()
+    project.save()
+
+    username = request.POST.get('username')
+    print("Attempting to delete")
+
+    if username == request.user.username:
+        if os.path.exists(swo.pdf.path):
+            os.remove(swo.pdf.path)
+            swo.delete()
+
+    return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
+
+
+@login_required(login_url='reports:login')
+def delete_prop(request, prop_id):
+    prop = get_object_or_404(Proposal, pk=prop_id)
+    project = prop.project_id
+    sub = prop.sub_id
+    project.edited_by = request.user.username
+    project.date = datetime.now()
+    project.save()
+
+    username = request.POST.get('username')
+    print("Attempting to delete")
+
+    if username == request.user.username:
+        if os.path.exists(prop.pdf.path):
+            os.remove(prop.pdf.path)
+            prop.delete()
+
+    return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
+
+
 
 
 @login_required(login_url='reports:login')
@@ -797,23 +1257,27 @@ def delete_invoice(request, project_id, draw_id, invoice_id):
 
     if request.method == 'POST':
         print("Attempting to delete invoice")
-        # Delete the PDF file from storage
-        if invoice.invoice_pdf:
-            if os.path.exists(invoice.invoice_pdf.path):
-                os.remove(invoice.invoice_pdf.path)
-                invoice.invoice_pdf.delete()
-        if invoice.lien_release_pdf:
-            if os.path.exists(invoice.lien_release_pdf.path):
-                os.remove(invoice.lien_release_pdf.path)
-                invoice.lien_release_pdf.delete()
+        username = request.POST.get('username')
+        print("Attempting to delete")
 
-        invoice.delete()
+        if username == request.user.username:
+            # Delete the PDF file from storage
+            if invoice.invoice_pdf:
+                if os.path.exists(invoice.invoice_pdf.path):
+                    os.remove(invoice.invoice_pdf.path)
+                    invoice.invoice_pdf.delete()
+            if invoice.lien_release_pdf:
+                if os.path.exists(invoice.lien_release_pdf.path):
+                    os.remove(invoice.lien_release_pdf.path)
+                    invoice.lien_release_pdf.delete()
+
+            invoice.delete()
         return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
 
     return render(request, 'reports/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
 
-    project.date = datetime.datetime.now()
-    draw.date = datetime.datetime.now()
+    project.date = datetime.now()
+    draw.date = datetime.now()
 
 
 @login_required(login_url='reports:login')
@@ -840,11 +1304,48 @@ def new_purchase_order(request, project_id, sub_id):
 def deductive_change_orders(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
     sub = get_object_or_404(Subcontractor, pk=sub_id)
-    if request.method == 'POST':
-        pass
+    dcos = DeductiveChangeOrder.objects.order_by('-date').filter(project_id=project).filter(sub_id=sub)
 
+    if request.method == 'POST':
+        for key, value in request.POST.items():
+            if key.startswith('scope'):
+                # Handle scope field
+                scope_index = key.replace('scope', '')
+                scope_value = value
+                # Process the scope value
+
+                # Get corresponding qty, unitprice, and totalprice values
+                qty_key = f'qty{scope_index}'
+                unitprice_key = f'unitprice{scope_index}'
+                totalprice_key = f'totalprice{scope_index}'
+
+                qty_value = request.POST.get(qty_key)
+                unitprice_value = request.POST.get(unitprice_key)
+                totalprice_value = request.POST.get(totalprice_key)
+
+                if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
+                    return render(request, 'reports/new_change_order.html',
+                                  {'project': project, 'sub': sub, 'error_message': "All fields need to be filled."})
+
+                try:
+                    qty_value = int(qty_value)
+                    unitprice_value = float(unitprice_value)
+                except ValueError:
+                    return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub,
+                                                                             'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
+
+                dco = DeductiveChangeOrder()
+                dco.order_number = f"{project.name} CO {datetime.now().year % 100}{len(DeductiveChangeOrder.objects.all()) + 1}{datetime.now().month}"
+                dco.date = datetime.now()
+                dco.sub_id = sub
+                dco.project_id = project
+
+                dco.save()
+                # create PDF HERE
+
+        return redirect('reports:change_orders', project_id=project_id, sub_id=sub_id)
     else:
-        return render(request, 'reports/deductive_change_orders.html', {'project': project, 'sub': sub})
+        return render(request, 'reports/deductive_change_orders.html', {'project': project, 'sub': sub, 'dcos': dcos})
 
 @login_required(login_url='reports:login')
 def new_deductive_change_order(request, project_id, sub_id):
@@ -859,7 +1360,7 @@ def new_deductive_change_order(request, project_id, sub_id):
 def change_orders(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
     sub = get_object_or_404(Subcontractor, pk=sub_id)
-    cos = ChangeOrder.objects.order_by('-date')
+    cos = ChangeOrder.objects.order_by('-date').filter(project_id=project).filter(sub_id=sub)
 
     if request.method == 'POST':
         for key, value in request.POST.items():
@@ -888,8 +1389,8 @@ def change_orders(request, project_id, sub_id):
                     return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub, 'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
 
                 co = ChangeOrder()
-                co.order_number = f"{project.name} CO {datetime.datetime.now().year % 100}{len(ChangeOrder.objects.all())+1}{datetime.datetime.now().month}"
-                co.date = datetime.datetime.now()
+                co.order_number = f"{project.name} CO {datetime.now().year % 100}{len(ChangeOrder.objects.all())+1}{datetime.now().month}"
+                co.date = datetime.now()
                 co.sub_id = sub
                 co.project_id = project
 
@@ -914,9 +1415,13 @@ def delete_change_order(request, co_id):
     co = get_object_or_404(ChangeOrder, pk=co_id)
 
     file_path = co.pdf.path
-    if os.path.exists(file_path):
-        os.remove(file_path)
-        co.delete()
+    username = request.POST.get('username')
+    print("Attempting to delete")
+
+    if username == request.user.username:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            co.delete()
 
     return redirect('reports:change_orders', project_id=co.project_id, sub_id=co.sub_id)
 
@@ -925,19 +1430,24 @@ def delete_change_order(request, co_id):
 def contract_view(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
     sub = get_object_or_404(Subcontractor, pk=sub_id)
-    contracts = Contract.objects.order_by("-date").filter(sub_id=sub)
-    print(contracts)
+    contracts = Contract.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
+    exhibits = Exhibit.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
+    swos = SWO.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
+
     context = {
         'project': project,
         'sub': sub,
-        'contracts': contracts
+        'contracts': contracts,
+        'exhibits': exhibits,
+        'SWOs': swos,
     }
 
     if request.method == 'POST':
         form_type = request.POST.get('form-type')
+        print(form_type)
         if form_type == 'contract':
             contract = Contract()
-            contract.date = datetime.datetime.now()
+            contract.date = datetime.now()
             contract.total = request.POST.get('total')
             contract.sub_id = sub
             contract.project_id = project

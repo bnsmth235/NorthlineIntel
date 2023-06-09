@@ -20,7 +20,7 @@
             </tr>
         {% for draw in draws %}
                 <tr class="report-item zebra">
-                    <td><a href="{% url 'reports:draw_view' project.id draw.id %}">Draw {{ draw.id }}</a></td>
+                    <td><a href="{% url 'reports:draw_view' project.id draw.id %}">Draw {{ draws|length }}</a></td>
                     <td><a href="{% url 'reports:draw_view' project.id draw.id %}">{{ draw.edited_by }}</a></td>
                     <td><a href="{% url 'reports:draw_view' project.id draw.id %}">{{ draw.date }}</a></td>
                     <td class="inline-edit-button"><a href=""><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto">Edit</a></td>

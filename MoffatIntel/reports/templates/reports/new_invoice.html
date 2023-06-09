@@ -13,19 +13,20 @@
             {% endif %}
 
             <label for="invoice_date">Invoice Date:</label>
-            <input type="date" name="invoice_date" id="invoice_date" class="input-field">
+            <input type="date" name="invoice_date" id="invoice_date" class="input-field" {% if error_message %} value="{{invoice_date}}" {% endif %}>
 
             <label for="invoice_num">Invoice Number:</label>
-            <input type="text" name="invoice_num" id="invoice_num" class="input-field">
+            <input type="text" name="invoice_num" id="invoice_num" class="input-field" {% if error_message %} value="{{invoice_num}}" {% endif %}>
 
             <label for="division_code">Division Code:</label>
-            <input type="text" name="division_code" id="division_code" class="input-field">
+            <input type="text" name="division_code" id="division_code" class="input-field" {% if error_message %} value="{{division_code}}" {% endif %}>
 
             <label for="method">Method:</label>
             <select name="method" id="method" class="input-field">
                 {% for choice in method_choices %}
                     <option value="{{ choice.0 }}">{{ choice.1 }}</option>
                 {% endfor %}
+                 {% if error_message %} <option selected value="{{methodselect}}">{{methodselect}}</option> {% endif %}
             </select>
             <br><br>
             <label for="sub">Subcontractor: </label>
@@ -33,23 +34,22 @@
                 {% for sub in subs %}
                     <option value="{{ sub.name }}">{{ sub.name }}</option>
                 {% endfor %}
+                 {% if error_message %} <option selected value="{{subselect.name}}"></option> {% endif %}
             </select>
 
             <label for="invoice_total">Invoice Total: $</label>
-            <input type="number" min="0" step=".01" name="invoice_total" id="invoice_total" class="input-field">
+            <input type="number" min="0" step=".01" name="invoice_total" id="invoice_total" class="input-field"  {% if error_message %} value="{{invoice_total}}" {% endif %}>
 
             <label for="lien_release_type">Lien Release Type: </label>
             <select name="lien_release_type" id="lien_release_type" class="input-field">
                 {% for choice in lien_release_type_choices %}
                     <option value="{{ choice.0 }}">{{ choice.1 }}</option>
                 {% endfor %}
+                 {% if error_message %} <option selected value="{{lrtypeselect}}">{{lrtypeselect}} {% endif %}
             </select>
-
-            <label for="w9">W9: </label>
-            <input type="text" name="w9" id="w9" class="input-field">
             <br><br>
             <label for="description">Description:</label>
-            <input type="text" name="description" id="description" class="input-field" style="width: 800px">
+            <input type="text" name="description" id="description" class="input-field" style="width: 800px"  {% if error_message %} value="{{description}}" {% endif %}>
 
             <br><br>
             <div class="form-field">

@@ -21,16 +21,39 @@
 {% if contracts %}
 <div style="text-align: center">
     <div style="display:inline-block"><a class="pick-icon" href="{% url 'reports:change_orders' project.id sub.id %}"><img src="{% static 'reports/images/change_order.png' %}"><li>Change Orders</li></a></div>
-    <div style="display:inline-block"><a class="pick-icon" href="#"><img src="{% static 'reports/images/deductive_change_order.png' %}"><li>Deductive Change Orders</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="{% url 'reports:deductive_change_orders' project.id sub.id %}"><img src="{% static 'reports/images/deductive_change_order.png' %}"><li>Deductive Change Orders</li></a></div>
     <div style="display:inline-block"><a class="pick-icon" href="#"><img src="{% static 'reports/images/purchase_order.png' %}"><li>Purchase Orders</li></a></div>
 </div>
 
 <div display="block">
 
+    <div v-if="isPropVisible">
+      <form method="post" enctype="multipart/form-data" action="{% url 'reports:contract_view' project.id sub.id%}">
+        <fieldset class="fieldset-table">
+            <legend><h2>Upload Proposal/Estimate</h2></legend>
+            {% csrf_token %}
+            <input hidden="hidden" name="form-type" value="prop">
+
+            <label for="prop_pdf">PDF: </label>
+            <input type="file" name="prop_pdf" id="prop_pdf" class="input-field" required="required">
+
+            <label for="total">Total: $</label>
+            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+
+            <div class="add-button"><button type="submit">Upload</button></div>
+        </fieldset>
+    </form>
+  </div>
+
 <div>
-    <h1 class="section-header">Proposals</h1>
-    <div class="add-new">
-        <a href="#">+ Add Proposal</a>
+    <h1 class="section-header">Proposals/Estimates</h1>
+
+    <div class="add-button" v-on:click="showProp()" v-if="!isPropVisible">
+        <button>+ Add Proposal</button>
+    </div>
+
+    <div class="add-button" v-on:click="showProp()" v-if="isPropVisible">
+        <button>Cancel</button>
     </div>
 </div>
 {% if proposals %}
@@ -80,35 +103,34 @@
 
 <h1 class="section-header">SWOs</h1>
 <div class="add-new">
-    <a href="#" >+ Add SWO</a>
+    <a href="{% url 'reports:new_contract' %}" >+ Add SWO</a>
 </div>
-{% if SWO %}
+{% if SWOs %}
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
             <tr class="report-item headers">
                 <th></th>
-                <th>Proposal <br>Date</th>
+                <th>File Name</th>
+                <th>Contract Date</th>
                 <th>Description</th>
             </tr>
             {% for SWO in SWOs %}
-                <tr class="report-item zebra" >
-                    {% if SWO.proposal_pdf %}
-                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
-                    {% else %}
-                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
-                    {% endif %}
+                <tr class="report-item zebra">
+                    <td width="25px"><a href="{% url 'reports:swo_pdf_view' SWO.id %}"><img src="{% static 'reports/images/pdf_icon.png' %}" height="22" width="22" style="margin-bottom: -4px;margin-left:2px"></a></td>
 
-                    <td width="6%" style="text-align: center"><a href="#">{{SWO.name}}</a></td>
-                    <td width="6%" style="text-align: center"><a href="#">{{SWO.date|date:"m/d/y"}}</a></td>
+                    <td width="23%"><a href="#">{{SWO.pdf.name|slice:"20:"}}</a></td>
+                    <td width="75px" style="text-align: center"><a href="#">{{SWO.date|date:"m/d/y"}}</a></td>
 
-                    <td width="fit-content" style="text-align: center"><a href="#"><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
-                    <td width="fit-content" style="text-align: center">
-                      <form id="delete-form2" method="post" data-delete-url="">
+                    <td width="fit-content"><a href="#">{{SWO.description}}</a></td>
+
+
+                    <td width="80px">
+                      <form id="delete-form4" method="post" data-delete-url="{% url 'reports:delete_swo' SWO.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="contract_id" value="{{ contract.id }}">
-                        <input type="hidden" name="username2" id="username2">
+                        <input type="hidden" name="username" id="username">
                         <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
-                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
+                          <img src="{% static 'reports/images/trash.png' %}" height="18" width="18"> Delete
                         </button>
                       </form>
                     </td>
@@ -129,35 +151,32 @@
 
 <h1 class="section-header">Exhibits</h1>
 <div class="add-new">
-    <a href="#">+ Add Exhibit</a>
+    <a href="{% url 'reports:new_exhibit' project.id sub.id %}">+ Add Exhibit</a>
 </div>
 {% if exhibits %}
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
             <tr class="report-item headers">
                 <th></th>
-                <th>Proposal <br>Date</th>
-                <th>Description</th>
+                <th>Exhibit</th>
+                <th>Date</th>
+                <th>Exhibit Total</th>
             </tr>
             {% for exhibit in exhibits %}
                 <tr class="report-item zebra" >
-                    {% if exhibit.proposal_pdf %}
-                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
-                    {% else %}
-                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
-                    {% endif %}
+                    <td width="25px"><a href="{% url 'reports:exhibit_pdf_view' exhibit.id %}"><img src="{% static 'reports/images/pdf_icon.png' %}" height="20" width="20" style="margin-bottom: -4px;margin-left:5px"></a></td>
 
-                    <td width="6%" style="text-align: center"><a href="#">{{exhibit.name}}</a></td>
-                    <td width="6%" style="text-align: center"><a href="#">{{exhibit.date|date:"m/d/y"}}</a></td>
+                    <td style="text-align: center">{{exhibit.name}}</a></td>
+                    <td width="75px" style="text-align: center">{{exhibit.date|date:"m/d/y"}}</a></td>
+                    <td style="text-align: center">${{exhibit.total}}</a></td>
 
-                    <td width="fit-content" style="text-align: center"><a href="#"><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
-                    <td width="fit-content" style="text-align: center">
-                      <form id="delete-form3" method="post" data-delete-url="">
+                    <td width="80px" style="text-align: center">
+                      <form id="delete-form3" method="post" data-delete-url="{% url 'reports:delete_exhibit' exhibit.id %}">
                         {% csrf_token %}
-                        <input type="hidden" name="contract_id" value="{{ contract.id }}">
-                        <input type="hidden" name="username3" id="username3">
+                        <input type="hidden" name="contract_id" value="{{ exhibit.id }}">
+                        <input type="hidden" name="username">
                         <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
-                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
+                          <img src="{% static 'reports/images/trash.png' %}" height="18" width="18">Delete
                         </button>
                       </form>
                     </td>
@@ -224,14 +243,14 @@
                     <td width="23%"><a href="#">{{contract.pdf.name|slice:"25:"}}</a></td>
                     <td width="75px" style="text-align: center"><a href="#">{{contract.date|date:"m/d/y"}}</a></td>
 
-                    <td width="fit-content" style="text-align: center"><a href="#">{{contract.description}}</a></td>
+                    <td width="fit-content"><a href="#">{{contract.description}}</a></td>
 
 
                     <td width="80px">
-                      <form id="delete-form4" method="post" data-delete-url="">
+                      <form id="delete-form4" method="post" data-delete-url="{% url 'reports:delete_contract' contract.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="contract_id" value="{{ contract.id }}">
-                        <input type="hidden" name="username4" id="username4">
+                        <input type="hidden" name="username" id="username">
                         <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
                           <img src="{% static 'reports/images/trash.png' %}" height="18" width="18"> Delete
                         </button>
@@ -280,12 +299,20 @@
   data() {
     return {
       isContractVisible: false,
+      isExhibitVisible: false,
+      isPropVisible: false,
     };
   },
 
   methods: {
     showContract() {
       this.isContractVisible = !this.isContractVisible;
+    },
+    showExhibit(){
+        this.isContractVisible = !this.isContractVisible;
+    },
+    showProp() {
+      this.isPropVisible = !this.isPropVisible;
     },
   },
 });

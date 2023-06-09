@@ -141,8 +141,9 @@ fieldset .errormessage{
 }
 
 hr{
-    border: 0;
-    border-top: 1px solid #eee;
+    color:#560200;
+    width:100%;
+    size:10;
     margin-top: -10px;
     margin-bottom: 20px;
 }
@@ -288,7 +289,16 @@ body{
     color: black;
 }
 
+.zebra:nth-child(odd){
+    background-color: white;
+    color: black;
+}
+
 .report-item.zebra:nth-child(even):hover {
+  background-color: #7c0300ba;
+}
+
+.report-item.zebra:nth-child(odd):hover {
   background-color: #7c0300ba;
 }
 

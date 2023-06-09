@@ -61,11 +61,12 @@ class Proposal(models.Model):
 
 
 class SWO(models.Model):
-    name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
+    description = models.CharField(max_length=200, default="")
+    total = models.FloatField()
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    pdf = models.FileField(upload_to='static/reports/SWOs', default=None)
+    pdf = models.FileField(upload_to='static/reports/SWOs')
 
     def __str__(self):
         return self.name
@@ -74,6 +75,7 @@ class SWO(models.Model):
 class Exhibit(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
+    total = models.FloatField(default=0.00)
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     pdf = models.FileField(upload_to='static/reports/exhibits/', default=None)
@@ -143,14 +145,14 @@ class Invoice(models.Model):
     division_code = models.CharField(max_length=20)
     method = models.CharField(max_length=1, default="I",
                               choices=[("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")])
-    sub = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     invoice_total = models.FloatField(default=0.00)
     description = models.TextField()
     lien_release_type = models.CharField(max_length=20, default="N",
                                          choices=[("F", "Final"), ("C", "Conditional"), ("N", "N/A")])
     invoice_pdf = models.FileField(default=None, upload_to='static/reports/invoices/')
     lien_release_pdf = models.FileField(default=None, upload_to='static/reports/lien_releases')
-    signed = models.BooleanField(default=None)
+    signed = models.BooleanField(default=False)
 
     def __str__(self):
         return self.invoice_num

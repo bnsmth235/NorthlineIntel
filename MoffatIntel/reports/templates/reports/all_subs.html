@@ -34,17 +34,30 @@
         <fieldset class="fieldset-table">
             <legend><h2>New Subcontractor</h2></legend>
             {% csrf_token %}
-            <label for="name">Sub name:</label>
-            <input type="text" name="name" id="name" class="input-field">
+            <div style="display: inline-block">
+                <label for="name">Sub name:</label>
+                <input type="text" name="name" id="name" class="input-field" {% if error_message %} value="{{name}}" {% endif %}>
+            </div>
 
-            <label for="address">Address:</label>
-            <input type="text" name="address" id="address" class="input-field">
+            <div style="display: inline-block">
+                <label for="address">Address:</label>
+                <input type="text" name="address" id="address" class="input-field"  {% if error_message %} value="{{name}}" {% endif %}>
+            </div>
 
-            <label for="phone">Phone:</label>
-            <input type="tel" name="phone" id="phone" class="input-field">
+            <div style="display: inline-block">
+                <label for="phone">Phone:</label>
+                <input type="tel" name="phone" id="phone" class="input-field" {% if error_message %} value="{{phone}}" {% endif %}>
+            </div>
 
-            <label for="email">Email:</label>
-            <input type="email" name="email" id="email" class="input-field">
+            <div style="display: inline-block">
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" class="input-field" {% if error_message %} value="{{email}}" {% endif %}>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="email">W9:</label>
+                <input type="number" name="w9" id="w9" step="1" class="input-field" {% if error_message %} value="{{w9}}" {% endif %}>
+            </div>
 
             <input class="input-field-save" type="submit" name="submit" value="Save">
 
