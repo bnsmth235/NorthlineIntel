@@ -7,3 +7,8 @@ __pycache__
 *.zip
 *.bak
 *.idea
+/static/reports/*
+!/static/reports/images
+!/static/reports/deleteConfirm.js
+!/style.css
+
