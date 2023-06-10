@@ -21,14 +21,17 @@
                 <th>Order Number</th>
                 <th>Date</th>
                 <th>Subcontractor</th>
+                <th>Change Total</th>
                 <th width="7%"></th>
             </tr>
         {% for co in cos %}
                 <tr class="report-item zebra">
-                    <td width="3%"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    <td width="3%"><a href="{% url 'reports:co_pdf_view' co.id %}"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
                     <td style="text-align: center">{{co.order_number}}</a></td>
                     <td style="text-align: center">{{co.date}}</a></td>
                     <td style="text-align: center">{{sub.name}}</a></td>
+                    <td style="text-align: center">${{co.total|floatformat:2}}</a></td>
+
                     <td>
                     <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_change_order' co.id %}">
                         {% csrf_token %}

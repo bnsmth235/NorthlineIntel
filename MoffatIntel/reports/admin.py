@@ -4,3 +4,4 @@ from .models import *
 admin.site.register(Project)
 admin.site.register(Draw)
 admin.site.register(Plan)
+admin.site.register(ChangeOrder)

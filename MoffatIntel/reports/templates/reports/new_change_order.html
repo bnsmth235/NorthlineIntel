@@ -8,7 +8,7 @@
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
 <div id="app">
-    <form action="{% url 'reports:change_orders' project.id sub.id %}" method="post">
+    <form action="{% url 'reports:new_change_order' %}" method="post">
         {% csrf_token %}
         <fieldset class="fieldset">
             <legend><h1>New Change Order</h1></legend>
@@ -17,6 +17,33 @@
                 <p><strong class="error">{{ error_message }}</strong></p>
             {% endif %}
 
+            <div style="display: inline-block">
+                <div style="display: inline-block">
+                    <label for="project">Project: </label>
+                    <select name="project" id="project" class="input-field" v-model="project" data-projectselect="{{ projectselect.id|default_if_none:'' }}">
+                        {% for project in projects %}
+                            <option value="{{ project.id }}">{{ project.name }}</option>
+                        {% endfor %}
+                        {% if projectselect %}<option selected value="{{projectselect.id}}">{{projectselect.name}}</option>{% endif %}
+                    </select>
+                </div>
+
+                <div style="display: inline-block">
+                    <label for="sub">Subcontractor: </label>
+                    <select name="sub" id="sub" class="input-field" v-model="sub" data-subselect="{{ subselect.id|default_if_none:'' }}">
+                        {% for sub in subs %}
+                            <option value="{{ sub.id }}">{{ sub.name }}</option>
+                        {% endfor %}
+                        {% if subselect %}<option selected value="{{subselect.id}}">{{subselect.name}}</option>{% endif %}                    </select>
+                </div>
+
+                <div style="display: inline-block">
+                    <label for="sub">Contract: </label>
+                    <select name="contract" id="contract" required="required" class="input-field"></select>
+                </div>
+            </div>
+
+            {% verbatim %}
             <div class="reports-list-div">
                 <table width="98%" height="98%" align="center" cellpadding="10" border="0" style="margin-bottom:20px">
                     <tr class="report-item headers">
@@ -27,16 +54,23 @@
                         <th width="10%">Total</th>
                     </tr>
 
-                    {% verbatim %}
                     <tr v-for="(row, rowIndex) in rows" :key="rowIndex" class="report-item" style="text-align: center">
                         <td>{{ rowIndex + 1 }}</td>
-                        <td><div><input type="text" :name="'scope' + rowIndex" :id="'scope' + rowIndex" class="input-field" style="margin: 0px; width: 90%"></div></td>
-                        <td><input type="number" v-model="row.qty" :name="'qty' + rowIndex" class="input-field" style="margin: 0px; width: 90%" :id="'qty' + rowIndex" step="1"></td>
-                        <td>$<input type="number" v-model="row.unitPrice" :name="'unitprice' + rowIndex" class="input-field" style="margin: 0px; width: 90%" :id="'unitprice' + rowIndex" step=".01"></td>
-                        <td>${{ totalPrices[rowIndex] }}</td>
-                        <input hidden="hidden" :value="totalPrices[rowIndex]" :id="'totalprice' + rowIndex" :name="'totalprice' + rowIndex">
+                        <td>
+                            <div><input required="required" type="text" :name="'scope' + rowIndex" :id="'scope' + rowIndex" class="input-field" style="margin: 0px; width: 90%"></div>
+                        </td>
+                        <td>
+                            <input required="required" type="number" v-model="row.qty" :name="'qty' + rowIndex" class="input-field" style="margin: 0px; width: 90%" :id="'qty' + rowIndex" step="1">
+                        </td>
+                        <td>
+                            $<input required="required" type="number" v-model="row.unitPrice" :name="'unitprice' + rowIndex" class="input-field" style="margin: 0px; width: 90%" :id="'unitprice' + rowIndex" step=".01">
+                        </td>
+                        <td>
+                            ${{ totalPrices[rowIndex] }}
+                        </td>
+                        <input hidden="hidden" :value="totalPrices[rowIndex]" :name="'totalprice' + rowIndex">
                     </tr>
-                    {% endverbatim %}
+
                 </table>
                 <div style="padding-top: 1em; padding-bottom: 1em">
                     <div class="add-button">
@@ -52,7 +86,7 @@
                 <input class="input-field-save" type="submit" name="submit" value="Save">
             </div>
 
-
+            {% endverbatim %}
         </fieldset>
     </form>
 </div>
@@ -61,10 +95,11 @@
     const app = Vue.createApp({
         data() {
             return {
+                project: '',
+                sub: '',
                 rows: [
                     {
                         scope: '',
-                        sub: '',
                         qty: '',
                         unitPrice: '',
                     },
@@ -95,7 +130,6 @@
             addRow() {
                 this.rows.push({
                     scope: '',
-                    sub: '',
                     qty: '',
                     unitPrice: '',
                 });
@@ -110,10 +144,46 @@
                     event.preventDefault();
                 }
             },
+            getTotalPrice(rowIndex) {
+                return this.totalPrices[rowIndex];
+            },
         },
     });
 
     const vm = app.mount("#app");
+</script>
+
+<script>
+    const projectSelect = document.getElementById('project');
+    const subSelect = document.getElementById('sub');
+    const contractSelect = document.getElementById('contract');
+
+    const contracts = JSON.parse('{{ contracts_data|escapejs }}');
+    console.log(contracts);
+
+    function populateContractOptions() {
+        contractSelect.innerHTML = '';
+
+        const selectedProject = projectSelect.value || projectSelect.dataset.projectselect || null;
+        const selectedSub = subSelect.value || subSelect.dataset.subselect || null;
+
+        for (const contract of contracts) {
+            if ((contract.project_id == selectedProject || contract.project_id == selectedProject) &&
+                (contract.sub_id == selectedSub || contract.sub_id == selectedSub)) {
+                const option = document.createElement('option');
+                option.value = contract.id;
+                option.textContent = `Contract ${contract.id}: Total: $${contract.total.toFixed(2)}`;
+                contractSelect.appendChild(option);
+            }
+        }
+    }
+
+    // Initial population of contract options
+    populateContractOptions();
+
+    // Add event listeners to project and subcontractor selects
+    projectSelect.addEventListener('change', populateContractOptions);
+    subSelect.addEventListener('change', populateContractOptions);
 </script>
 
 {% endblock %}

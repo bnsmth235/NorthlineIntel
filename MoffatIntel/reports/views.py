@@ -1,3 +1,4 @@
+import json
 import os
 from io import BytesIO
 
@@ -6,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.files import File
 from django.core.files.base import ContentFile
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Sum
 from django.shortcuts import render, redirect, resolve_url, get_object_or_404
 from django.contrib.auth import authenticate, logout, login
@@ -532,7 +534,7 @@ def create_exhibit(POST, project, sub):
 
     # Set up the PDF document
     pdf.set_title("Scope & Values - Exhibit")
-    pdf.set_author("Your Name")
+    pdf.set_author("Moffat Construction")
     pdf.set_font("Arial", size=10)
 
     # Set margins (3/4 inch margins)
@@ -1150,7 +1152,24 @@ def swo_pdf_view(request, swo_id):
     swo = get_object_or_404(SWO, pk=swo_id)
     pdf_bytes = swo.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'contract': swo})
+    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'SWO': swo})
+
+
+@login_required(login_url='reports:login')
+def co_pdf_view(request, co_id):
+    co = get_object_or_404(ChangeOrder, pk=co_id)
+    pdf_bytes = co.pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'co': co})
+
+
+@login_required(login_url='reports:login')
+def dco_pdf_view(request, dco_id):
+    dco = get_object_or_404(DeductiveChangeOrder, pk=dco_id)
+    pdf_bytes = dco.pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'dco': dco})
+
 
 @login_required(login_url='reports:login')
 def exhibit_pdf_view(request, exhibit_id):
@@ -1306,7 +1325,43 @@ def deductive_change_orders(request, project_id, sub_id):
     sub = get_object_or_404(Subcontractor, pk=sub_id)
     dcos = DeductiveChangeOrder.objects.order_by('-date').filter(project_id=project).filter(sub_id=sub)
 
+    return render(request, 'reports/deductive_change_orders.html', {'project': project, 'sub': sub, 'dcos': dcos})
+
+
+@login_required(login_url='reports:login')
+def new_deductive_change_order(request, project_id = None, sub_id = None):
+    projectselect = get_object_or_404(Project, pk=project_id) if project_id else None
+    subselect = get_object_or_404(Subcontractor, pk=sub_id) if sub_id else None
+    projects = Project.objects.order_by('name')
+    subs = Subcontractor.objects.order_by('name')
+    contracts = Contract.objects.order_by('-date')
+    contracts_data = json.dumps(
+        [
+            {
+                'id': contract.id,
+                'project_id': contract.project_id.id,
+                'sub_id': contract.sub_id.id,
+                'total': contract.total,
+                'date': contract.date.isoformat(),  # Convert datetime to string
+            }
+            for contract in contracts
+        ],
+        cls=DjangoJSONEncoder
+    )
+
+    context = {
+        'projectselect': projectselect,
+        'subselect': subselect,
+        'projects': projects,
+        'subs': subs,
+        'contracts_data': contracts_data,  # Pass the serialized contracts data to the template
+    }
+
     if request.method == 'POST':
+        contract = get_object_or_404(Contract, pk=request.POST.get('contract'))
+        project = get_object_or_404(Project, pk=contract.project_id.id)
+        sub = get_object_or_404(Subcontractor, pk=contract.sub_id.id)
+        rows = []
         for key, value in request.POST.items():
             if key.startswith('scope'):
                 # Handle scope field
@@ -1321,40 +1376,36 @@ def deductive_change_orders(request, project_id, sub_id):
 
                 qty_value = request.POST.get(qty_key)
                 unitprice_value = request.POST.get(unitprice_key)
-                totalprice_value = request.POST.get(totalprice_key)
+                totalprice_value = float(qty_value) * float(unitprice_value)
 
                 if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
-                    return render(request, 'reports/new_change_order.html',
-                                  {'project': project, 'sub': sub, 'error_message': "All fields need to be filled."})
+                    context.update({'error_message': "All fields need to be filled."})
+                    return render(request, 'reports/new_change_order.html', context)
 
                 try:
                     qty_value = int(qty_value)
                     unitprice_value = float(unitprice_value)
+                    totalprice_value = float(totalprice_value)  # Convert totalprice to float
                 except ValueError:
-                    return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub,
-                                                                             'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
+                    context.update({'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
+                    return render(request, 'reports/new_change_order.html', context)
 
-                dco = DeductiveChangeOrder()
-                dco.order_number = f"{project.name} CO {datetime.now().year % 100}{len(DeductiveChangeOrder.objects.all()) + 1}{datetime.now().month}"
-                dco.date = datetime.now()
-                dco.sub_id = sub
-                dco.project_id = project
+                # Create a dictionary for the change order data
+                co_data = {
+                    'scope_value': scope_value,
+                    'qty_value': qty_value,
+                    'unitprice_value': unitprice_value,
+                    'totalprice_value': totalprice_value,
+                }
 
-                dco.save()
-                # create PDF HERE
+                rows.append(co_data)
 
-        return redirect('reports:change_orders', project_id=project_id, sub_id=sub_id)
-    else:
-        return render(request, 'reports/deductive_change_orders.html', {'project': project, 'sub': sub, 'dcos': dcos})
+        co = create_change_order(request.POST, "Deductive Change Order", rows)
 
-@login_required(login_url='reports:login')
-def new_deductive_change_order(request, project_id, sub_id):
-    project = get_object_or_404(Project, pk=project_id)
-    sub = get_object_or_404(Subcontractor, pk=sub_id)
-    if request.method == 'POST':
-        pass
-    else:
-        return render(request, 'reports/new_deductive_change_order.html', {'project':project, 'sub': sub})
+        return redirect('reports:deductive_change_orders', project_id=project.id, sub_id=sub.id)
+
+    return render(request, 'reports/new_deductive_change_order.html', context)
+
 
 @login_required(login_url='reports:login')
 def change_orders(request, project_id, sub_id):
@@ -1362,7 +1413,44 @@ def change_orders(request, project_id, sub_id):
     sub = get_object_or_404(Subcontractor, pk=sub_id)
     cos = ChangeOrder.objects.order_by('-date').filter(project_id=project).filter(sub_id=sub)
 
+    return render(request, 'reports/change_orders.html', {'project': project, 'sub': sub, 'cos': cos})
+
+
+@login_required(login_url='reports:login')
+def new_change_order(request, project_id=None, sub_id=None):
+    projectselect = get_object_or_404(Project, pk=project_id) if project_id else None
+    subselect = get_object_or_404(Subcontractor, pk=sub_id) if sub_id else None
+    projects = Project.objects.order_by('name')
+    subs = Subcontractor.objects.order_by('name')
+    contracts = Contract.objects.order_by('-date')
+    contracts_data = json.dumps(
+        [
+            {
+                'id': contract.id,
+                'project_id': contract.project_id.id,
+                'sub_id': contract.sub_id.id,
+                'total': contract.total,
+                'date': contract.date.isoformat(),  # Convert datetime to string
+            }
+            for contract in contracts
+        ],
+        cls=DjangoJSONEncoder
+    )
+
+    context = {
+        'projectselect': projectselect,
+        'subselect': subselect,
+        'projects': projects,
+        'subs': subs,
+        'contracts_data': contracts_data,
+    }
+
     if request.method == 'POST':
+        contract = get_object_or_404(Contract, pk=request.POST.get('contract'))
+        project = contract.project_id
+        sub = contract.sub_id
+
+        rows = []
         for key, value in request.POST.items():
             if key.startswith('scope'):
                 # Handle scope field
@@ -1373,41 +1461,38 @@ def change_orders(request, project_id, sub_id):
                 # Get corresponding qty, unitprice, and totalprice values
                 qty_key = f'qty{scope_index}'
                 unitprice_key = f'unitprice{scope_index}'
-                totalprice_key = f'totalprice{scope_index}'
 
                 qty_value = request.POST.get(qty_key)
                 unitprice_value = request.POST.get(unitprice_key)
-                totalprice_value = request.POST.get(totalprice_key)
+                totalprice_value = float(qty_value) * float(unitprice_value)
 
                 if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
-                    return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub, 'error_message': "All fields need to be filled."})
+                    context.update({'error_message': "All fields need to be filled."})
+                    return render(request, 'reports/new_change_order.html', context)
 
                 try:
                     qty_value = int(qty_value)
                     unitprice_value = float(unitprice_value)
+                    totalprice_value = float(totalprice_value)  # Convert totalprice to float
                 except ValueError:
-                    return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub, 'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
+                    context.update({'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
+                    return render(request, 'reports/new_change_order.html', context)
 
-                co = ChangeOrder()
-                co.order_number = f"{project.name} CO {datetime.now().year % 100}{len(ChangeOrder.objects.all())+1}{datetime.now().month}"
-                co.date = datetime.now()
-                co.sub_id = sub
-                co.project_id = project
+                # Create a dictionary for the change order data
+                co_data = {
+                    'scope_value': scope_value,
+                    'qty_value': qty_value,
+                    'unitprice_value': unitprice_value,
+                    'totalprice_value': totalprice_value,
+                }
 
-                co.save()
-                #create PDF HERE
+                rows.append(co_data)
 
-        return redirect('reports:change_orders', project_id=project_id, sub_id=sub_id)
-    else:
-        return render(request, 'reports/change_orders.html', {'project': project, 'sub': sub, 'cos': cos})
+        co = create_change_order(request.POST, "Change Order", rows)
 
+        return redirect('reports:change_orders', project_id=project.id, sub_id=sub.id)
 
-@login_required(login_url='reports:login')
-def new_change_order(request, project_id, sub_id):
-    project = get_object_or_404(Project, pk=project_id)
-    sub = get_object_or_404(Subcontractor, pk=sub_id)
-
-    return render(request, 'reports/new_change_order.html', {'project': project, 'sub': sub})
+    return render(request, 'reports/new_change_order.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -1423,7 +1508,278 @@ def delete_change_order(request, co_id):
             os.remove(file_path)
             co.delete()
 
-    return redirect('reports:change_orders', project_id=co.project_id, sub_id=co.sub_id)
+    return redirect('reports:change_orders', project_id=get_object_or_404(Project, pk=co.project_id), sub_id=get_object_or_404(Subcontractor, pk=co.sub_id))
+
+@login_required(login_url='reports:login')
+def delete_deductive_change_order(request, dco_id):
+    dco = get_object_or_404(DeductiveChangeOrder, pk=dco_id)
+
+    file_path = dco.pdf.path
+    username = request.POST.get('username')
+    print("Attempting to delete")
+
+    if username == request.user.username:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            dco.delete()
+
+    return redirect('reports:deductive_change_orders')
+
+
+
+def create_change_order(POST, type, rows):
+    contract = get_object_or_404(Contract, pk=POST.get('contract'))
+    project = contract.project_id
+    sub = contract.sub_id
+
+    file_name = project.name + " " + sub.name + " " + type + " " + str(datetime.now().strftime("%B-%d-%Y"))
+
+    if os.path.exists(file_name + ".pdf"):
+        print("***********Check 4**********")
+        counter = 1
+        while os.path.exists(file_name + "(" + str(counter) + ")" + ".pdf"):
+            counter += 1
+        file_name += "(" + str(counter) + ")"
+
+    file_name += ".pdf"
+    abrv = ""
+    for word in project.name.split():
+        abrv += word[0].upper()
+
+    obj = None
+    if type == "Deductive Change Order":
+        dco = DeductiveChangeOrder()
+        dco.project_id = project
+        dco.sub_id = sub
+        dco.date = datetime.now()
+        dco.order_number = abrv + " DCO " + str(datetime.now().strftime("%y")) + str(
+            "{:03d}".format(len(DeductiveChangeOrder.objects.all()) + 1))
+        obj = dco
+
+    elif type == "Change Order":
+        co = ChangeOrder()
+        co.project_id = project
+        co.sub_id = sub
+        co.date = datetime.now()
+        co.order_number = abrv + " CO " + str(datetime.now().strftime("%y")) + str(
+            "{:03d}".format(len(DeductiveChangeOrder.objects.all()) + 1))
+        obj = co
+
+    pdf = FPDF()
+
+    # Set up the PDF document
+    pdf.set_title(project.name + " " + sub.name + " " + type + " " + str(datetime.now().strftime("%B-%d-%Y")))
+    pdf.set_author("Moffat Construction")
+    pdf.set_font("Arial", size=10)
+
+    # Set margins (3/4 inch margins)
+    margin = 20
+    pdf.set_auto_page_break(auto=True, margin=margin)
+
+    # Add a new page
+    pdf.add_page()
+
+    # Add image at the top center
+    pdf.image(os.path.join(settings.STATIC_ROOT, 'reports\images\logo_onlyM.png'),
+              x=(pdf.w - 20) / 2, y=10, w=20, h=20)
+    pdf.ln(23)
+
+    pdf.set_font("Arial", style="B", size=16)
+    pdf.set_line_width(.75)
+    pdf.cell(pdf.w - 20, 10, type.upper()+" SUBCONTRACTOR", 1, 0, align="C")
+    pdf.ln(15)
+
+    pdf.set_font("Arial", size=10)
+
+    # Define table data
+    table_data = [
+        [type + " No.", obj.order_number],
+        ["Date", str(datetime.now().strftime("%B-%d-%Y"))],
+    ]
+
+    # Set column widths
+    col_width = pdf.w / 4
+
+    # Calculate x position to center the table
+    x = 10
+    pdf.set_line_width(.25)
+    # Loop through rows and columns to create table
+    for row in table_data:
+        print("***********Check 5**********")
+        for col, cell_data in enumerate(row):
+            # Apply formatting for "a Moffat Company" cell
+            if "a Moffat Company" in cell_data:
+                pdf.set_font("Arial", style="I", size=10)
+                pdf.set_text_color(255, 0, 0)
+
+            # Add cell without borders
+            pdf.set_xy(x + (col * col_width), pdf.get_y())
+            pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    # Add gap
+    pdf.ln(3)
+
+    table_data = [
+        ["General Contractor:", "Moffat Construction"],
+        ["Trade:", ""],
+        ["Subcontractor:", sub.name],
+        ["Project: ", project.name],
+        ["Address: ", project.address],
+        ["City, State, Zip: ", project.city + ", " + project.state + ", " + str(project.zip)]
+    ]
+
+    # Loop through rows and columns to create table
+    for row in table_data:
+        for col, cell_data in enumerate(row):
+            if col == 0 and sub.name in cell_data or sub.address in cell_data or "Schedule" in cell_data:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", style="B", size=10)
+                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
+            else:
+                # Add cell without borders
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    pdf.ln(3)
+
+    # Add cell with light gray background
+    pdf.set_fill_color(192)
+    pdf.cell((pdf.w-20)*.8, 5, "ORIGINAL CONTRACT AMOUNT", 1, 0, "C", True)
+    pdf.cell((pdf.w-20)*.2, 5, "$"+"{:.2f}".format(contract.total), 1, 0, "C", True)
+
+
+    # Add gap
+    pdf.ln(8)
+
+    pdf.cell(pdf.w - 20, 5, "SCOPE & VALUES" if type == "Change Order" else "SCOPE & VALUES REDUCED", 1, 0, "C", True)
+
+    pdf.ln(5)
+
+    pdf.set_fill_color(255)
+    pdf.set_font('Arial', size=10)
+    pdf.cell((pdf.w - 20) * .075, 5, 'No.', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .475, 5, 'Scope of Work', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .15, 5, 'Unit Price', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .1, 5, 'Qty', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .2, 5, 'Total', 1, 1, 'C', True)
+
+    subtotal = 0.00
+    # Iterate over rows for the current group
+    for index, row in enumerate(rows):
+        print(row)
+        scope = row['scope_value']
+        qty = row['qty_value']
+        unit_price = row['unitprice_value']
+        total_price = row['totalprice_value']
+
+        pdf.set_fill_color(255 if index % 2 == 0 else 240)
+        pdf.set_font('Arial', size=10)
+        pdf.cell((pdf.w - 20) * .075, 5, str(index + 1), 1, 0, 'C', True)
+        pdf.cell((pdf.w - 20) * .475, 5, scope, 1, 0, 'L', True)
+        pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(unit_price), 1, 0, 'L', True)
+        pdf.cell((pdf.w - 20) * .1, 5, str(qty), 1, 0, 'C', True)
+        pdf.cell((pdf.w - 20) * .2, 5, " $" + "{:.2f}".format(total_price), 1, 1, 'L', True)
+        subtotal += total_price
+
+    # Add a break after each group
+    pdf.set_fill_color(217, 225, 242)
+    pdf.set_font('Arial', style='B', size=10)
+    pdf.cell((pdf.w - 20) * .8, 5, type.upper() + " AMOUNT: ", 1, 0, 'R', True)
+    pdf.cell((pdf.w - 20) * .2, 5, " $" + "{:.2f}".format(subtotal), 1, 1, 'L', True)
+    pdf.ln(5)
+
+    # Add table with two columns and eight rows for signatures
+
+    pdf.set_fill_color(192)
+    pdf.set_font('Arial', style='B', size=10)
+    pdf.set_xy(pdf.w*.5 + 10, pdf.get_y())
+    pdf.cell((pdf.w - 20) * .25, 5, "NEW CONTRACT AMOUNT", 1, 0, 'C', True)
+    if type == "Change Order":
+        pdf.cell((pdf.w - 20) * .2, 5, " $" + "{:.2f}".format(contract.total + subtotal), 1, 1, 'L', True)
+    elif type == "Deductive Change Order":
+        pdf.cell((pdf.w - 20) * .2, 5, " $" + "{:.2f}".format(contract.total - subtotal), 1, 1, 'L', True)
+
+    pdf.ln(15)
+
+    obj.total = subtotal
+
+    if pdf.get_y() + 65 > pdf.page_break_trigger:
+        pdf.add_page()
+
+    pdf.set_fill_color(255)
+    pdf.cell(pdf.w - 20, 5, "Signatures", 1, 1, "C", True)
+
+    table_data = [
+        ["Moffat Construction", sub.name],
+        ["Signature", "Signature"],
+        ["Date", "Date"]
+    ]
+
+    col_width = (pdf.w - 20) / 2
+
+    # Loop through rows and columns to create table
+    for row in table_data:
+        for col, cell_data in enumerate(row):
+            if table_data.index(row) == 0:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", size=8)
+                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
+            elif "Signature" in cell_data:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", size=8)
+                pdf.cell(col_width, 12, cell_data + " \n\n\n\n\n\n\n", 1, 0, "L")
+            elif cell_data == "" or cell_data == "Greg Moffat":
+                pdf.set_font("Arial", size=12)
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 12, cell_data, 1, 0, "C")
+            else:
+                # Add cell without borders
+                pdf.set_font("Arial", size=8)
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+
+                # Reset font and text color
+                pdf.set_font("Arial", size=10)
+                pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    # Generate the full file path
+    ex_file_path = os.path.join(settings.STATIC_ROOT, file_name)
+    pdf.output(ex_file_path)
+    with open(ex_file_path, 'rb') as file:
+        file_content = file.read()
+
+    file_data = ContentFile(file_content)
+
+    obj.pdf.save(file_name, file_data)
+
+    # Delete the temporary file
+    os.remove(ex_file_path)
+
+    project.date = datetime.now()
+    project.save()
+    obj.save()
+    print("***********Check Final**********")
+    return obj
+
+
+
 
 
 @login_required(login_url='reports:login')

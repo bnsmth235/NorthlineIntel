@@ -101,19 +101,21 @@ class ChangeOrder(models.Model):
     date = models.DateTimeField('Order Date')
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    total = models.FloatField(default=0.00)
     pdf = models.FileField(upload_to='static/reports/change_orders')
     def __str__(self):
-        return self.name
+        return self.order_number
 
 class DeductiveChangeOrder(models.Model):
     order_number = models.CharField(max_length=50)
     date = models.DateTimeField('Order Date')
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    total = models.FloatField(default=0.00)
     pdf = models.FileField(upload_to='static/reports/deductive_change_orders')
 
     def __str__(self):
-        return self.name
+        return self.order_number
 
 
 class PurchaseOrder(models.Model):

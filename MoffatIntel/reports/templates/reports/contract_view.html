@@ -66,11 +66,7 @@
             </tr>
             {% for proposal in proposals %}
                 <tr class="report-item zebra" >
-                    {% if proposal.proposal_pdf %}
                     <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
-                    {% else %}
-                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon_red.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
-                    {% endif %}
 
                     <td width="6%" style="text-align: center"><a href="#">{{proposal.name}}</a></td>
                     <td width="6%" style="text-align: center"><a href="#">{{proposal.date|date:"m/d/y"}}</a></td>
