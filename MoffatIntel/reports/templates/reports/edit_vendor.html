@@ -1,0 +1,32 @@
+{% extends "reports/base.html" %}
+
+{% block title %}Edit Vendor{% endblock %}
+
+{% block content %}
+    <form action="{% url 'reports:edit_vendor' vendor.id %}" method="post">
+        {% csrf_token %}
+        <fieldset class="fieldset">
+            <legend><h1>Edit Vendor</h1></legend>
+            <label for="name">Vendor Name:</label>
+            <input required="required" type="text" name="name" id="name" class="input-field" value="{{vendor.name}}">
+
+            <label for="address">Address:</label>
+            <input required="required" type="text" name="address" id="address" style="width:30%;" class="input-field" value="{{vendor.address}}">
+
+            <label for="cname">Contact Name:</label>
+            <input type="text" name="cname" id="cname" class="input-field" value="{{vendor.cname}}">
+
+            <label for="cphone">Contact Phone:</label>
+            <input type="tel" name="cphone" id="cphone" class="input-field" value="{{vendor.cphone}}">
+
+            <label for="cemail">Contact Email:</label>
+            <input type="email" name="cemail" id="cemail" class="input-field" value="{{vendor.cemail}}">
+
+            <input class="input-field-save" type="submit" name="submit" value="Save">
+
+            {% if error_message %}
+                <p><strong class="error">{{ error_message }}</strong></p>
+            {% endif %}
+        </fieldset>
+    </form>
+{% endblock %}

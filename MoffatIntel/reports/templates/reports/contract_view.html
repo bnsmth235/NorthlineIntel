@@ -18,11 +18,11 @@
     <p><strong class="error">{{ error_message }}</strong></p>
 {% endif %}
 
-{% if contracts %}
+{% if contracts or SWOs %}
 <div style="text-align: center">
     <div style="display:inline-block"><a class="pick-icon" href="{% url 'reports:change_orders' project.id sub.id %}"><img src="{% static 'reports/images/change_order.png' %}"><li>Change Orders</li></a></div>
     <div style="display:inline-block"><a class="pick-icon" href="{% url 'reports:deductive_change_orders' project.id sub.id %}"><img src="{% static 'reports/images/deductive_change_order.png' %}"><li>Deductive Change Orders</li></a></div>
-    <div style="display:inline-block"><a class="pick-icon" href="#"><img src="{% static 'reports/images/purchase_order.png' %}"><li>Purchase Orders</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="{% url 'reports:purchase_orders' project.id %}"><img src="{% static 'reports/images/purchase_order.png' %}"><li>Purchase Orders</li></a></div>
 </div>
 
 <div display="block">

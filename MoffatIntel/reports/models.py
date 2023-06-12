@@ -38,6 +38,17 @@ class Subcontractor(models.Model):
     def __str__(self):
         return self.name
 
+
+class Vendor(models.Model):
+    name = models.CharField(max_length=50)
+    address = models.CharField(max_length=200)
+    cname = models.CharField(max_length=50, default="")
+    cphone = models.CharField(max_length=11, default="")
+    cemail = models.EmailField(default="")
+
+    def __str__(self):
+        return self.name
+
 class Plan(models.Model):
     name = models.CharField(max_length=100)
     date = models.DateTimeField('Last Modified')
@@ -122,7 +133,7 @@ class PurchaseOrder(models.Model):
     name = models.CharField(max_length=50)
     order_number = models.CharField(max_length=50)
     date = models.DateTimeField('Order Date')
-    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     pdf = models.FileField(upload_to='static/reports/purchase_orders')
     def __str__(self):

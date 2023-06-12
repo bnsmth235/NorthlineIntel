@@ -1,0 +1,138 @@
+{% extends "reports/base.html" %}
+
+{% block title %}Vendors{% endblock %}
+
+
+{% block content %}
+{% load static %}
+<script src="{% static 'reports/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<div id="app">
+
+<h1 class="section-header">Vendors</h1>
+
+<div class="add-button" v-on:click="showDiv()" v-if="!isDivVisible">
+    <button>+ New Vendor</button>
+</div>
+
+<div class="add-button" v-on:click="showDiv()" v-if="isDivVisible">
+    <button> Cancel</button>
+</div>
+
+{% if error_message %}
+    <script>
+        window.addEventListener('DOMContentLoaded', function () {
+            vm.showDiv();
+        });
+    </script>
+{% endif %}
+
+
+  <div v-if="isDivVisible">
+      <form method="post" action="{% url 'reports:all_vendors'%}" >
+        <fieldset class="fieldset-table">
+            <legend><h2>New Vendor</h2></legend>
+            {% csrf_token %}
+            <div style="display: inline-block">
+                <label for="name">Vendor Name:</label>
+                <input required="required" type="text" name="name" id="name" class="input-field" {% if error_message %} value="{{name}}" {% endif %}>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="address">Address:</label>
+                <input required="required" type="text" name="address" id="address" class="input-field"  {% if error_message %} value="{{name}}" {% endif %}>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="cname">Contact Name:</label>
+                <input type="tel" name="cname" id="cname" class="input-field" {% if error_message %} value="{{cname}}" {% endif %}>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="cphone">Contact Phone:</label>
+                <input type="tel" name="cphone" id="cphone" class="input-field" {% if error_message %} value="{{cphone}}" {% endif %}>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="cemail">Email:</label>
+                <input type="email" name="cemail" id="cemail" class="input-field" {% if error_message %} value="{{email}}" {% endif %}>
+            </div>
+
+            <input class="input-field-save" type="submit" name="submit" value="Save">
+
+            {% if error_message %}
+                <p><strong class="error">{{ error_message }}</strong></p>
+            {% endif %}
+
+        </fieldset>
+    </form>
+  </div>
+
+{% if vendors %}
+    <div class="reports-list-div">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers">
+                <th>Name</th>
+                <th>Address</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>W9</th>
+            </tr>
+        {% for vendor in vendors %}
+                <tr class="report-item zebra">
+                    <td>{{vendor.name}}</td>
+                    <td>{{ vendor.address }}</td>
+                    <td>{{vendor.cname}}</td>
+                    <td>{{ vendor.cphone }}</td>
+                    <td>{{ vendor.cemail }}</td>
+                    <td class="inline-edit-button"><a href="{% url 'reports:edit_vendor' vendor.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="18" width="18">Edit</a></td>
+                    <td style="width: 6%; text-align: center">
+                      <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_vendor' vendor.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="vendor_id" value="{{ vendor.id }}">
+                        <input type="hidden" name="username" id="username">
+                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'reports/images/trash.png' %}" height="15" width="15">Delete
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+
+        {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr>
+                <td>There are currently no Vendors.</td>
+            </tr>
+        </table>
+    </div>
+
+{% endif %}
+
+</table>
+
+</div>
+
+<script>
+    const app = Vue.createApp({
+  data() {
+    return {
+      isDivVisible: false,
+    };
+  },
+
+  methods: {
+    showDiv() {
+      this.isDivVisible = !this.isDivVisible;
+    },
+  },
+});
+
+const vm = app.mount("#app");
+</script>
+
+{% endblock %}

@@ -19,7 +19,7 @@ from datetime import datetime
 from django.core.files.uploadedfile import UploadedFile
 from fpdf import FPDF
 from .forms import DocumentForm, InvoiceForm
-from .models import Project, Proposal, Plan, PurchaseOrder, Contract, ChangeOrder, Draw, DeductiveChangeOrder, SWO, Exhibit, Invoice, Subcontractor
+from .models import Project, Proposal, Plan, PurchaseOrder, Contract, ChangeOrder, Draw, DeductiveChangeOrder, SWO, Exhibit, Invoice, Subcontractor, Vendor
 
 
 
@@ -139,7 +139,7 @@ def edit_sub(request, sub_id):
             return render(request, 'reports/edit_sub.html', {'error_message': "Please enter the subcontractor name. (Less than 50 characters)", 'sub': sub})
 
         if not address and not phone and not email:
-            return render(request, 'reports/all_subs.html', {'error_message': "Please enter at least one form of contact", 'sub': sub})
+            return render(request, 'reports/edit_sub.html', {'error_message': "Please enter at least one form of contact", 'sub': sub})
 
         sub.name = name
         sub.addresss = address
@@ -152,6 +152,34 @@ def edit_sub(request, sub_id):
         return redirect('reports:all_subs')
 
     return render(request, 'reports/edit_sub.html', {'sub': sub})
+
+
+@login_required(login_url='reports:login')
+def edit_vendor(request, vendor_id):
+    vendor = get_object_or_404(Vendor, pk=vendor_id)
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        cname = request.POST.get('cname')
+        cphone = request.POST.get('cphone')
+        cemail = request.POST.get('cemail')
+        if not name:
+            return render(request, 'reports/edit_vendor.html', {'error_message': "Please enter the vendor name. (Less than 50 characters)", 'vendor': vendor})
+
+        if not address and not cphone and not cemail:
+            return render(request, 'reports/edit_vendor.html', {'error_message': "Please enter at least one form of contact", 'vendor': vendor})
+
+        vendor.name = name
+        vendor.addresss = address
+        vendor.cname = cname
+        vendor.cphone = cphone
+        vendor.cemail = cemail
+
+        vendor.save()
+
+        return redirect('reports:all_vendors')
+
+    return render(request, 'reports/edit_vendor.html', {'vendor': vendor})
 
 
 @login_required(login_url='reports:login')
@@ -169,6 +197,21 @@ def delete_sub(request, sub_id):
 
     return redirect('reports:all_subs')
 
+
+@login_required(login_url='reports:login')
+def delete_vendor(request, vendor_id):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        print("Attempting to delete")
+
+        if username == request.user.username:
+            vendor = get_object_or_404(Vendor, pk=vendor_id)
+            vendor.delete()
+            print("Vendor deleted")
+        else:
+            print("Username incorrect")
+
+    return redirect('reports:all_vendors')
 
 @login_required(login_url='reports:login')
 def sub_select(request, project_id):
@@ -215,6 +258,44 @@ def all_subs(request):
 
     return render(request, 'reports/all_subs.html', {'subs': subs})
 
+
+@login_required(login_url='reports:login')
+def all_vendors(request):
+    vendors = Vendor.objects.order_by("name")
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        cname = request.POST.get('cname')
+        cphone = request.POST.get('cphone')
+        cemail = request.POST.get('cemail')
+
+        context = {
+            'vendors': vendors,
+            'name': name,
+            'address': address,
+            'cname': cname,
+            'cphone': cphone,
+            'cemail': cemail,
+        }
+        if not name:
+            context.update({'error_message': "Please enter the vendor name. (Less than 50 characters)"})
+            return render(request, 'reports/all_vendors.html', context)
+
+        if not address and not cname and not cphone and not cemail:
+            context.update({'error_message': "Please enter at least one form of contact"})
+            return render(request, 'reports/all_vendors.html', context)
+
+        vendor = Vendor()
+        vendor.name = name
+        vendor.address = address
+        vendor.cname = cname
+        vendor.cphone = cphone
+        vendor.cemail = cemail
+        vendor.save()
+
+        return redirect(reverse('reports:all_vendors'))
+
+    return render(request, 'reports/all_vendors.html', {'vendors': vendors})
 
 @login_required(login_url='reports:login')
 def home(request):
@@ -481,7 +562,7 @@ def create_exhibit(POST, project, sub):
 
     exhibit = Exhibit()
     exhibit.name = "Exhibit " + chr(len(exhibits) + 65)
-    exhibit.date = datetime.date.today()
+    exhibit.date = datetime.today()
     exhibit.sub_id = sub
     exhibit.project_id = project
 
@@ -1162,6 +1243,13 @@ def co_pdf_view(request, co_id):
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'co': co})
 
+@login_required(login_url='reports:login')
+def po_pdf_view(request, po_id):
+    po = get_object_or_404(PurchaseOrder, pk=po_id)
+    pdf_bytes = po.pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'po': po})
+
 
 @login_required(login_url='reports:login')
 def dco_pdf_view(request, dco_id):
@@ -1298,25 +1386,64 @@ def delete_invoice(request, project_id, draw_id, invoice_id):
     project.date = datetime.now()
     draw.date = datetime.now()
 
-
 @login_required(login_url='reports:login')
-def purchase_orders(request, project_id, sub_id):
-    project = get_object_or_404(Project, pk=project_id)
-    sub = get_object_or_404(Subcontractor, pk=sub_id)
-    if request.method == 'POST':
-        pass
+def new_purchase_order(request, project_id=None):
+    projectselect = get_object_or_404(Project, pk=project_id) if project_id else None
+    projects = Project.objects.order_by('name')
+    vendors = Vendor.objects.order_by('name')
 
-    else:
-        return render(request, 'reports/purchase_orders.html', {'project': project, 'sub': sub})
+    context = {
+        'projectselect': projectselect,
+        'projects': projects,
+        'vendors': vendors,
+    }
 
-@login_required(login_url='reports:login')
-def new_purchase_order(request, project_id, sub_id):
-    project = get_object_or_404(Project, pk=project_id)
-    sub = get_object_or_404(Subcontractor, pk=sub_id)
     if request.method == 'POST':
-        pass
-    else:
-        return render(request, 'reports/new_purchase_order.html', {'project': project, 'sub': sub})
+        project = get_object_or_404(Project, pk=request.POST.get('project'))
+        vendor = get_object_or_404(Vendor, pk=request.POST.get('vendor'))
+        rows = []
+        for key, value in request.POST.items():
+            if key.startswith('scope'):
+                # Handle scope field
+                scope_index = key.replace('scope', '')
+                scope_value = value
+                # Process the scope value
+
+                # Get corresponding qty, unitprice, and totalprice values
+                qty_key = f'qty{scope_index}'
+                unitprice_key = f'unitprice{scope_index}'
+
+                qty_value = request.POST.get(qty_key)
+                unitprice_value = request.POST.get(unitprice_key)
+                totalprice_value = float(qty_value) * float(unitprice_value)
+
+                if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
+                    context.update({'error_message': "All fields need to be filled."})
+                    return render(request, 'reports/new_purchase_order.html', context)
+
+                try:
+                    qty_value = int(qty_value)
+                    unitprice_value = float(unitprice_value)
+                    totalprice_value = float(totalprice_value)  # Convert totalprice to float
+                except ValueError:
+                    context.update({'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
+                    return render(request, 'reports/new_purchase_order.html', context)
+
+                # Create a dictionary for the change order data
+                po_data = {
+                    'scope_value': scope_value,
+                    'qty_value': qty_value,
+                    'unitprice_value': unitprice_value,
+                    'totalprice_value': totalprice_value,
+                }
+
+                rows.append(po_data)
+        print("Going into creation...")
+        po = create_purchase_order(project, vendor, rows)
+
+        return redirect('reports:purchase_orders', project_id=project.id)
+
+    return render(request, 'reports/new_purchase_order.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -1380,7 +1507,7 @@ def new_deductive_change_order(request, project_id = None, sub_id = None):
 
                 if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
                     context.update({'error_message': "All fields need to be filled."})
-                    return render(request, 'reports/new_change_order.html', context)
+                    return render(request, 'reports/new_deductive_change_order.html', context)
 
                 try:
                     qty_value = int(qty_value)
@@ -1388,7 +1515,7 @@ def new_deductive_change_order(request, project_id = None, sub_id = None):
                     totalprice_value = float(totalprice_value)  # Convert totalprice to float
                 except ValueError:
                     context.update({'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
-                    return render(request, 'reports/new_change_order.html', context)
+                    return render(request, 'reports/new_deductive_change_order.html', context)
 
                 # Create a dictionary for the change order data
                 co_data = {
@@ -1414,6 +1541,14 @@ def change_orders(request, project_id, sub_id):
     cos = ChangeOrder.objects.order_by('-date').filter(project_id=project).filter(sub_id=sub)
 
     return render(request, 'reports/change_orders.html', {'project': project, 'sub': sub, 'cos': cos})
+
+
+@login_required(login_url='reports:login')
+def purchase_orders(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    pos = PurchaseOrder.objects.order_by('-date').order_by('vendor_id').filter(project_id=project)
+
+    return render(request, 'reports/purchase_orders.html', {'project': project, 'pos': pos})
 
 
 @login_required(login_url='reports:login')
@@ -1524,6 +1659,274 @@ def delete_deductive_change_order(request, dco_id):
             dco.delete()
 
     return redirect('reports:deductive_change_orders')
+
+@login_required(login_url='reports:login')
+def delete_purchase_order(request, po_id):
+    po = get_object_or_404(PurchaseOrder, pk=po_id)
+    project = po.project_id
+    file_path = po.pdf.path
+    username = request.POST.get('username')
+    print("Attempting to delete")
+
+    if username == request.user.username:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            po.delete()
+
+    return redirect('reports:purchase_orders', project_id=project.id)
+
+
+def create_purchase_order(project, vendor, rows):
+    draws = Draw.objects.filter(project_id=project)
+    file_name = project.name + " " + vendor.name + " " + str(datetime.now().strftime("%B-%d-%Y"))
+
+    if os.path.exists(file_name + ".pdf"):
+        counter = 1
+        while os.path.exists(file_name + "(" + str(counter) + ")" + ".pdf"):
+            counter += 1
+        file_name += "(" + str(counter) + ")"
+
+    file_name += ".pdf"
+    abrv = ""
+    for word in project.name.split():
+        abrv += word[0].upper()
+
+    pdf = FPDF()
+
+    # Set up the PDF document
+    pdf.set_title(project.name + " " + vendor.name + " " + str(datetime.now().strftime("%B-%d-%Y")))
+    pdf.set_author("Moffat Construction")
+    pdf.set_font("Arial", size=10)
+
+    # Set margins (3/4 inch margins)
+    margin = 20
+    pdf.set_auto_page_break(auto=True, margin=margin)
+
+    # Add a new page
+    pdf.add_page()
+
+    # Add image at the top center
+    pdf.image(os.path.join(settings.STATIC_ROOT, 'reports\images\logo_onlyM.png'),
+              x=(pdf.w - 20) / 2, y=10, w=20, h=20)
+    pdf.ln(23)
+
+    pdf.set_font("Arial", style="B", size=16)
+    pdf.set_line_width(.75)
+    pdf.cell(pdf.w - 20, 10, "PURCHASE ORDER", 1, 0, align="C")
+    pdf.ln(15)
+
+    pdf.set_font("Arial", size=10)
+
+    # Define table data
+
+    table_data = [
+        ["MOFFAT CONSTRUCTION", ""],
+        ["a Moffat Company", "Purchase Order No.", "PO" + str(datetime.now().strftime("%y")) + str(
+        "{:03d}".format(len(PurchaseOrder.objects.all()) + 1))],
+        ["519 W. STATE STREET SUITE #202", "Date", str(datetime.now().strftime("%B-%d-%Y"))],
+        ["PLEASANT GROVE, UTAH 84062", ""]
+    ]
+
+    # Set column widths
+    col_width = pdf.w / 3
+
+    # Calculate total table width
+    table_width = col_width * 2
+
+    # Calculate x position to center the table
+    x = (pdf.w - table_width) / 2
+    pdf.set_line_width(.25)
+    # Loop through rows and columns to create table
+    for row in table_data:
+        print("***********Check 5**********")
+        for col, cell_data in enumerate(row):
+            # Apply formatting for "a Moffat Company" cell
+            if "a Moffat Company" in cell_data:
+                pdf.set_font("Arial", style="I", size=10)
+                pdf.set_text_color(255, 0, 0)
+
+            # Add cell without borders
+            pdf.set_xy(x + (col * col_width), pdf.get_y())
+            pdf.cell(col_width, 5, cell_data, 0, 0, "C")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    # Add gap
+    pdf.ln(3)
+
+    table_data = [
+        ["BUYER", "SELLER"],
+        ["Moffat Construction", "Vendor: " + vendor.name],
+        ["Address: 519 West State St., Pleasant Grove, UT 84062", "Address: " + vendor.address],
+        ["Email: g60moffat@gmail.com; william@moffatcompany.com", "Contact Name: " + vendor.cname],
+        ["Phone: c. 804.851.0606 o. 801.769.0745", "Contact Phone: " + vendor.cphone],
+        ["", "Contact Email: " + vendor.cemail]
+    ]
+
+    # Loop through rows and columns to create table
+    for row in table_data:
+        for col, cell_data in enumerate(row):
+            if col == 0 and "SELLER" in cell_data or "BUYER" in cell_data:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", style="B", size=10)
+                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
+            else:
+                # Add cell without borders
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    pdf.ln(3)
+
+    table_data = [
+        ["DELIVER TO / WORK PERFORMED AT:", "SCHEDULE"],
+        ["Project Name: " + project.name + "\nAddress: " + project.address + "\nCity, State, Zip: " + project.city + " " + project.state + " " + str(project.zip), ""],
+    ]
+
+    # Loop through rows and columns to create table
+    for row in table_data:
+        for col, cell_data in enumerate(row):
+            if col == 0 and "DELIVER" in cell_data or "SCHEDULE" in cell_data:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", style="B", size=10)
+                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
+            else:
+                # Add cell without borders
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    # Add gap
+    pdf.ln(8)
+
+    pdf.cell(pdf.w - 20, 5, "SCOPE OF WORK - MATERIALS", 1, 0, "C", True)
+
+    pdf.ln(5)
+
+    pdf.set_fill_color(255)
+    pdf.set_font('Arial', size=10)
+    pdf.multi_cell((pdf.w - 20) * .8, 5, "This document, including any plans and specifications, if any, and all attached hereto are made a part hereof,"
+         " shall constitute the Agreement. All labor, transportation, delivery fees, equipment, industry standards shall"
+         " apply in all aspects for the the Seller to perform for fulfillment of this Purchase Order.", 1, 0, "L", True)
+    pdf.set_xy((pdf.w - 20) * .8, pdf.get_y())
+    pdf.multi_cell((pdf.w - 20) * .2, 5, "Draw: " + str(len(draws)) + "\nDate: " + str(datetime.now().strftime("%B-%d-%Y")), 1, 0, "L", True)
+    pdf.ln()
+    pdf.cell((pdf.w - 20) * .05, 5, 'No.', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .45, 5, 'Scope of Work', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .1, 5, 'Qty', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .125, 5, 'Unit Price', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .15, 5, 'Total', 1, 1, 'C', True)
+    pdf.cell((pdf.w - 20) * .125, 5, 'Earned Value', 1, 1, 'C', True)
+
+    subtotal = 0.00
+    # Iterate over rows for the current group
+    for index, row in enumerate(rows):
+        scope = row['scope_value']
+        qty = row['qty_value']
+        unit_price = row['unitprice_value']
+        total_price = row['totalprice_value']
+
+        pdf.set_fill_color(255 if index % 2 == 0 else 240)
+        pdf.set_font('Arial', size=10)
+        pdf.cell((pdf.w - 20) * .05, 5, str(index + 1), 1, 0, 'C', True)
+        pdf.cell((pdf.w - 20) * .45, 5, scope, 1, 0, 'L', True)
+        pdf.cell((pdf.w - 20) * .1, 5, " $" + "{:.2f}".format(unit_price), 1, 0, 'L', True)
+        pdf.cell((pdf.w - 20) * .125, 5, str(qty), 1, 0, 'C', True)
+        pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(total_price), 1, 1, 'L', True)
+        pdf.cell((pdf.w - 20) * .125, 5, "", 1, 1, 'C', True)
+        subtotal += total_price
+
+    pdf.set_fill_color(217, 225, 242)
+    pdf.set_font('Arial', style='B', size=10)
+    pdf.cell((pdf.w - 20) * .625, 5, "TOTAL PURCHASE ORDER AMOUNT: ", 1, 0, 'R', True)
+    pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(subtotal), 1, 1, 'L', True)
+    pdf.cell((pdf.w - 20) * .125, 5, 'Earned Value', 1, 1, 'C', True)
+
+    if pdf.get_y() + 65 > pdf.page_break_trigger:
+        pdf.add_page()
+
+    pdf.set_fill_color(255)
+    pdf.cell(pdf.w - 20, 5, "Signatures", 1, 1, "C", True)
+
+    table_data = [
+        ["Moffat Construction", vendor.name],
+        ["Signature:", "Signature:"],
+        ["Print Name:          Gregory Moffat", "Print Name:"],
+        ["Date:          " + str(datetime.now().strftime("%B-%d-%Y")), "Date: "]
+    ]
+
+    col_width = (pdf.w - 20) / 2
+
+    # Loop through rows and columns to create table
+    for row in table_data:
+        for col, cell_data in enumerate(row):
+            if table_data.index(row) == 0:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", size=8)
+                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
+            elif "Signature" in cell_data:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.set_font("Arial", size=8)
+                pdf.cell(col_width, 12, cell_data + " \n\n\n\n\n\n\n", 1, 0, "L")
+            elif cell_data == "" or cell_data == "Gregory Moffat":
+                pdf.set_font("Arial", size=12)
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 12, cell_data, 1, 0, "C")
+            else:
+                # Add cell without borders
+                pdf.set_font("Arial", size=8)
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+
+                # Reset font and text color
+                pdf.set_font("Arial", size=10)
+                pdf.set_text_color(0)
+
+        # Move to next row
+        pdf.ln()
+
+    # Generate the full file path
+    ex_file_path = os.path.join(settings.STATIC_ROOT, file_name)
+    pdf.output(ex_file_path)
+    with open(ex_file_path, 'rb') as file:
+        file_content = file.read()
+
+    file_data = ContentFile(file_content)
+
+    po = PurchaseOrder()
+    po.name = file_name
+    po.order_number = "PO" + str(datetime.now().strftime("%y")) + str(
+        "{:03d}".format(len(PurchaseOrder.objects.all()) + 1))
+    po.date = datetime.now()
+    po.vendor_id = vendor
+    po.project_id = project
+    po.pdf.save(file_name, file_data)
+
+    # Delete the temporary file
+    os.remove(ex_file_path)
+
+    project.date = datetime.now()
+    project.save()
+    po.save()
+    print("***********Check Final**********")
+    return po
 
 
 
