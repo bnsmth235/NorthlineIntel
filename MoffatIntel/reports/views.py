@@ -1205,12 +1205,13 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
 def draw_view(request, project_id, draw_id):
     project = get_object_or_404(Project, pk=project_id)
     draw = get_object_or_404(Draw, pk=draw_id)
+    contracts = Contract.objects.order_by('-date').filter(project_id=project.id)
     draws = Draw.objects.order_by('-date').filter(project_id=project.id)
     invoices = Invoice.objects.order_by('-invoice_date').order_by('sub_id').filter(draw_id=draw.id)
 
     total_invoice_amount = invoices.aggregate(total=Sum('invoice_total'))['total']
 
-    return render(request, 'reports/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project})
+    return render(request, 'reports/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project, 'contracts': contracts})
 
 
 @login_required(login_url='reports:login')
@@ -1721,9 +1722,9 @@ def create_purchase_order(project, vendor, rows):
 
     table_data = [
         ["MOFFAT CONSTRUCTION", ""],
-        ["a Moffat Company", "Purchase Order No.", "PO" + str(datetime.now().strftime("%y")) + str(
+        ["a Moffat Company", "          Purchase Order No.:   " + "PO" + str(datetime.now().strftime("%y")) + str(
         "{:03d}".format(len(PurchaseOrder.objects.all()) + 1))],
-        ["519 W. STATE STREET SUITE #202", "Date", str(datetime.now().strftime("%B-%d-%Y"))],
+        ["519 W. STATE STREET SUITE #202", "          Date:   " + str(datetime.now().strftime("%B-%d-%Y"))],
         ["PLEASANT GROVE, UTAH 84062", ""]
     ]
 
@@ -1744,10 +1745,15 @@ def create_purchase_order(project, vendor, rows):
             if "a Moffat Company" in cell_data:
                 pdf.set_font("Arial", style="I", size=10)
                 pdf.set_text_color(255, 0, 0)
-
-            # Add cell without borders
-            pdf.set_xy(x + (col * col_width), pdf.get_y())
-            pdf.cell(col_width, 5, cell_data, 0, 0, "C")
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 0, 0, "C")
+            elif col == 1:
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 0, 0, "L")
+            else:
+                # Add cell without borders
+                pdf.set_xy(x + (col * col_width), pdf.get_y())
+                pdf.cell(col_width, 5, cell_data, 0, 0, "C")
 
             # Reset font and text color
             pdf.set_font("Arial", size=10)
@@ -1768,71 +1774,82 @@ def create_purchase_order(project, vendor, rows):
         ["", "Contact Email: " + vendor.cemail]
     ]
 
+    col_width = pdf.w / 2 - 10
     # Loop through rows and columns to create table
     for row in table_data:
         for col, cell_data in enumerate(row):
-            if col == 0 and "SELLER" in cell_data or "BUYER" in cell_data:
-                pdf.set_xy(x + (col * col_width), pdf.get_y())
+            if "SELLER" in cell_data or "BUYER" in cell_data:
+                pdf.set_fill_color(211)
                 pdf.set_font("Arial", style="B", size=10)
-                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
+                pdf.cell(pdf.w / 2 - 10, 5, cell_data, 1, 0, "C")
             else:
                 # Add cell without borders
-                pdf.set_xy(x + (col * col_width), pdf.get_y())
-                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+                pdf.cell(pdf.w / 2 - 10, 5, cell_data, 1, 0, "L")
 
             # Reset font and text color
-            pdf.set_font("Arial", size=10)
+            pdf.set_font("Arial", size=9)
+            pdf.set_fill_color(256)
             pdf.set_text_color(0)
 
         # Move to next row
         pdf.ln()
-
-    pdf.ln(3)
-
-    table_data = [
-        ["DELIVER TO / WORK PERFORMED AT:", "SCHEDULE"],
-        ["Project Name: " + project.name + "\nAddress: " + project.address + "\nCity, State, Zip: " + project.city + " " + project.state + " " + str(project.zip), ""],
-    ]
-
-    # Loop through rows and columns to create table
-    for row in table_data:
-        for col, cell_data in enumerate(row):
-            if col == 0 and "DELIVER" in cell_data or "SCHEDULE" in cell_data:
-                pdf.set_xy(x + (col * col_width), pdf.get_y())
-                pdf.set_font("Arial", style="B", size=10)
-                pdf.cell(col_width, 5, cell_data, 1, 0, "C")
-            else:
-                # Add cell without borders
-                pdf.set_xy(x + (col * col_width), pdf.get_y())
-                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
-
-            # Reset font and text color
-            pdf.set_font("Arial", size=10)
-            pdf.set_text_color(0)
-
-        # Move to next row
-        pdf.ln()
-
-    # Add gap
-    pdf.ln(8)
-
-    pdf.cell(pdf.w - 20, 5, "SCOPE OF WORK - MATERIALS", 1, 0, "C", True)
 
     pdf.ln(5)
 
-    pdf.set_fill_color(255)
+    table_data = [
+        ["DELIVER TO / WORK PERFORMED AT:", "SCHEDULE"],
+        [
+            "Project Name: " + project.name + "\nAddress: " + project.address + "\nCity, State, Zip: " + project.city + ", " + project.state + ", " + str(
+                project.zip), "\n\n\n"],
+    ]
+
+    # Set initial position
+    x = pdf.get_x()
+    y = pdf.get_y()
+
+    # Loop through rows and columns to create table
+    for row in table_data:
+        for col, cell_data in enumerate(row):
+            if "DELIVER" in cell_data or "SCHEDULE" in cell_data:
+                pdf.set_font("Arial", style="B", size=10)
+                pdf.set_xy(x + (col * col_width), y)  # Set the position of the cell
+                pdf.set_fill_color(211)
+                pdf.multi_cell(col_width, 5, cell_data, 1, "C")
+            else:
+                # Add cell without borders
+                pdf.set_xy(x + (col * col_width), y)  # Set the position of the cell
+                pdf.multi_cell(col_width, 5, cell_data, 1, "L")
+
+            # Reset font and text color
+            pdf.set_font("Arial", size=10)
+            pdf.set_text_color(0)
+            pdf.set_fill_color(256)
+
+
+        # Update the y-coordinate for the next row
+        y += pdf.font_size + 1.5 # Adjust the value (2) as needed for spacing between rows
+
+
+    # Add gap
+    pdf.ln(8)
+    pdf.set_fill_color(217, 225, 242)
+    pdf.cell(pdf.w - 20, 5, "SCOPE OF WORK - MATERIALS", 1, 0, "C", True)
+    pdf.set_fill_color(256)
+    pdf.ln(5)
+
     pdf.set_font('Arial', size=10)
-    pdf.multi_cell((pdf.w - 20) * .8, 5, "This document, including any plans and specifications, if any, and all attached hereto are made a part hereof,"
+    pdf.multi_cell((pdf.w - 20), 5, "This document, including any plans and specifications, if any, and all attached hereto are made a part hereof,"
          " shall constitute the Agreement. All labor, transportation, delivery fees, equipment, industry standards shall"
-         " apply in all aspects for the the Seller to perform for fulfillment of this Purchase Order.", 1, 0, "L", True)
-    pdf.set_xy((pdf.w - 20) * .8, pdf.get_y())
-    pdf.multi_cell((pdf.w - 20) * .2, 5, "Draw: " + str(len(draws)) + "\nDate: " + str(datetime.now().strftime("%B-%d-%Y")), 1, 0, "L", True)
-    pdf.ln()
+         " apply in all aspects for the the Seller to perform for fulfillment of this Purchase Order.", 1, "L", True)
+    pdf.ln(5)
+
+    pdf.set_xy(pdf.w * .875 - 7.5, pdf.get_y())
+    pdf.multi_cell((pdf.w - 20) * .125, 5, "Draw: " + str(len(draws)) + "\nDate: " + str(datetime.now().strftime("%m-%d-%Y")), 1, "L", True)
     pdf.cell((pdf.w - 20) * .05, 5, 'No.', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .45, 5, 'Scope of Work', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .1, 5, 'Qty', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .125, 5, 'Unit Price', 1, 0, 'C', True)
-    pdf.cell((pdf.w - 20) * .15, 5, 'Total', 1, 1, 'C', True)
+    pdf.cell((pdf.w - 20) * .15, 5, 'Total', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .125, 5, 'Earned Value', 1, 1, 'C', True)
 
     subtotal = 0.00
@@ -1849,22 +1866,25 @@ def create_purchase_order(project, vendor, rows):
         pdf.cell((pdf.w - 20) * .45, 5, scope, 1, 0, 'L', True)
         pdf.cell((pdf.w - 20) * .1, 5, " $" + "{:.2f}".format(unit_price), 1, 0, 'L', True)
         pdf.cell((pdf.w - 20) * .125, 5, str(qty), 1, 0, 'C', True)
-        pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(total_price), 1, 1, 'L', True)
+        pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(total_price), 1, 0, 'L', True)
         pdf.cell((pdf.w - 20) * .125, 5, "", 1, 1, 'C', True)
         subtotal += total_price
 
     pdf.set_fill_color(217, 225, 242)
     pdf.set_font('Arial', style='B', size=10)
-    pdf.cell((pdf.w - 20) * .625, 5, "TOTAL PURCHASE ORDER AMOUNT: ", 1, 0, 'R', True)
-    pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(subtotal), 1, 1, 'L', True)
-    pdf.cell((pdf.w - 20) * .125, 5, 'Earned Value', 1, 1, 'C', True)
+    pdf.cell((pdf.w - 20) * .725, 5, "TOTAL PURCHASE ORDER AMOUNT: ", 1, 0, 'R', True)
+    pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(subtotal), 1, 0, 'L', True)
+    pdf.set_fill_color(242, 235, 23)
+    pdf.cell((pdf.w - 20) * .125, 5, '', 1, 1, 'C', True)
 
     if pdf.get_y() + 65 > pdf.page_break_trigger:
         pdf.add_page()
 
-    pdf.set_fill_color(255)
-    pdf.cell(pdf.w - 20, 5, "Signatures", 1, 1, "C", True)
+    pdf.ln(15)
 
+    pdf.set_fill_color(211)
+    pdf.cell(pdf.w - 20, 5, "Signatures", 1, 1, "C", True)
+    pdf.set_fill_color(256)
     table_data = [
         ["Moffat Construction", vendor.name],
         ["Signature:", "Signature:"],
@@ -1885,15 +1905,15 @@ def create_purchase_order(project, vendor, rows):
                 pdf.set_xy(x + (col * col_width), pdf.get_y())
                 pdf.set_font("Arial", size=8)
                 pdf.cell(col_width, 12, cell_data + " \n\n\n\n\n\n\n", 1, 0, "L")
-            elif cell_data == "" or cell_data == "Gregory Moffat":
-                pdf.set_font("Arial", size=12)
+            elif "Print Name" in cell_data:
+                pdf.set_font("Arial", size=8)
                 pdf.set_xy(x + (col * col_width), pdf.get_y())
-                pdf.cell(col_width, 12, cell_data, 1, 0, "C")
+                pdf.cell(col_width, 12, cell_data, 1, 0, "L")
             else:
                 # Add cell without borders
                 pdf.set_font("Arial", size=8)
                 pdf.set_xy(x + (col * col_width), pdf.get_y())
-                pdf.cell(col_width, 5, cell_data, 1, 0, "L")
+                pdf.cell(col_width, 8, cell_data, 1, 0, "L")
 
                 # Reset font and text color
                 pdf.set_font("Arial", size=10)

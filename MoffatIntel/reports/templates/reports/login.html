@@ -13,7 +13,7 @@
                     <div id="logo">
                         <img src="{% static 'reports/images/logo.png' %}" alt="Moffat Logo" width="300px">
                     </div>
-                    <hr>
+                    <hr style="margin-top: 10px;">
                     <form action="{% url 'reports:index' %}" method="post" class="form-input">
                         {% csrf_token %}
                         <fieldset>
