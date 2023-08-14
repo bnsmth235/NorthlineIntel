@@ -20,22 +20,21 @@
             <div style="display: inline-block">
                 <div style="display: inline-block">
                     <label for="project">Project: </label>
-                    <select name="project" required="required" id="project" class="input-field" v-model="project" data-projectselect="{{ projectselect.id|default_if_none:'' }}">
+                    <select name="project" id="project" class="input-field" v-model="project" data-projectselect="{{ projectselect.id|default_if_none:'' }}">
                         {% for project in projects %}
                             <option value="{{ project.id }}">{{ project.name }}</option>
                         {% endfor %}
-                        <option selected="selected" {% if projectselect %}value="{{projectselect.id}}"{% endif %}>{% if projectselect %}{{projectselect.name}}{% endif %}</option>
+                        {% if projectselect %}<option selected hidden="hidden" value="{{projectselect.id}}">{{projectselect.name}}</option>{% endif %}
                     </select>
                 </div>
 
                 <div style="display: inline-block">
                     <label for="sub">Subcontractor: </label>
-                    <select name="sub" id="sub" required="required" class="input-field" v-model="sub" data-subselect="{{ subselect.id|default_if_none:'' }}">
+                    <select name="sub" id="sub" class="input-field" v-model="sub" data-subselect="{{ subselect.id|default_if_none:'' }}">
                         {% for sub in subs %}
                             <option value="{{ sub.id }}">{{ sub.name }}</option>
                         {% endfor %}
-                        <option selected="selected" {% if subselect %}value="{{subselect.id}}"{% endif %}>{% if subselect %}{{subselect.name}}{% endif %}</option>
-                    </select>
+                        {% if subselect %}<option selected hidden="hidden" value="{{subselect.id}}">{{subselect.name}}</option>{% endif %}                    </select>
                 </div>
 
                 <div style="display: inline-block">
@@ -58,13 +57,13 @@
                     <tr v-for="(row, rowIndex) in rows" :key="rowIndex" class="report-item" style="text-align: center">
                         <td>{{ rowIndex + 1 }}</td>
                         <td>
-                            <div><input type="text" :name="'scope' + rowIndex" :id="'scope' + rowIndex" class="input-field" style="margin: 0px; width: 90%"></div>
+                            <div><input required="required" type="text" :name="'scope' + rowIndex" :id="'scope' + rowIndex" class="input-field" style="margin: 0px; width: 90%"></div>
                         </td>
                         <td>
-                            <input type="number" v-model="row.qty" :name="'qty' + rowIndex" class="input-field" style="margin: 0px; width: 90%" :id="'qty' + rowIndex" step="1">
+                            <input required="required" type="number" v-model="row.qty" :name="'qty' + rowIndex" class="input-field" style="margin: 0px; width: 90%" :id="'qty' + rowIndex" step="1">
                         </td>
                         <td>
-                            $<input type="number" v-model="row.unitPrice" :name="'unitprice' + rowIndex" class="input-field" style="margin: 0px; width: 90%" :id="'unitprice' + rowIndex" step=".01">
+                            $<input required="required" type="number" v-model="row.unitPrice" :name="'unitprice' + rowIndex" class="input-field" style="margin: 0px; width: 90%" :id="'unitprice' + rowIndex" step=".01">
                         </td>
                         <td>
                             ${{ totalPrices[rowIndex] }}
@@ -168,13 +167,18 @@
         const selectedProject = projectSelect.value || projectSelect.dataset.projectselect || null;
         const selectedSub = subSelect.value || subSelect.dataset.subselect || null;
 
+        const addedContracts = new Set();
+
         for (const contract of contracts) {
             if ((contract.project_id == selectedProject || contract.project_id == selectedProject) &&
-                (contract.sub_id == selectedSub || contract.sub_id == selectedSub)) {
+                (contract.sub_id == selectedSub || contract.sub_id == selectedSub) &&
+                !addedContracts.has(contract.id)) {
                 const option = document.createElement('option');
                 option.value = contract.id;
                 option.textContent = `Contract ${contract.id}: Total: $${contract.total.toFixed(2)}`;
+
                 contractSelect.appendChild(option);
+                addedContracts.add(contract.id);
             }
         }
     }
@@ -185,6 +189,27 @@
     // Add event listeners to project and subcontractor selects
     projectSelect.addEventListener('change', populateContractOptions);
     subSelect.addEventListener('change', populateContractOptions);
+
+    // Populate project and sub selects with selected options
+    const selectedProjectId = "{{ projectselect.id|default_if_none:'' }}";
+    const selectedSubId = "{{ subselect.id|default_if_none:'' }}";
+
+    const projectOptions = document.querySelectorAll('#project option');
+    const subOptions = document.querySelectorAll('#sub option');
+
+    for (const option of projectOptions) {
+        if (option.value === selectedProjectId) {
+            option.selected = true;
+            break;
+        }
+    }
+
+    for (const option of subOptions) {
+        if (option.value === selectedSubId) {
+            option.selected = true;
+            break;
+        }
+    }
 </script>
 
 {% endblock %}

@@ -47,6 +47,7 @@ urlpatterns = [
     path('new_invoice/<int:project_id>/<int:draw_id>/', views.new_invoice, name='new_invoice'),
     path('new_change_order/<int:project_id>/<int:sub_id>/', views.new_change_order, name='new_change_order'),
     path('new_change_order/', views.new_change_order, name='new_change_order'),
+    path('new_deductive_change_order/<int:project_id>/<int:sub_id>/', views.new_deductive_change_order, name='new_deductive_change_order'),
     path('new_deductive_change_order', views.new_deductive_change_order, name='new_deductive_change_order'),
     path('new_purchase_order/<int:project_id>/', views.new_purchase_order, name='new_purchase_order'),
     path('new_purchase_order/', views.new_purchase_order, name='new_purchase_order'),

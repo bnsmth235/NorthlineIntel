@@ -24,7 +24,9 @@
                         {% for project in projects %}
                             <option value="{{ project.id }}">{{ project.name }}</option>
                         {% endfor %}
-                        {% if projectselect %}<option selected value="{{projectselect.id}}">{{projectselect.name}}</option>{% endif %}
+
+                        {% if projectselect %}<option selected hidden="hidden" value="{{projectselect.id}}">{{projectselect.name}}</option>{% endif %}
+
                     </select>
                 </div>
 
@@ -34,7 +36,8 @@
                         {% for vendor in vendors %}
                             <option value="{{ vendor.id }}">{{ vendor.name }}</option>
                         {% endfor %}
-                        {% if vendorselect %}<option selected value="{{vendorselect.id}}">{{vendorselect.name}}</option>{% endif %}                    </select>
+                        {% if vendorselect %}<option selected hidden="hidden" value="{{vendorselect.id}}">{{vendorselect.name}}</option>{% endif %}
+                    </select>
                 </div>
             </div>
 

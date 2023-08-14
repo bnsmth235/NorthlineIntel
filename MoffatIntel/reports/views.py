@@ -357,6 +357,7 @@ def check_space(self, required_height):
     if self.get_y() + required_height > self.page_break_trigger:
         self.add_page()
 
+
 @login_required(login_url='reports:login')
 def new_contract(request):
     projects = Project.objects.order_by('name')
@@ -435,7 +436,7 @@ def new_contract(request):
         swo.description = description[:196]+"..."
         swo.project_id = project
 
-        file_path = os.path.join(settings.STATIC_ROOT, 'reports\pdf_templates\contract_template.pdf')
+        file_path = os.path.join(settings.STATIC_ROOT, 'pdf_templates\contract_template.pdf')
 
         output_path = sub.name + " Contract " + contract_date
 
@@ -532,6 +533,7 @@ def new_contract(request):
                             file_content = file.read()
 
                         file_data = ContentFile(file_content)
+                        os.remove(temp_path)
                         print("*************MERGED**************")
 
                         contract = Contract()
@@ -562,7 +564,7 @@ def create_exhibit(POST, project, sub):
 
     exhibit = Exhibit()
     exhibit.name = "Exhibit " + chr(len(exhibits) + 65)
-    exhibit.date = datetime.today()
+    exhibit.date = datetime.now().strftime('%Y-%m-%d')
     exhibit.sub_id = sub
     exhibit.project_id = project
 
@@ -626,7 +628,7 @@ def create_exhibit(POST, project, sub):
     pdf.add_page()
 
     # Add image at the top center
-    pdf.image(os.path.join(settings.STATIC_ROOT, 'reports\images\logo_onlyM.png'),
+    pdf.image(os.path.join(settings.BASE_DIR, 'reports\static\\reports\images\logo_onlyM.png'),
               x=(pdf.w - 20) / 2, y=10, w=20, h=20)
     pdf.ln(23)
 
@@ -787,7 +789,7 @@ def create_exhibit(POST, project, sub):
         ["Printed Name", "Printed Name"],
         ["Greg Moffat", ""],
         ["Title/Position", "Title/Position"],
-        ["", ""]
+        ["General Contractor", ""]
     ]
 
     # Loop through rows and columns to create table
@@ -821,7 +823,8 @@ def create_exhibit(POST, project, sub):
     exhibit.total = total_total
 
     # Generate the full file path
-    ex_file_path = os.path.join(settings.STATIC_ROOT, file_name)
+    ex_file_path = os.path.join(settings.STATIC_ROOT, "exhibits", file_name)
+
     pdf.output(ex_file_path)
     with open(ex_file_path, 'rb') as file:
         file_content = file.read()
@@ -1482,13 +1485,14 @@ def new_deductive_change_order(request, project_id = None, sub_id = None):
         'subselect': subselect,
         'projects': projects,
         'subs': subs,
-        'contracts_data': contracts_data,  # Pass the serialized contracts data to the template
+        'contracts_data': contracts_data,
     }
 
     if request.method == 'POST':
         contract = get_object_or_404(Contract, pk=request.POST.get('contract'))
-        project = get_object_or_404(Project, pk=contract.project_id.id)
-        sub = get_object_or_404(Subcontractor, pk=contract.sub_id.id)
+        project = contract.project_id
+        sub = contract.sub_id
+
         rows = []
         for key, value in request.POST.items():
             if key.startswith('scope'):
@@ -1500,7 +1504,6 @@ def new_deductive_change_order(request, project_id = None, sub_id = None):
                 # Get corresponding qty, unitprice, and totalprice values
                 qty_key = f'qty{scope_index}'
                 unitprice_key = f'unitprice{scope_index}'
-                totalprice_key = f'totalprice{scope_index}'
 
                 qty_value = request.POST.get(qty_key)
                 unitprice_value = request.POST.get(unitprice_key)
@@ -1528,7 +1531,7 @@ def new_deductive_change_order(request, project_id = None, sub_id = None):
 
                 rows.append(co_data)
 
-        co = create_change_order(request.POST, "Deductive Change Order", rows)
+        dco = create_change_order(request.POST, "Deductive Change Order", rows)
 
         return redirect('reports:deductive_change_orders', project_id=project.id, sub_id=sub.id)
 
@@ -1707,7 +1710,7 @@ def create_purchase_order(project, vendor, rows):
     pdf.add_page()
 
     # Add image at the top center
-    pdf.image(os.path.join(settings.STATIC_ROOT, 'reports\images\logo_onlyM.png'),
+    pdf.image(os.path.join(settings.BASE_DIR, 'reports\static\\reports\images\logo_onlyM.png'),
               x=(pdf.w - 20) / 2, y=10, w=20, h=20)
     pdf.ln(23)
 
@@ -1923,7 +1926,7 @@ def create_purchase_order(project, vendor, rows):
         pdf.ln()
 
     # Generate the full file path
-    ex_file_path = os.path.join(settings.STATIC_ROOT, file_name)
+    ex_file_path = os.path.join(settings.STATIC_ROOT, "purchase_orders", file_name)
     pdf.output(ex_file_path)
     with open(ex_file_path, 'rb') as file:
         file_content = file.read()
@@ -2003,7 +2006,7 @@ def create_change_order(POST, type, rows):
     pdf.add_page()
 
     # Add image at the top center
-    pdf.image(os.path.join(settings.STATIC_ROOT, 'reports\images\logo_onlyM.png'),
+    pdf.image(os.path.join(settings.BASE_DIR, 'reports\static\\reports\images\logo_onlyM.png'),
               x=(pdf.w - 20) / 2, y=10, w=20, h=20)
     pdf.ln(23)
 
@@ -2183,7 +2186,7 @@ def create_change_order(POST, type, rows):
         pdf.ln()
 
     # Generate the full file path
-    ex_file_path = os.path.join(settings.STATIC_ROOT, file_name)
+    ex_file_path = os.path.join(settings.STATIC_ROOT, "reports", file_name)
     pdf.output(ex_file_path)
     with open(ex_file_path, 'rb') as file:
         file_content = file.read()
