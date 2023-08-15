@@ -20,13 +20,11 @@
             <div style="display: inline-block">
                 <div style="display: inline-block">
                     <label for="project">Project: </label>
-                    <select name="project" id="project" class="input-field" v-model="project" data-projectselect="{{ projectselect.id|default_if_none:'' }}">
+                    <select name="project" id="project" class="input-field">
+                        <option selected hidden="hidden" value="{{projectselect.id}}">{{projectselect.name}}</option>
                         {% for project in projects %}
                             <option value="{{ project.id }}">{{ project.name }}</option>
                         {% endfor %}
-
-                        {% if projectselect %}<option selected hidden="hidden" value="{{projectselect.id}}">{{projectselect.name}}</option>{% endif %}
-
                     </select>
                 </div>
 

@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from io import BytesIO
 
 from PyPDF2.generic import NameObject
@@ -19,7 +20,7 @@ from datetime import datetime
 from django.core.files.uploadedfile import UploadedFile
 from fpdf import FPDF
 from .forms import DocumentForm, InvoiceForm
-from .models import Project, Proposal, Plan, PurchaseOrder, Contract, ChangeOrder, Draw, DeductiveChangeOrder, SWO, Exhibit, Invoice, Subcontractor, Vendor
+from .models import *
 
 
 
@@ -77,6 +78,25 @@ STATE_OPTIONS = [
     ("WY", "Wyoming"),
 ]
 
+DIVISION_CHOICES = [
+    ("1", "General Requirement"),
+    ("2", "Site Works"),
+    ("3", "Concrete"),
+    ("4", "Masonry"),
+    ("5", "Metals"),
+    ("6", "Wood and Plastics"),
+    ("7", "Thermal and Moisture Protection"),
+    ("8", "Doors and Windows"),
+    ("9", "Finishes"),
+    ("10", "Specialties"),
+    ("11", "Equipment"),
+    ("12", "Furnishings"),
+    ("13", "Special Construction"),
+    ("14", "Conveying Systems"),
+    ("15", "Mechanical/Plumbing"),
+    ("16", "Electrical"),
+    ]
+
 STATUS_OPTIONS = [("I", "In Progress"), ("C", "Completed"), ("O", "On Hold")]
 
 METHOD_OPTIONS = [("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")]
@@ -127,6 +147,46 @@ def input_data(request):
 
 
 @login_required(login_url='reports:login')
+def edit_estimate(request, estimate_id):
+    estimate = get_object_or_404(Estimate, pk=estimate_id)
+    project = get_object_or_404(Project, pk=estimate.project_id)
+    subs = Subcontractor.objects.order_by('name')
+
+    context = {
+        'estimate': estimate,
+        'project': project,
+        'subs': subs,
+    }
+
+    if request.method == 'POST':
+        date = request.POST.get('date')
+        sub = request.POST.get('sub')
+        csi = request.POST.get('csi')
+        category = request.POST.get('category')
+        total = request.POST.get('total')
+
+        if not date or not sub or not csi or not category or not total:
+            context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
+            return render(request, 'reports/edit_estimate.html', context)
+
+        estimate.date = date
+        estimate.sub_id = get_object_or_404(Subcontractor, pk=sub)
+        estimate.csi = csi
+        estimate.category = category
+        estimate.total = total
+
+        if 'pdf' in request.FILES:
+            estimate.pdf = request.FILES['pdf']
+            if not estimate.pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
+                return render(request, 'reports/edit_invoice.html', context)
+
+        estimate.save()
+
+
+
+
+@login_required(login_url='reports:login')
 def edit_sub(request, sub_id):
     sub = get_object_or_404(Subcontractor, pk=sub_id)
     if request.method == 'POST':
@@ -135,17 +195,43 @@ def edit_sub(request, sub_id):
         phone = request.POST.get('phone')
         email = request.POST.get('email')
         w9 = request.POST.get('w9')
+        csi = request.POST.get('csi')
+        category = request.POST.get('category')
+
+        context = {
+            'sub': sub,
+            'name': name,
+            'address': address,
+            'phone': phone,
+            'email': email,
+            'w9': w9,
+            'csi': csi,
+            'category': category,
+        }
+
         if not name:
-            return render(request, 'reports/edit_sub.html', {'error_message': "Please enter the subcontractor name. (Less than 50 characters)", 'sub': sub})
+            context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
+            return render(request, 'reports/edit_sub.html', context)
 
         if not address and not phone and not email:
-            return render(request, 'reports/edit_sub.html', {'error_message': "Please enter at least one form of contact", 'sub': sub})
+            context.update({'error_message': "Please enter at least one form of contact"})
+            return render(request, 'reports/edit_sub.html', context)
+
+        if not csi:
+            context.update({'error_message': "Select a CSI division"})
+            return render(request, 'reports/edit_sub.html', context)
+
+        if not category:
+            context.update({'error_message': "Select a category"})
+            return render(request, 'reports/edit_sub.html', context)
 
         sub.name = name
-        sub.addresss = address
+        sub.address = address
         sub.phone = phone
         sub.email = email
         sub.w9 = w9
+        sub.csi = csi
+        sub.category = category
 
         sub.save()
 
@@ -303,7 +389,6 @@ def home(request):
     context = {'recent_projects': recent_projects}
     return render(request, 'reports/home.html', context)
 
-
 @login_required(login_url='reports:login')
 def all(request):
     projects = Project.objects.order_by('-date', '-status')
@@ -319,7 +404,7 @@ def new_proj(request):
         city = request.POST.get('city')
         state = request.POST.get('state')
         zip = request.POST.get('zip')
-        date = datetime.now()
+        date = datetime.datetime.now()
         edited_by = request.user.username
         status = "I"
 
@@ -359,11 +444,17 @@ def check_space(self, required_height):
 
 
 @login_required(login_url='reports:login')
-def new_contract(request):
+def new_contract(request, project_id = None, sub_id = None):
     projects = Project.objects.order_by('name')
     subs = Subcontractor.objects.order_by('name')
 
     context = {'projects': projects, 'subs': subs}
+    if project_id:
+        project = get_object_or_404(Project, pk=project_id)
+        context.update({'projectselect': project})
+    if sub_id:
+        sub = get_object_or_404(Subcontractor, pk=project_id)
+        context.update({'subselect':sub})
 
     if request.method == 'POST':
         project = get_object_or_404(Project, pk=request.POST.get('project'))
@@ -547,7 +638,7 @@ def new_contract(request):
                         contract.pdf.save(output_path, file_data)
                         contract.save()
 
-                project.date = datetime.now()
+                project.date = datetime.datetime.now()
                 project.edited_by = request.user.username
                 project.save()
 
@@ -564,7 +655,7 @@ def create_exhibit(POST, project, sub):
 
     exhibit = Exhibit()
     exhibit.name = "Exhibit " + chr(len(exhibits) + 65)
-    exhibit.date = datetime.now().strftime('%Y-%m-%d')
+    exhibit.date = datetime.datetime.now().strftime('%Y-%m-%d')
     exhibit.sub_id = sub
     exhibit.project_id = project
 
@@ -837,7 +928,7 @@ def create_exhibit(POST, project, sub):
     # Delete the temporary file
     os.remove(ex_file_path)
 
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.save()
     exhibit.save()
     print("***********Check Final**********")
@@ -845,98 +936,161 @@ def create_exhibit(POST, project, sub):
 
 
 @login_required(login_url='reports:login')
+def new_check(request, project_id, draw_id, invoice_id):
+    draw = get_object_or_404(Draw, pk=draw_id)
+    project = get_object_or_404(Project, pk=project_id)
+    invoice = get_object_or_404(Invoice, pk=invoice_id)
+    subs = Subcontractor.objects.order_by('name')
+
+    context = {
+        'draw': draw,
+        'project': project,
+        'invoice': invoice,
+        'subs': subs,
+        'lien_release_type_choices': LIEN_RELEASE_OPTIONS
+    }
+
+    if request.method == 'POST':
+        check_date = request.POST.get('check_date')
+        check_number = request.POST.get('check_num')
+        sub = request.POST.get('sub')
+        total = request.POST.get('check_total')
+        lien_release_type = request.POST.get('lien_release_type')
+        distributed = request.POST.get('distributed')
+        signed = bool(request.POST.get('signed', False))
+
+        context.update({
+            'check_date': check_date,
+            'check_number': check_number,
+            'sub': sub,
+            'check_total': total,
+            'lien_release_type': lien_release_type,
+            'distributed': distributed,
+            'signed': signed
+        })
+
+        if not check_date or not check_number or not total or not sub:
+            context.update({'error_message': "Please fill out all fields"})
+            return render(request, 'reports/new_check.html', context)
+
+        check = Check()
+        check.date = datetime.datetime.now()
+        check.draw_id = draw
+        check.sub_id = sub
+        check.invoice_id = invoice
+        check.check_date = check_date
+        check.check_num = check_number
+        check.check_total = total
+        check.lien_release_type = lien_release_type
+        check.signed = signed
+        check.distributed = distributed
+
+        # Handle lien release PDF
+        if 'check_pdf' in request.FILES:
+            check.check_pdf = request.FILES['check_pdf']
+            if not check.check_pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
+                return render(request, 'reports/new_check.html', context)
+
+        # Handle lien release PDF
+        if 'lien_release_pdf' in request.FILES:
+            check.lien_release_pdf = request.FILES['lien_release_pdf']
+            if not check.lien_release_pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
+                return render(request, 'reports/new_check.html', context)
+
+        else:
+            check.signed = False
+
+        project.edited_by = request.user.username
+        project.date = datetime.datetime.now()
+        project.save()
+
+        draw.edited_by = request.user.username
+        draw.date = datetime.datetime.now()
+        draw.save()
+
+        invoice.date = datetime.datetime.now()
+        invoice.save()
+
+        check.save()
+
+        return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
+
+    return render(request, 'reports/new_check.html', context)
+
+
+@login_required(login_url='reports:login')
 def new_invoice(request, project_id, draw_id):
     project = get_object_or_404(Project, pk=project_id)
     draw = get_object_or_404(Draw, pk=draw_id)
     subs = Subcontractor.objects.order_by('name')
-    invoice_form = InvoiceForm(request.POST, request.FILES)
 
     context = {
         'subs': subs,
         'project': project,
-        'form': invoice_form,
         'draw': draw,
         'method_choices': METHOD_OPTIONS,
-        'lien_release_type_choices': LIEN_RELEASE_OPTIONS
     }
 
     if request.method == 'POST':
         invoice_date = request.POST.get('invoice_date')
         invoice_num = request.POST.get('invoice_num')
-        division_code = request.POST.get('division_code')
+        csi = request.POST.get('csi')
+        category = request.POST.get('category')
         method = request.POST.get('method')
         sub_name = request.POST.get('sub')
         sub = get_object_or_404(Subcontractor, name=sub_name)
-
         invoice_total = request.POST.get('invoice_total')
-
         description = request.POST.get('description')
-        lien_release_type = request.POST.get('lien_release_type')
         w9 = sub.w9
-        signed = bool(request.POST.get('signed', False))
 
         context.update({
             'invoice_date': invoice_date,
             'invoice_num': invoice_num,
-            'division_code': division_code,
+            'csi': csi,
+            'category': category,
             'methodselect': method,
             'subselect': sub,
             'invoice_total': invoice_total,
-            'lrtypeselect': lien_release_type,
             'description': description
         })
 
-        if not invoice_date or not invoice_num or not division_code or not method or not sub or not invoice_total or not description or not lien_release_type:
+        if not csi or not category or not method or not sub or not invoice_total or not description:
             context.update({'error_message': "Please fill out all fields"})
             return render(request, 'reports/new_invoice.html', context)
 
-        if invoice_form.is_valid():
-            invoice = Invoice()
-            invoice.draw_id = draw
-            invoice.invoice_date = invoice_date
-            invoice.invoice_num = invoice_num
-            invoice.division_code = division_code
-            invoice.method = method
-            invoice.sub_id = sub
-            invoice.invoice_total = invoice_total
-            invoice.description = description
-            invoice.lien_release_type = lien_release_type
-            invoice.w9 = w9
-            invoice.signed = signed
+        invoice = Invoice()
+        invoice.draw_id = draw
+        invoice.invoice_date = invoice_date
+        invoice.invoice_num = invoice_num
+        invoice.csi = csi
+        invoice.category = category
+        invoice.method = method
+        invoice.sub_id = sub
+        invoice.invoice_total = invoice_total
+        invoice.description = description
+        invoice.w9 = w9
 
-            # Handle invoice PDF
-            if 'invoice_pdf' in request.FILES:
-                invoice.invoice_pdf = request.FILES['invoice_pdf']
-                if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
-                    context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
-                    return render(request, 'reports/new_invoice.html', context)
+        # Handle invoice PDF
+        if 'invoice_pdf' in request.FILES:
+            invoice.invoice_pdf = request.FILES['invoice_pdf']
+            if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
+                return render(request, 'reports/new_invoice.html', context)
 
-            # Handle lien release PDF
-            if 'lien_release_pdf' in request.FILES:
-                invoice.lien_release_pdf = request.FILES['lien_release_pdf']
-                if not invoice.lien_release_pdf.file.content_type.startswith('application/pdf'):
-                    context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
-                    return render(request, 'reports/new_invoice.html', context)
+        # Save invoice and related objects
+        project.edited_by = request.user.username
+        project.date = datetime.datetime.now()
+        project.save()
 
-            else:
-                invoice.signed = False;
+        draw.edited_by = request.user.username
+        draw.date = datetime.datetime.now()
+        draw.save()
 
-            # Save invoice and related objects
-            project.edited_by = request.user.username
-            project.date = datetime.now()
-            project.save()
+        invoice.save()
 
-            draw.edited_by = request.user.username
-            draw.date = datetime.now()
-            draw.save()
-
-            invoice.save()
-
-            return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
-        else:
-            print(invoice_form.errors)
-            context.update({'error_message': "File upload failed"})
-            return render(request, 'reports/new_invoice.html', context)
+        return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
 
     return render(request, 'reports/new_invoice.html', context)
 
@@ -945,10 +1099,10 @@ def new_invoice(request, project_id, draw_id):
 def new_draw(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.edited_by = request.user.username
 
-    cur_draw = Draw(date=datetime.now(), project_id=project, edited_by=request.user.username)
+    cur_draw = Draw(date=datetime.datetime.now(), project_id=project, edited_by=request.user.username)
 
     cur_draw.save()
     project.save()
@@ -972,6 +1126,7 @@ def todo(request):
 def add_signature(request, invoice_id):
     invoice = get_object_or_404(Invoice, pk=invoice_id)
     draw = get_object_or_404(Draw, pk=invoice.draw_id.id)
+    sub = get_object_or_404(Subcontractor, pk=invoice.sub_id.id)
     project = get_object_or_404(Project, pk=draw.project_id.id)
 
     return edit_invoice(request, project.id, draw.id, invoice_id)
@@ -996,16 +1151,21 @@ def edit_proj(request, project_id):
         state = request.POST.get('state')
         zip = request.POST.get('zip')
         status = request.POST.get('status')
-        date = datetime.now()
+        print("***********************")
+        print(status)
+        print("***********************")
+        date = datetime.datetime.now()
         edited_by = request.user.username
 
         if not name or not address or not city or not state or not zip:
             return render(request, 'reports/edit_project.html', {'error_message': "Please fill out all fields",
+                                                                 'project': project,
                                                                  'state_options': STATE_OPTIONS,
                                                                  'status_options': STATUS_OPTIONS})
 
-        if int(zip) < 10000 and zip != "":
+        if (int(zip) < 0 or int(zip) > 99999) and zip != "":
             return render(request, 'reports/edit_project.html', {'error_message': "Zip code incorrect",
+                                                                 'project': project,
                                                                  'state_options': STATE_OPTIONS,
                                                                  'status_options': STATUS_OPTIONS})
 
@@ -1021,7 +1181,6 @@ def edit_proj(request, project_id):
 
         return redirect('reports:home')
 
-    project.address = [x.strip() for x in project.address.split(',')]
     return render(request, 'reports/edit_project.html', {'project': project,
                                                          'state_options': STATE_OPTIONS,
                                                          'status_options': STATUS_OPTIONS})
@@ -1067,6 +1226,20 @@ def project_view(request, project_id):
 
 
 @login_required(login_url='reports:login')
+def all_estimates(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    estimates = Estimate.objects.filter(project_id = project).order_by('csi')
+
+    context = {
+        'project': project,
+        'estimates': estimates,
+        'divisions': DIVISION_CHOICES,
+    }
+
+    return render(request, 'reports/all_estimates.html', context)
+
+
+@login_required(login_url='reports:login')
 def all_plans(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     form = DocumentForm(request.POST, request.FILES)
@@ -1096,7 +1269,7 @@ def upload_plan(request, project_id):
 
             plan.name = name;
             plan.edited_by = request.user.username
-            plan.date = datetime.now()
+            plan.date = datetime.datetime.now()
             plan.project_id = get_object_or_404(Project, pk=project_id)
             plan.save()
             form.save_m2m()
@@ -1119,6 +1292,7 @@ def delete_plan(request, project_id):
         document = get_object_or_404(Plan, pk=plan_id)
         file_path = document.pdf.path
         if os.path.exists(file_path):
+            time.sleep(3)
             os.remove(file_path)
             document.delete()
             print("Plan deleted")
@@ -1129,48 +1303,124 @@ def delete_plan(request, project_id):
 
 
 @login_required(login_url='reports:login')
-def edit_invoice(request, project_id, draw_id, invoice_id):
-    project = get_object_or_404(Project, pk=project_id)
-    draw = get_object_or_404(Draw, pk=draw_id)
-    invoice = get_object_or_404(Invoice, pk=invoice_id)
+def edit_check(request, check_id):
+    check = get_object_or_404(Check, pk=check_id)
+    invoice = check.invoice_id
+    draw = invoice.draw_id
+    project = draw.project_id
+    sub = get_object_or_404(Subcontractor, pk=invoice.sub_id.id)
     subs = Subcontractor.objects.order_by('name')
 
     context = {
         'subs': subs,
+        'subselect': sub,
+        'check': check,
+        'lien_release_type_choices': LIEN_RELEASE_OPTIONS
+    }
+
+    if request.method == 'POST':
+        check_date = request.POST.get('check_date')
+        check_num = request.POST.get('check_num')
+        sub = request.POST.get('sub')
+        check_total = request.POST.get('check_total')
+        lien_release_type = request.POST.get('lien_release_type')
+        distributed = request.POST.get('distributed')
+        signed = bool(request.POST.get('signed', False))
+
+        if not check_date or not check_num or not sub or not check_total or not lien_release_type:
+            context.update({'error_message': "Please fill out all fields"})
+            return render(request, 'reports/edit_check.html', context)
+
+        check.date = datetime.datetime.now()
+        check.check_date = check_date
+        check.check_num = check_num
+        check.check_total = check_total
+        check.sub_id = sub
+        check.lien_release_type = lien_release_type
+        check.distributed = distributed
+        check.signed = signed
+
+        print("******************************")
+        print(check.signed)
+        print("******************************")
+
+        # Handle check PDF
+        if 'check_pdf' in request.FILES:
+            invoice.invoice_pdf = request.FILES['check_pdf']
+            if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the Check PDF"})
+                return render(request, 'reports/edit_check.html', context)
+
+        # Handle lien release PDF
+        if 'lien_release_pdf' in request.FILES:
+            invoice.lien_release_pdf = request.FILES['lien_release_pdf']
+            if not invoice.lien_release_pdf.file.content_type.startswith('application/pdf'):
+                context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
+                return render(request, 'reports/edit_check.html', context)
+
+        else:
+            check.signed = None
+
+        # Save invoice and related objects
+        project.edited_by = request.user.username
+        project.date = datetime.datetime.now()
+        project.save()
+
+        draw.edited_by = request.user.username
+        draw.date = datetime.datetime.now()
+        draw.save()
+
+        invoice.date = datetime.datetime.now()
+
+        check.save()
+
+        return redirect('reports:draw_view', project_id=project.id, draw_id=draw.id)  # Redirect to a success page
+
+    return render(request, 'reports/edit_check.html', context)
+@login_required(login_url='reports:login')
+def edit_invoice(request, project_id, draw_id, invoice_id):
+    project = get_object_or_404(Project, pk=project_id)
+    draw = get_object_or_404(Draw, pk=draw_id)
+    invoice = get_object_or_404(Invoice, pk=invoice_id)
+    sub = get_object_or_404(Subcontractor, pk=invoice.sub_id.id)
+    subs = Subcontractor.objects.order_by('name')
+
+    context = {
+        'subs': subs,
+        'subselect': sub,
         'project': project,
         'invoice': invoice,
         'draw': draw,
         'method_choices': METHOD_OPTIONS,
-        'lien_release_type_choices': LIEN_RELEASE_OPTIONS
     }
 
     if request.method == 'POST':
         invoice_date = request.POST.get('invoice_date')
         invoice_num = request.POST.get('invoice_num')
-        division_code = request.POST.get('division_code')
+        csi = request.POST.get('csi')
+        category = request.POST.get('category')
         method = request.POST.get('method')
         sub_name = request.POST.get('sub')
         sub = get_object_or_404(Subcontractor, name=sub_name)
         invoice_total = request.POST.get('invoice_total')
         description = request.POST.get('description')
         lien_release_type = request.POST.get('lien_release_type')
-        w9 = request.POST.get('w9')
-        signed = bool(request.POST.get('signed', False))
 
-        if not invoice_date or not invoice_num or not division_code or not method or not sub or not invoice_total or not description or not lien_release_type or not w9:
+        if not invoice_date or not invoice_num or not csi or not category or not method or not sub or not invoice_total or not description:
             context.update({'error_message': "Please fill out all fields"})
             return render(request, 'reports/edit_invoice.html', context)
 
         invoice.invoice_date = invoice_date
         invoice.invoice_num = invoice_num
-        invoice.division_code = division_code
+        invoice.csi = csi
+        invoice.category = category
+        invoice.category = category
         invoice.method = method
         invoice.sub = sub
         invoice.invoice_total = invoice_total
         invoice.description = description
         invoice.lien_release_type = lien_release_type
-        invoice.w9 = w9
-        invoice.signed = signed
+        invoice.w9 = sub.w9
 
         # Handle invoice PDF
         if 'invoice_pdf' in request.FILES:
@@ -1191,11 +1441,11 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
 
         # Save invoice and related objects
         project.edited_by = request.user.username
-        project.date = datetime.now()
+        project.date = datetime.datetime.now()
         project.save()
 
         draw.edited_by = request.user.username
-        draw.date = datetime.now()
+        draw.date = datetime.datetime.now()
         draw.save()
 
         invoice.save()
@@ -1211,10 +1461,11 @@ def draw_view(request, project_id, draw_id):
     contracts = Contract.objects.order_by('-date').filter(project_id=project.id)
     draws = Draw.objects.order_by('-date').filter(project_id=project.id)
     invoices = Invoice.objects.order_by('-invoice_date').order_by('sub_id').filter(draw_id=draw.id)
+    checks = Check.objects.order_by('-check_date').order_by('invoice_id')
 
     total_invoice_amount = invoices.aggregate(total=Sum('invoice_total'))['total']
 
-    return render(request, 'reports/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project, 'contracts': contracts})
+    return render(request, 'reports/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project, 'contracts': contracts, 'checks': checks})
 
 
 @login_required(login_url='reports:login')
@@ -1225,11 +1476,11 @@ def contract_pdf_view(request, contract_id):
     return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'contract': contract})
 
 @login_required(login_url='reports:login')
-def prop_pdf_view(request, prop_id):
-    prop = get_object_or_404(Proposal, pk=prop_id)
-    pdf_bytes = prop.pdf.read()
+def estimate_pdf_view(request, estimate_id):
+    estimate = get_object_or_404(Estimate, pk=estimate_id)
+    pdf_bytes = estimate.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/prop_pdf_view.html', {'pdf_data': pdf_data, 'contract': prop})
+    return render(request, 'reports/estimate_pdf_view.html', {'pdf_data': pdf_data, 'estimate': estimate})
 
 
 @login_required(login_url='reports:login')
@@ -1277,7 +1528,7 @@ def delete_exhibit(request, exhibit_id):
     project = exhibit.project_id
     sub = exhibit.sub_id
     project.edited_by = request.user.username
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.save()
 
     username = request.POST.get('username')
@@ -1285,6 +1536,7 @@ def delete_exhibit(request, exhibit_id):
 
     if username == request.user.username:
         if os.path.exists(exhibit.pdf.path):
+            time.sleep(3)
             os.remove(exhibit.pdf.path)
             exhibit.delete()
 
@@ -1296,7 +1548,7 @@ def delete_contract(request, contract_id):
     project = contract.project_id
     sub = contract.sub_id
     project.edited_by = request.user.username
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.save()
 
     username = request.POST.get('username')
@@ -1304,6 +1556,7 @@ def delete_contract(request, contract_id):
 
     if username == request.user.username:
         if os.path.exists(contract.pdf.path):
+            time.sleep(3)
             os.remove(contract.pdf.path)
             contract.delete()
 
@@ -1315,7 +1568,7 @@ def delete_swo(request, swo_id):
     project = swo.project_id
     sub = swo.sub_id
     project.edited_by = request.user.username
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.save()
 
     username = request.POST.get('username')
@@ -1323,6 +1576,7 @@ def delete_swo(request, swo_id):
 
     if username == request.user.username:
         if os.path.exists(swo.pdf.path):
+            time.sleep(3)
             os.remove(swo.pdf.path)
             swo.delete()
 
@@ -1330,25 +1584,24 @@ def delete_swo(request, swo_id):
 
 
 @login_required(login_url='reports:login')
-def delete_prop(request, prop_id):
-    prop = get_object_or_404(Proposal, pk=prop_id)
-    project = prop.project_id
-    sub = prop.sub_id
+def delete_estimate(request, estimate_id):
+    estimate = get_object_or_404(Estimate, pk=estimate_id)
+    project = estimate.project_id
+    sub = estimate.sub_id
     project.edited_by = request.user.username
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.save()
 
     username = request.POST.get('username')
     print("Attempting to delete")
 
     if username == request.user.username:
-        if os.path.exists(prop.pdf.path):
-            os.remove(prop.pdf.path)
-            prop.delete()
+        if os.path.exists(estimate.pdf.path):
+            time.sleep(3)
+            os.remove(estimate.pdf.path)
+            estimate.delete()
 
-    return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
-
-
+    return redirect('reports:all_estimates', project_id=project.id)
 
 
 @login_required(login_url='reports:login')
@@ -1358,6 +1611,44 @@ def plan_view(request, plan_id, project_id):
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'reports/plan_view.html', {'pdf_data': pdf_data, 'plan': plan})
 
+
+@login_required(login_url='reports:login')
+def delete_check(request, check_id):
+    check = get_object_or_404(Check, pk=check_id)
+    invoice = check.invoice_id
+    draw = invoice.draw_id
+    project = draw.project_id
+
+    if request.method == 'POST':
+        print("Attempting to delete check")
+        username = request.POST.get('username')
+        print("Attempting to delete")
+
+        if username == request.user.username:
+            # Delete the PDF file from storage
+            if check.check_pdf:
+                if os.path.exists(check.check_pdf.path):
+                    time.sleep(3)
+                    os.remove(check.check_pdf.path)
+                    check.check_pdf.delete()
+            if check.lien_release_pdf:
+                if os.path.exists(check.lien_release_pdf.path):
+                    time.sleep(3)
+                    os.remove(check.lien_release_pdf.path)
+                    check.lien_release_pdf.delete()
+
+            project.date = datetime.datetime.now()
+            draw.date = datetime.datetime.now()
+            invoice.date = datetime.datetime.now()
+
+            project.save()
+            draw.save()
+            invoice.save()
+            check.delete()
+
+        return redirect('reports:draw_view', project_id=project.id, draw_id=draw.id)  # Redirect to a success page
+
+    return render(request, 'reports/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
 
 
 @login_required(login_url='reports:login')
@@ -1375,20 +1666,19 @@ def delete_invoice(request, project_id, draw_id, invoice_id):
             # Delete the PDF file from storage
             if invoice.invoice_pdf:
                 if os.path.exists(invoice.invoice_pdf.path):
+                    time.sleep(3)
                     os.remove(invoice.invoice_pdf.path)
                     invoice.invoice_pdf.delete()
-            if invoice.lien_release_pdf:
-                if os.path.exists(invoice.lien_release_pdf.path):
-                    os.remove(invoice.lien_release_pdf.path)
-                    invoice.lien_release_pdf.delete()
 
+            project.date = datetime.datetime.now()
+            draw.date = datetime.datetime.now()
+            project.save()
+            draw.save()
             invoice.delete()
         return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
 
     return render(request, 'reports/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
 
-    project.date = datetime.now()
-    draw.date = datetime.now()
 
 @login_required(login_url='reports:login')
 def new_purchase_order(request, project_id=None):
@@ -1644,6 +1934,7 @@ def delete_change_order(request, co_id):
 
     if username == request.user.username:
         if os.path.exists(file_path):
+            time.sleep(3)
             os.remove(file_path)
             co.delete()
 
@@ -1652,6 +1943,8 @@ def delete_change_order(request, co_id):
 @login_required(login_url='reports:login')
 def delete_deductive_change_order(request, dco_id):
     dco = get_object_or_404(DeductiveChangeOrder, pk=dco_id)
+    project = dco.project_id
+    sub = dco.sub_id
 
     file_path = dco.pdf.path
     username = request.POST.get('username')
@@ -1659,10 +1952,11 @@ def delete_deductive_change_order(request, dco_id):
 
     if username == request.user.username:
         if os.path.exists(file_path):
+            time.sleep(3)
             os.remove(file_path)
             dco.delete()
 
-    return redirect('reports:deductive_change_orders')
+    return redirect('reports:deductive_change_orders', project.id, sub.id)
 
 @login_required(login_url='reports:login')
 def delete_purchase_order(request, po_id):
@@ -1674,6 +1968,7 @@ def delete_purchase_order(request, po_id):
 
     if username == request.user.username:
         if os.path.exists(file_path):
+            time.sleep(3)
             os.remove(file_path)
             po.delete()
 
@@ -1682,7 +1977,7 @@ def delete_purchase_order(request, po_id):
 
 def create_purchase_order(project, vendor, rows):
     draws = Draw.objects.filter(project_id=project)
-    file_name = project.name + " " + vendor.name + " " + str(datetime.now().strftime("%B-%d-%Y"))
+    file_name = project.name + " " + vendor.name + " " + str(datetime.datetime.now().strftime("%B-%d-%Y"))
 
     if os.path.exists(file_name + ".pdf"):
         counter = 1
@@ -1698,7 +1993,7 @@ def create_purchase_order(project, vendor, rows):
     pdf = FPDF()
 
     # Set up the PDF document
-    pdf.set_title(project.name + " " + vendor.name + " " + str(datetime.now().strftime("%B-%d-%Y")))
+    pdf.set_title(project.name + " " + vendor.name + " " + str(datetime.datetime.now().strftime("%B-%d-%Y")))
     pdf.set_author("Moffat Construction")
     pdf.set_font("Arial", size=10)
 
@@ -1725,9 +2020,9 @@ def create_purchase_order(project, vendor, rows):
 
     table_data = [
         ["MOFFAT CONSTRUCTION", ""],
-        ["a Moffat Company", "          Purchase Order No.:   " + "PO" + str(datetime.now().strftime("%y")) + str(
+        ["a Moffat Company", "          Purchase Order No.:   " + "PO" + str(datetime.datetime.now().strftime("%y")) + str(
         "{:03d}".format(len(PurchaseOrder.objects.all()) + 1))],
-        ["519 W. STATE STREET SUITE #202", "          Date:   " + str(datetime.now().strftime("%B-%d-%Y"))],
+        ["519 W. STATE STREET SUITE #202", "          Date:   " + str(datetime.datetime.now().strftime("%B-%d-%Y"))],
         ["PLEASANT GROVE, UTAH 84062", ""]
     ]
 
@@ -1847,7 +2142,7 @@ def create_purchase_order(project, vendor, rows):
     pdf.ln(5)
 
     pdf.set_xy(pdf.w * .875 - 7.5, pdf.get_y())
-    pdf.multi_cell((pdf.w - 20) * .125, 5, "Draw: " + str(len(draws)) + "\nDate: " + str(datetime.now().strftime("%m-%d-%Y")), 1, "L", True)
+    pdf.multi_cell((pdf.w - 20) * .125, 5, "Draw: " + str(len(draws)) + "\nDate: " + str(datetime.datetime.now().strftime("%m-%d-%Y")), 1, "L", True)
     pdf.cell((pdf.w - 20) * .05, 5, 'No.', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .45, 5, 'Scope of Work', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .1, 5, 'Qty', 1, 0, 'C', True)
@@ -1892,7 +2187,7 @@ def create_purchase_order(project, vendor, rows):
         ["Moffat Construction", vendor.name],
         ["Signature:", "Signature:"],
         ["Print Name:          Gregory Moffat", "Print Name:"],
-        ["Date:          " + str(datetime.now().strftime("%B-%d-%Y")), "Date: "]
+        ["Date:          " + str(datetime.datetime.now().strftime("%B-%d-%Y")), "Date: "]
     ]
 
     col_width = (pdf.w - 20) / 2
@@ -1935,17 +2230,18 @@ def create_purchase_order(project, vendor, rows):
 
     po = PurchaseOrder()
     po.name = file_name
-    po.order_number = "PO" + str(datetime.now().strftime("%y")) + str(
+    po.order_number = "PO" + str(datetime.datetime.now().strftime("%y")) + str(
         "{:03d}".format(len(PurchaseOrder.objects.all()) + 1))
-    po.date = datetime.now()
+    po.date = datetime.datetime.now()
     po.vendor_id = vendor
     po.project_id = project
     po.pdf.save(file_name, file_data)
+    po.total = subtotal
 
     # Delete the temporary file
     os.remove(ex_file_path)
 
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.save()
     po.save()
     print("***********Check Final**********")
@@ -1958,7 +2254,7 @@ def create_change_order(POST, type, rows):
     project = contract.project_id
     sub = contract.sub_id
 
-    file_name = project.name + " " + sub.name + " " + type + " " + str(datetime.now().strftime("%B-%d-%Y"))
+    file_name = type + " " + str(datetime.datetime.now().strftime("%B-%d-%Y"))
 
     if os.path.exists(file_name + ".pdf"):
         print("***********Check 4**********")
@@ -1977,8 +2273,8 @@ def create_change_order(POST, type, rows):
         dco = DeductiveChangeOrder()
         dco.project_id = project
         dco.sub_id = sub
-        dco.date = datetime.now()
-        dco.order_number = abrv + " DCO " + str(datetime.now().strftime("%y")) + str(
+        dco.date = datetime.datetime.now()
+        dco.order_number = abrv + " DCO " + str(datetime.datetime.now().strftime("%y")) + str(
             "{:03d}".format(len(DeductiveChangeOrder.objects.all()) + 1))
         obj = dco
 
@@ -1986,15 +2282,15 @@ def create_change_order(POST, type, rows):
         co = ChangeOrder()
         co.project_id = project
         co.sub_id = sub
-        co.date = datetime.now()
-        co.order_number = abrv + " CO " + str(datetime.now().strftime("%y")) + str(
+        co.date = datetime.datetime.now()
+        co.order_number = abrv + " CO " + str(datetime.datetime.now().strftime("%y")) + str(
             "{:03d}".format(len(DeductiveChangeOrder.objects.all()) + 1))
         obj = co
 
     pdf = FPDF()
 
     # Set up the PDF document
-    pdf.set_title(project.name + " " + sub.name + " " + type + " " + str(datetime.now().strftime("%B-%d-%Y")))
+    pdf.set_title(project.name + " " + sub.name + " " + type + " " + str(datetime.datetime.now().strftime("%B-%d-%Y")))
     pdf.set_author("Moffat Construction")
     pdf.set_font("Arial", size=10)
 
@@ -2020,7 +2316,7 @@ def create_change_order(POST, type, rows):
     # Define table data
     table_data = [
         [type + " No.", obj.order_number],
-        ["Date", str(datetime.now().strftime("%B-%d-%Y"))],
+        ["Date", str(datetime.datetime.now().strftime("%B-%d-%Y"))],
     ]
 
     # Set column widths
@@ -2186,7 +2482,7 @@ def create_change_order(POST, type, rows):
         pdf.ln()
 
     # Generate the full file path
-    ex_file_path = os.path.join(settings.STATIC_ROOT, "reports", file_name)
+    ex_file_path = os.path.join(settings.STATIC_ROOT, "deductive_change_orders", file_name)
     pdf.output(ex_file_path)
     with open(ex_file_path, 'rb') as file:
         file_content = file.read()
@@ -2198,7 +2494,7 @@ def create_change_order(POST, type, rows):
     # Delete the temporary file
     os.remove(ex_file_path)
 
-    project.date = datetime.now()
+    project.date = datetime.datetime.now()
     project.save()
     obj.save()
     print("***********Check Final**********")
@@ -2226,14 +2522,68 @@ def contract_view(request, project_id, sub_id):
 
     if request.method == 'POST':
         form_type = request.POST.get('form-type')
-        print(form_type)
+        if form_type == 'swo':
+            swo = SWO()
+            swo.date = datetime.datetime.now()
+            swo.total = request.POST.get('total')
+            swo.sub_id = sub
+            swo.project_id = project
+
+            if 'swo_pdf' in request.FILES:
+                swo.pdf = request.FILES['swo_pdf']
+                if not swo.pdf.file.content_type.startswith('application/pdf'):
+                    context.update({'error_message': "Only PDFs are allowed for the SWO PDF"})
+                    return render(request, 'reports/contract_view.html', context)
+
+            try:
+                swo.total = float(swo.total)
+                if swo.total <= 0:
+                    context.update({'error_message': "Total must be a positive number and not 0"})
+                    return render(request, 'reports/contract_view.html', context)
+            except:
+                context.update({'error_message': "Total must be a number"})
+                return render(request, 'reports/contract_view.html', context)
+
+            swo.save()
+            return redirect('reports:contract_view', project_id, sub_id)
+
+        if form_type == 'exhibit':
+            exhibit = Exhibit()
+            exhibit.date = datetime.datetime.now()
+            exhibit.total = request.POST.get('total')
+            exhibit.sub_id = sub
+            exhibit.project_id = project
+
+            if 'exhibit_pdf' in request.FILES:
+                exhibit.pdf = request.FILES['exhibit_pdf']
+                if not exhibit.pdf.file.content_type.startswith('application/pdf'):
+                    context.update({'error_message': "Only PDFs are allowed for the Exhibit PDF"})
+                    return render(request, 'reports/contract_view.html', context)
+
+            try:
+                exhibit.total = float(exhibit.total)
+                if exhibit.total <= 0:
+                    context.update({'error_message': "Total must be a positive number and not 0"})
+                    return render(request, 'reports/contract_view.html', context)
+            except:
+                context.update({'error_message': "Total must be a number"})
+                return render(request, 'reports/contract_view.html', context)
+
+            exhibit.save()
+            return redirect('reports:contract_view', project_id, sub_id)
+
         if form_type == 'contract':
             contract = Contract()
-            contract.date = datetime.now()
+            contract.date = datetime.datetime.now()
             contract.total = request.POST.get('total')
             contract.sub_id = sub
             contract.project_id = project
-            contract.pdf = request.POST.get('contract_pdf')
+
+            if 'contract_pdf' in request.FILES:
+                contract.pdf = request.FILES['contract_pdf']
+                if not contract.pdf.file.content_type.startswith('application/pdf'):
+                    context.update({'error_message': "Only PDFs are allowed for the Contract PDF"})
+                    return render(request, 'reports/contract_view.html', context)
 
             try:
                 contract.total = float(contract.total)
@@ -2244,9 +2594,8 @@ def contract_view(request, project_id, sub_id):
                 context.update({'error_message': "Total must be a number"})
                 return render(request, 'reports/contract_view.html', context)
 
-            if not contract.pdf.file.content_type.startswith('application/pdf'):
-                context.update({'error_message': "Only PDFs are allowed for the PDF"})
-                return render(request, 'reports/contract_view.html', context)
+            contract.save()
+            return redirect('reports:contract_view', project_id, sub_id)
 
     return render(request, 'reports/contract_view.html', context)
 
@@ -2258,5 +2607,19 @@ def invoice_view(request, invoice_id):
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'reports/invoice_view.html', {'pdf_data': pdf_data, 'invoice': invoice})
 
+
+@login_required(login_url='reports:login')
+def check_view(request, check_id):
+    check = get_object_or_404(Check, pk=check_id)
+    pdf_bytes = check.check_pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/check_view.html', {'pdf_data': pdf_data, 'check': check})
+
+@login_required(login_url='reports:login')
+def lr_view(request, check_id):
+    check = get_object_or_404(Check, pk=check_id)
+    pdf_bytes = check.lien_release_pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'reports/check_view.html', {'pdf_data': pdf_data, 'check': check})
 
 

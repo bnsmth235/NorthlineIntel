@@ -20,21 +20,22 @@
             <div style="display: inline-block">
                 <div style="display: inline-block">
                     <label for="project">Project: </label>
-                    <select name="project" id="project" class="input-field" v-model="project" data-projectselect="{{ projectselect.id|default_if_none:'' }}">
+                    <select name="project" id="project" class="input-field">
+                        <option selected hidden="hidden" value="{{projectselect.id}}">{{projectselect.name}}</option>
                         {% for project in projects %}
                             <option value="{{ project.id }}">{{ project.name }}</option>
                         {% endfor %}
-                        {% if projectselect %}<option selected hidden="hidden" value="{{projectselect.id}}">{{projectselect.name}}</option>{% endif %}
                     </select>
                 </div>
 
                 <div style="display: inline-block">
                     <label for="sub">Subcontractor: </label>
-                    <select name="sub" id="sub" class="input-field" v-model="sub" data-subselect="{{ subselect.id|default_if_none:'' }}">
+                    <select name="sub" id="sub" class="input-field">
                         {% for sub in subs %}
                             <option value="{{ sub.id }}">{{ sub.name }}</option>
                         {% endfor %}
-                        {% if subselect %}<option selected hidden="hidden" value="{{subselect.id}}">{{subselect.name}}</option>{% endif %}                    </select>
+                        {% if subselect %}<option selected hidden="hidden" value="{{subselect.id}}">{{subselect.name}}</option>{% endif %}
+                    </select>
                 </div>
 
                 <div style="display: inline-block">

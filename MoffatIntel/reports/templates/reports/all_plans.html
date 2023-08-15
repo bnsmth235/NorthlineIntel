@@ -64,13 +64,13 @@
                     <td><a href="{% url 'reports:plan_view' plan.project_id.id plan.id%}">{{plan.name}}</a></td>
                     <td><a href="{% url 'reports:plan_view' plan.project_id.id plan.id%}">{{ plan.edited_by }}</a></td>
                     <td><a href="{% url 'reports:plan_view' plan.project_id.id plan.id%}">{{ plan.date }}</a></td>
-                    <td style="width: 5%; text-align: center">
+                    <td style="width: 6.5%; text-align: center">
                       <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_plan' project.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="plan_id" value="{{ plan.id }}">
                         <input type="hidden" name="username" id="username">
                         <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
-                            Delete
+                            <img src="{% static 'reports/images/trash.png' %}" height="14" width="14"> Delete
                         </button>
                       </form>
                     </td>

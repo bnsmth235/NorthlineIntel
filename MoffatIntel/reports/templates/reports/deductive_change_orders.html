@@ -13,7 +13,7 @@
     <a href="{% url 'reports:new_deductive_change_order' project.id sub.id %}">+ New Deductive Change Order</a>
 </div>
 
-{% if cos %}
+{% if dcos %}
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
             <tr class="headers">
@@ -26,14 +26,14 @@
             </tr>
         {% for dco in dcos %}
                 <tr class="report-item zebra">
-                    <td width="3%"><a href="{% url 'reports:dco_pdf_view' co.id %}"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
+                    <td width="3%"><a href="{% url 'reports:dco_pdf_view' dco.id %}"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
                     <td style="text-align: center">{{dco.order_number}}</a></td>
                     <td style="text-align: center">{{dco.date}}</a></td>
                     <td style="text-align: center">{{sub.name}}</a></td>
                     <td style="text-align: center">${{dco.total|floatformat:2}}</a></td>
 
                     <td>
-                    <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_deductive_change_order' co.id %}">
+                    <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_deductive_change_order' dco.id %}">
                         {% csrf_token %}
                         <input type="hidden" name="sub_id" value="{{ sub.id }}">
                         <input type="hidden" name="username" id="username">

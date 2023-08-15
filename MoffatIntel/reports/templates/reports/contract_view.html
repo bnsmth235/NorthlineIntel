@@ -27,80 +27,37 @@
 
 <div display="block">
 
-    <div v-if="isPropVisible">
-      <form method="post" enctype="multipart/form-data" action="{% url 'reports:contract_view' project.id sub.id%}">
+
+<h1 class="section-header">SWOs</h1>
+
+<div class="add-button" v-on:click="showSWO()" v-if="!isSWOVisible">
+    <button>+ Upload SWO</button>
+</div>
+
+<div class="add-button" v-on:click="showSWO()" v-if="isSWOVisible">
+    <button>Cancel</button>
+</div>
+
+<div v-if="isSWOVisible">
+    <form method="post" enctype="multipart/form-data" action="{% url 'reports:contract_view' project.id sub.id%}">
         <fieldset class="fieldset-table">
-            <legend><h2>Upload Proposal/Estimate</h2></legend>
+            <legend><h2>Upload SWO</h2></legend>
             {% csrf_token %}
-            <input hidden="hidden" name="form-type" value="prop">
+            <input hidden="hidden" name="form-type" value="swo">
 
-            <label for="prop_pdf">PDF: </label>
-            <input type="file" name="prop_pdf" id="prop_pdf" class="input-field" required="required">
+            <label for="contract_pdf">PDF: </label>
+            <input type="file" name="swo_pdf" id="swo_pdf" class="input-field" required="required">
 
-            <label for="total">Total: $</label>
+            <label for="total">SWO Total: $</label>
             <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+
+            <div class="add-new"><a href="{% url 'reports:new_contract' project.id sub.id %}">+ New SWO</a></div>
 
             <div class="add-button"><button type="submit">Upload</button></div>
         </fieldset>
     </form>
-  </div>
-
-<div>
-    <h1 class="section-header">Proposals/Estimates</h1>
-
-    <div class="add-button" v-on:click="showProp()" v-if="!isPropVisible">
-        <button>+ Add Proposal</button>
-    </div>
-
-    <div class="add-button" v-on:click="showProp()" v-if="isPropVisible">
-        <button>Cancel</button>
-    </div>
 </div>
-{% if proposals %}
-    <div class="reports-list-div">
-        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
-            <tr class="report-item headers">
-                <th></th>
-                <th>Proposal <br>Date</th>
-                <th>Description</th>
-            </tr>
-            {% for proposal in proposals %}
-                <tr class="report-item zebra" >
-                    <td width="fit-content"><a href="#"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
 
-                    <td width="6%" style="text-align: center"><a href="#">{{proposal.name}}</a></td>
-                    <td width="6%" style="text-align: center"><a href="#">{{proposal.date|date:"m/d/y"}}</a></td>
-
-                    <td width="fit-content" style="text-align: center"><a href="#"><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto" style="margin-bottom: -4px; margin-right: 2px"></a></td>
-                    <td width="fit-content" style="text-align: center">
-                      <form id="delete-form" method="post" data-delete-url="">
-                        {% csrf_token %}
-                        <input type="hidden" name="contract_id" value="{{ contract.id }}">
-                        <input type="hidden" name="username" id="username">
-                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
-                          <img src="{% static 'reports/images/trash.png' %}" height="15px" width="auto">
-                        </button>
-                      </form>
-                    </td>
-                </tr>
-            {% endfor %}
-        </table>
-    </div>
-{% else %}
-    <div class="reports-list-div">
-        <table>
-            <tr>
-                <td>There are currently no proposals available.</td>
-            </tr>
-        </table>
-    </div>
-{% endif %}
-
-
-<h1 class="section-header">SWOs</h1>
-<div class="add-new">
-    <a href="{% url 'reports:new_contract' %}" >+ Add SWO</a>
-</div>
 {% if SWOs %}
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
@@ -146,9 +103,35 @@
 
 
 <h1 class="section-header">Exhibits</h1>
-<div class="add-new">
-    <a href="{% url 'reports:new_exhibit' project.id sub.id %}">+ Add Exhibit</a>
+
+<div class="add-button" v-on:click="showExhibit()" v-if="!isExhibitVisible">
+    <button>+ Upload Exhibit</button>
 </div>
+
+<div class="add-button" v-on:click="showExhibit()" v-if="isExhibitVisible">
+    <button>Cancel</button>
+</div>
+
+<div v-if="isExhibitVisible">
+    <form method="post" enctype="multipart/form-data" action="{% url 'reports:contract_view' project.id sub.id%}">
+        <fieldset class="fieldset-table">
+            <legend><h2>Upload Exhibit</h2></legend>
+            {% csrf_token %}
+            <input hidden="hidden" name="form-type" value="exhibit">
+
+            <label for="exhibit_pdf">PDF: </label>
+            <input type="file" name="exhibit_pdf" id="exhibit_pdf" class="input-field" required="required">
+
+            <label for="total">Exhibit Total: $</label>
+            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+
+            <div class="add-new"><a href="{% url 'reports:new_exhibit' project.id sub.id %}">+ New Exhibit</a></div>
+
+            <div class="add-button"><button type="submit">Upload</button></div>
+        </fieldset>
+    </form>
+</div>
+
 {% if exhibits %}
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
@@ -219,6 +202,8 @@
             <label for="total">Contract Total: $</label>
             <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
 
+            <div class="add-new"><a href="{% url 'reports:new_contract' project.id sub.id %}">+ New Contract</a></div>
+
             <div class="add-button"><button type="submit">Upload</button></div>
         </fieldset>
     </form>
@@ -273,7 +258,7 @@
             <label for="total">Contract Total: $</label>
             <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
 
-            <div class="add-button"><a href="{% url 'reports:new_contract' %}">+ New Contract</a></div>
+            <div class="add-new"><a href="{% url 'reports:new_contract' project.id sub.id %}">+ New Contract</a></div>
 
             <div class="add-button"><button type="submit">Upload</button></div>
         </fieldset>
@@ -294,28 +279,28 @@
 
 <script>
     const app = Vue.createApp({
-  data() {
-    return {
-      isContractVisible: false,
-      isExhibitVisible: false,
-      isPropVisible: false,
-    };
-  },
+    data() {
+        return {
+            isContractVisible: false,
+            isExhibitVisible: false,
+            isSWOVisible: false,
+        };
+    },
 
-  methods: {
-    showContract() {
-      this.isContractVisible = !this.isContractVisible;
-    },
-    showExhibit(){
-        this.isContractVisible = !this.isContractVisible;
-    },
-    showProp() {
-      this.isPropVisible = !this.isPropVisible;
-    },
-  },
-});
+        methods: {
+            showContract() {
+                this.isContractVisible = !this.isContractVisible;
+            },
+            showExhibit() {
+                this.isExhibitVisible = !this.isExhibitVisible;
+            },
+            showSWO() {
+                this.isSWOVisible = !this.isSWOVisible;
+            },
+        },
+    });
 
-const vm = app.mount("#app");
+    const vm = app.mount("#app");
 </script>
 
 {% endblock %}

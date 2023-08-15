@@ -20,7 +20,7 @@
                     {% for project in projects %}
                         <option value="{{ project.id }}">{{ project.name }}</option>
                     {% endfor %}
-                    <option selected="selected" {% if failure %}value="{{projectselect.id}}"{% endif %}>{% if failure %}{{projectselect.name}}{% endif %}</option>
+                    {% if projectselect %}<option selected="selected" hidden="hidden" value="{{projectselect.id}}">{{projectselect.name}}</option>{% endif %}
                 </select>
             </div>
 
@@ -30,7 +30,7 @@
                     {% for sub in subs %}
                         <option value="{{ sub.id }}">{{ sub.name }}</option>
                     {% endfor %}
-                    <option selected="selected" {% if failure %}value="{{subselect.id}}"{% endif %}>{% if failure %}{{subselect.name}}{% endif %}</option>
+                    {% if subselect %} <option selected="selected" hidden="hidden" value="{{subselect.id}}">{{subselect.name}}</option>{% endif %}
                 </select>
             </div>
 

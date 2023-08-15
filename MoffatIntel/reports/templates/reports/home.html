@@ -5,7 +5,7 @@
 {% block content %}
 {% load static %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
-<h2 class="section-header">Recent Projects</h2>
+<h1 class="section-header">Recent Projects</h1>
 <div class="add-new">
     <a href="/reports/new_proj/">+ Create Project</a>
 </div>
@@ -17,7 +17,7 @@
                 <th>Name</th>
                 <th>Address</th>
                 <th>Status</th>
-                <th>Edited By</th>
+                <th style="text-align: center; width: 1%; white-space: nowrap">Edited By</th>
                 <th>Last Edited</th>
             </tr>
 
@@ -26,17 +26,17 @@
                 <tr class="report-item zebra">
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.name }}</a></td>
                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.address }}, {{project.city}}, {{project.state}} {{project.zip}}</a></td>
-                     <td><a href="{% url 'reports:project_view' project.id %}">{{ project.get_status_display_long }}</a></td>
-                    <td><a href="{% url 'reports:project_view' project.id %}">{{ project.edited_by }}</a></td>
-                    <td><a href="{% url 'reports:project_view' project.id %}">{{ project.last_edit_date }}</a></td>
-                    <td><a href="{% url 'reports:edit_proj' project.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="10px" width="auto"> Edit</a></td>
-                    <td>
+                    <td style="text-align: center; width: 1%; white-space: nowrap" ><a href="{% url 'reports:project_view' project.id %}">{{ project.get_status_display_long }}</a></td>
+                    <td style="text-align: center; width: 1%; white-space: nowrap" ><a href="{% url 'reports:project_view' project.id %}">{{ project.edited_by }}</a></td>
+                    <td style="text-align: center; width: 1%; white-space: nowrap"><a href="{% url 'reports:project_view' project.id %}">{{ project.date }}</a></td>
+                    <td width="5%"><a href="{% url 'reports:edit_proj' project.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="20px" width="auto" style="margin-bottom: -5px"> Edit</a></td>
+                    <td width="6.5%">
                       <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_proj' project.id%}">
                         {% csrf_token %}
                         <input type="hidden" name="project_id" value="{{ project.id }}">
                         <input type="hidden" name="username" id="username">
                         <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
-                          <img src="{% static 'reports/images/trash.png' %}" height="10px" width="auto"> Delete
+                          <img src="{% static 'reports/images/trash.png' %}" height="14px" width="auto"> Delete
                         </button>
                       </form>
                     </td>

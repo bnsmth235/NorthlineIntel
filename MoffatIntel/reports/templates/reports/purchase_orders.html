@@ -20,8 +20,8 @@
                 <th></th>
                 <th>Order Number</th>
                 <th>Date</th>
-                <th>Subcontractor</th>
-                <th>purchase Total</th>
+                <th>Vendor</th>
+                <th>Purchase Total</th>
                 <th width="7%"></th>
             </tr>
         {% for po in pos %}
@@ -29,7 +29,7 @@
                     <td width="3%"><a href="{% url 'reports:po_pdf_view' po.id %}"><img src="{% static 'reports/images/pdf_icon.png' %}" height="18px" width="auto" style="margin-bottom: -4px;margin-left:5px"></a></td>
                     <td style="text-align: center">{{po.order_number}}</a></td>
                     <td style="text-align: center">{{po.date}}</a></td>
-                    <td style="text-align: center">{{vendor.name}}</a></td>
+                    <td style="text-align: center">{{po.vendor_id.name}}</a></td>
                     <td style="text-align: center">${{po.total|floatformat:2}}</a></td>
 
                     <td>

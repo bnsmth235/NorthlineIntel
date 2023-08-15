@@ -27,8 +27,10 @@
                             <div><a class="menu-icon" href="/reports/home"><img style="width: 42px; height: auto;" src="{% static 'reports/images/home.png' %}"><li style="margin-left: -22px">Home</li>
                             </a><br><br></div>
                             <a class="menu-icon" href="/reports/all"><img style="width: 52px; height: auto;" src="{% static 'reports/images/files.png' %}"><li style="margin-left:-28px">All Projects</li></a><br><br><br>
-                            <a class="menu-icon" href="/reports/todo"><img style="width: 50px; height: auto;" src="{% static 'reports/images/paper.png' %}"><li style="margin-left: -18px">Todo</li></a><br><br>
-                            <a class="menu-icon" href="/reports/input_data"><img style="width: 52px; height: auto;" src="{% static 'reports/images/pencil.png' %}"><li>Input Data</li></a><br><br><br><br>
+                            <a class="menu-icon" href="#"><img style="width: 50px; height: auto;" src="{% static 'reports/images/paper.png' %}"><li style="margin-left: -28px">Reports</li></a><br><br>
+                            <a class="menu-icon" href="{% url 'reports:all_subs' %}"><img style="width: 50px; height: auto;" src="{% static 'reports/images/sub.png' %}"><li style="margin-left: -18px">Subs</li></a><br><br>
+                            <a class="menu-icon" href="{% url 'reports:all_vendors' %}"><img style="width: 50px; height: auto;" src="{% static 'reports/images/vendor.png' %}"><li style="margin-left: -28px">Vendors</li></a><br><br>
+                            <a class="menu-icon" href="/reports/input_data"><img style="width: 52px; height: auto;" src="{% static 'reports/images/pencil.png' %}"><li>New Files</li></a><br><br><br><br>
                         </ul>
                 </nav>
             </div>

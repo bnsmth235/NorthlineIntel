@@ -5,7 +5,7 @@
 
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
-<h2 class="section-header">Draws for {{project.name}}</h2>
+<h1 class="section-header">Draws for {{project.name}}</h1>
 <div class="add-new">
     <a href="{% url 'reports:new_draw' project.id%}">+ New Draw</a>
 </div>

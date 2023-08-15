@@ -1,12 +1,12 @@
 {% extends "reports/base.html" %}
 
-{% block title %}New Invoice{% endblock %}
+{% block title %}Edit Estimate{% endblock %}
 
 {% block content %}
-    <form action="{% url 'reports:new_invoice' project.id draw.id%}" enctype="multipart/form-data" method="post">
+    <form action="{% url 'reports:edit_estimate' estimate.id%}" enctype="multipart/form-data" method="post">
         {% csrf_token %}
         <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
-            <legend><h1>New Invoice</h1></legend>
+            <legend><h1>Edit Estimate</h1></legend>
 
             {% if error_message %}
             <div style="display: block">
@@ -15,19 +15,24 @@
             {% endif %}
 
             <div style="display: inline-block">
-                <label for="invoice_date">Invoice Date:</label>
-                <input type="date" name="invoice_date" id="invoice_date" class="input-field" {% if error_message %} value="{{invoice_date}}" {% endif %}>
+                <label for="date">Estimate Date:</label>
+                <input type="date" name="date" id="date" class="input-field" value="{{ estimate.date|date:'Y-m-d'}}">
             </div>
 
             <div style="display: inline-block">
-                <label for="invoice_num">Invoice Number:</label>
-                <input type="text" name="invoice_num" id="invoice_num" class="input-field" {% if error_message %} value="{{invoice_num}}" {% endif %}>
+                <label for="sub">Subcontractor: </label>
+                <select name="sub" id="sub" class="input-field">
+                    {% for sub in subs %}
+                        <option value="{{ sub.name }}">{{ sub.name }}</option>
+                    {% endfor %}
+                    <option selected hidden="hidden" value="{{estimate.sub.name}}">{{estimate.sub.name}}</option>
+                </select>
             </div>
 
             <div style="display: inline-block">
                 <label for="csi">CSI Division:</label>
                 <select name="csi" id="csi" class="input-field">
-                    <option selected hidden="hidden" value="{{sub.csi}}">{{sub.get_long_csi}}</option>
+                    <option selected hidden="hidden" value="{{estimate.csi}}">{{estimate.get_long_csi}}</option>
                     <option value="1">General Requirement</option>
                     <option value="2">Site Works</option>
                     <option value="3">Concrete</option>
@@ -50,7 +55,7 @@
             <div style="display: inline-block">
                 <label for="category">Category:</label>
                 <select name="category" id="category" class="input-field">
-                    <option selected hidden="hidden" value="{{sub.category}}">{{sub.get_long_category}}</option>
+                    <option selected hidden="hidden" value="{{estimate.category}}">{{estimate.get_long_category}}</option>
                     <option value="1">Civil Engineering</option>
                     <option value="2">Architecture</option>
                     <option value="3">Electrical Engineering</option>
@@ -64,43 +69,23 @@
             </div>
 
             <div style="display: inline-block">
-            <label for="method">Method:</label>
-            <select name="method" id="method" class="input-field">
-                {% for choice in method_choices %}
-                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
-                {% endfor %}
-                 {% if error_message %} <option selected value="{{methodselect}}">{{get_method_display_long}}</option> {% endif %}
-            </select>
+                <label for="total">Estimate Total: $</label>
+                <input type="number" min="0" step=".01" name="total" id="total" class="input-field" value="{{estimate.total}}">
             </div>
 
-            <div style="display: inline-block">
-                <label for="sub">Subcontractor: </label>
-                <select name="sub" id="sub" class="input-field">
-                    {% for sub in subs %}
-                        <option value="{{ sub.name }}">{{ sub.name }}</option>
-                    {% endfor %}
-                     {% if error_message %} <option selected value="{{subselect.name}}"></option> {% endif %}
-                </select>
-            </div>
-
-            <div style="display: inline-block">
-                <label for="invoice_total">Invoice Total: $</label>
-                <input type="number" min="0" step=".01" name="invoice_total" id="invoice_total" class="input-field"  {% if error_message %} value="{{invoice_total}}" {% endif %}>
-            </div>
-
-
-
-            <div style="display: inline-block">
-                <label for="description">Description:</label>
-                <input type="text" name="description" id="description" class="input-field" style="width: 800px"  {% if error_message %} value="{{description}}" {% endif %}>
-            </div>
             <br><br>
             <div style="display: inline-block">
-                <label style="position: relative">Invoice PDF: </label>
-                <input type="file" name="invoice_pdf" id="invoice_pdf">
+                <label style="position: relative">Estimate PDF: </label>
+                <input type="file" name="pdf" id="pdf" class="input-field" value="{{estimate.pdf}}">
+                {% if estimate.pdf %}
+                    <span>Current file: {{estimate.pdf.name}}</span>
+                {% endif %}
+
             </div>
 
-            <input class="input-field-save" type="submit" name="submit" value="Save">
+            <div style="display: inline-block; float: right">
+                <input class="input-field-save" type="submit" name="submit" value="Save">
+            </div>
 
         </fieldset>
     </form>
