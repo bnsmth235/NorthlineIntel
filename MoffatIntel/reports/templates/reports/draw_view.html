@@ -28,7 +28,7 @@
             <th>Invoice<br>#</th>
             <th>Div<br>Code</th>
             <th>Category</th>
-            <th>Sub</th>
+            <th>Sub/Vendor</th>
             <th>Method</th>
             <th>Invoice<br>Total</th>
             <th>W-9</th>
@@ -64,7 +64,7 @@
                     <td width="1" style="text-align: center; white-space: nowrap"><a href="">{{ invoice.invoice_num }}</a></td>
                     <td width="1%" style="text-align: center; white-space: nowrap"><a href="">{{ invoice.csi }}</a></td>
                     <td width="5%" style=""><a href="">{{ invoice.get_long_category }}</a></td>
-                    <td width="5%" style="text-align: center; white-space: nowrap; margin-left: 5px; margin-right: 5px;"><a href="">{{ invoice.sub_id }} </a></td>
+                    <td width="5%" style="text-align: center; white-space: nowrap; margin-left: 5px; margin-right: 5px;"><a href="">{% if invoice.sub_id %}{{ invoice.sub_id }}{% endif %}{% if invoice.vendor_id %}{{invoice.vendor_id}}{% endif %}</a></td>
                     <td width="5%" style="text-align: center"><a href="">{{ invoice.get_method_display_long }}</a></td>
                     <td width="7.5%" style="text-align: right"><a href="">${{ invoice.invoice_total|floatformat:2 }}</a></td>
                     <td width="4%" style="text-align: center; white-space: nowrap;"><a href="">{{ invoice.w9 }}</a></td>
@@ -131,7 +131,7 @@
 
             {% endfor %}
             <tr class="report-item sub-total">
-                <td colspan="7" style="text-align: right;">Subtotal for {{ group.list.0.sub_id.name }}:</td>
+                <td colspan="7" style="text-align: right;">Subtotal for {% if group.list.0.sub_id %}{{ group.list.0.sub_id.name }}{% endif %}{% if group.list.0.vendor_id %}{{ group.list.0.vendor_id.name}}{% endif %}:</td>
                 <td style="text-align: right; background-color: #7c0300ba; color: white; font-weight: bold; font-size: 20px">
                     ${{ group.list|sum_values:"invoice_total"|floatformat:2 }}</td>
                 <td colspan="4"></td>

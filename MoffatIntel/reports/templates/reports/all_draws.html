@@ -5,6 +5,24 @@
 
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
+
+<div style="text-align: center">
+    <br>
+    <h1 class="center-content-block">Moffat Construction</h1>
+    <h2 class="center-content-block">Draw Summary</h2>
+    <p class="center-content-block">Job Name: {{ project.name }}</p>
+    <p class="center-content-block">Updated: {{ project.date }}</p>
+</div>
+
+<div class="reports-list-div">
+    <table width="98%" height="98%" align="center" cellpadding="4" border="0">
+        <tr class="report-item headers" style="font-size: 12px">
+
+        </tr>
+    </table>
+</div>
+
+
 <h1 class="section-header">Draws for {{project.name}}</h1>
 <div class="add-new">
     <a href="{% url 'reports:new_draw' project.id%}">+ New Draw</a>
@@ -40,7 +58,7 @@
         </table>
     </div>
 {% else %}
-    <div class="reports-list-div no-hover">
+    <div class="reports-list-div">
         <table>
             <tr class="report-item">
                 <td>There are currently no draws available.</td>

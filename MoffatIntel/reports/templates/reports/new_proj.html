@@ -28,9 +28,9 @@
                     {% for choice in state_options %}
                         <option value="{{ choice.0 }}">{{ choice.0 }}</option>
                     {% endfor %}
-                        <option selected="selected">
-                            UT
-                        </option>
+                    <option selected="selected">
+                        UT
+                    </option>
                 </select>
             </div>
 
@@ -38,8 +38,16 @@
                 <label for="zip">Zip Code:</label>
                 <input type="number" name="zip" id="zip" class="input-field" width="50px">
             </div>
+            <br>
+            <div style="display: inline-block">
+                <label for="groups">Groups/Subgroups:</label>
+                <div id="groupsContainer">
+                    <!-- Dynamic inputs will be added here -->
+                </div>
+                <button type="button" id="addGroupBtn" class="add-button-small" style="display: inline-block; margin-left: 0; margin-top: 5px">+ Add Group</button>
+            </div>
 
-            <div>
+            <div style="display: inline-block; float: right">
                 <input class="input-field-save" type="submit" name="submit" value="Save">
             </div>
 
@@ -48,4 +56,68 @@
             {% endif %}
         </fieldset>
     </form>
+<script>
+        const groupsContainer = document.getElementById('groupsContainer');
+        const addGroupBtn = document.getElementById('addGroupBtn');
+
+        function createGroupDiv() {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'group';
+
+            const groupInput = document.createElement('input');
+            groupInput.type = 'text';
+            groupInput.placeholder = 'Enter Group Name';
+            groupInput.className = 'input-field';
+
+            const subgroupInputsDiv = document.createElement('div');
+
+            const addSubgroupBtn = document.createElement('button');
+            addSubgroupBtn.textContent = '+ Add Subgroup';
+            addSubgroupBtn.type = 'button'; // Prevents form submission
+            addSubgroupBtn.className = 'add-button-small input-field';
+            addSubgroupBtn.style = 'margin-left: 0; display: inline-block; margin-bottom: 0px; margin-top: 3px; margin-right: 20px'
+            addSubgroupBtn.addEventListener('click', () => {
+                const subgroupInput = document.createElement('input');
+                subgroupInput.type = 'text';
+                subgroupInput.placeholder = 'Enter Subgroup Name';
+                subgroupInput.className = 'input-field';
+
+                const deleteSubgroupBtn = document.createElement('button');
+                const textspan = document.createElement('span');
+                textspan.style = 'margin: 5px';
+                textspan.textContent = '-'
+                deleteSubgroupBtn.appendChild(textspan);
+                deleteSubgroupBtn.type = 'button';
+                deleteSubgroupBtn.className = 'add-button-small';
+                deleteSubgroupBtn.addEventListener('click', () => {
+                    subgroupInputsDiv.removeChild(subgroupInput);
+                    subgroupInputsDiv.removeChild(deleteSubgroupBtn);
+                });
+
+                subgroupInputsDiv.appendChild(subgroupInput);
+                subgroupInputsDiv.appendChild(deleteSubgroupBtn);
+            });
+
+            const deleteGroupBtn = document.createElement('button');
+            deleteGroupBtn.textContent = '- Delete Group';
+            deleteGroupBtn.type = 'button';
+            deleteGroupBtn.className = 'add-button-small';
+            deleteGroupBtn.addEventListener('click', () => {
+                groupsContainer.removeChild(groupDiv);
+            });
+
+            groupDiv.appendChild(groupInput);
+            groupDiv.appendChild(subgroupInputsDiv);
+            groupDiv.appendChild(addSubgroupBtn);
+            groupDiv.appendChild(deleteGroupBtn);
+
+            return groupDiv;
+        }
+
+        addGroupBtn.addEventListener('click', () => {
+            const groupDiv = createGroupDiv();
+            groupsContainer.appendChild(groupDiv);
+        });
+    </script>
+
 {% endblock %}

@@ -55,8 +55,52 @@
             </div>
 
             <div style="display: inline-block">
-                <label for="cemail">Email:</label>
+                <label for="cemail">Contact Email:</label>
                 <input type="email" name="cemail" id="cemail" class="input-field" {% if error_message %} value="{{email}}" {% endif %}>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="w9">W9:</label>
+                <input type="number" name="w9" id="w9" step="1" class="input-field" {% if error_message %} value="{{w9}}" {% endif %}>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="csi">CSI Division:</label>
+                <select name="csi" id="csi" class="input-field">
+                    {% if error_message %} <option selected value="{{csi}}">{{vendor.get_long_csi}}</option> {% endif %}
+                    <option value="1">General Requirement</option>
+                    <option value="2">Site Works</option>
+                    <option value="3">Concrete</option>
+                    <option value="4">Masonry</option>
+                    <option value="5">Metals</option>
+                    <option value="6">Wood and Plastics</option>
+                    <option value="7">Thermal and Moisture Protection</option>
+                    <option value="8">Doors and Windows</option>
+                    <option value="9">Finishes</option>
+                    <option value="10">Specialties</option>
+                    <option value="11">Equipment</option>
+                    <option value="12">Furnishings</option>
+                    <option value="13">Special Construction</option>
+                    <option value="14">Conveying Systems</option>
+                    <option value="15">Mechanical/Plumbing</option>
+                    <option value="16">Electrical</option>
+                </select>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="category">Category:</label>
+                <select name="category" id="category" class="input-field">
+                    {% if error_message %}<option selected value="{{category}}">{{vendor.get_long_category}}</option> {% endif %}
+                    <option value="1">Civil Engineering</option>
+                    <option value="2">Architecture</option>
+                    <option value="3">Electrical Engineering</option>
+                    <option value="4">Mechanical Engineering</option>
+                    <option value="5">Plumbing</option>
+                    <option value="6">Environmental</option>
+                    <option value="7">Health Department</option>
+                    <option value="8">Amenities</option>
+                    <option value="9">Landscape</option>
+                </select>
             </div>
 
             <input class="input-field-save" type="submit" name="submit" value="Save">
@@ -75,17 +119,23 @@
             <tr class="report-item headers">
                 <th>Name</th>
                 <th>Address</th>
+                <th>Contact Name</th>
                 <th>Phone</th>
                 <th>Email</th>
                 <th>W9</th>
+                <th>CSI</th>
+                <th>Category</th>
             </tr>
         {% for vendor in vendors %}
                 <tr class="report-item zebra">
                     <td>{{vendor.name}}</td>
                     <td>{{ vendor.address }}</td>
                     <td>{{vendor.cname}}</td>
-                    <td>{{ vendor.cphone }}</td>
+                    <td width="5%">{{ vendor.cphone }}</td>
                     <td>{{ vendor.cemail }}</td>
+                    <td>{{vendor.w9}}</td>
+                    <td>{{ vendor.get_long_csi }}</td>
+                    <td>{{ vendor.get_long_category }}</td>
                     <td class="inline-edit-button"><a href="{% url 'reports:edit_vendor' vendor.id %}"><img src="{% static 'reports/images/pencil.png' %}" height="18" width="18">Edit</a></td>
                     <td style="width: 6%; text-align: center">
                       <form id="delete-form" method="post" data-delete-url="{% url 'reports:delete_vendor' vendor.id %}">

@@ -28,7 +28,8 @@
             <div style="display: inline-block">
                 <label for="csi">CSI Division:</label>
                 <select name="csi" id="csi" class="input-field">
-                    <option selected hidden="hidden" value="{{subselect.csi}}">{{subselect.get_long_csi}}</option>
+                    {% if subselect %}<option selected hidden="hidden" value="{{subselect.csi}}">{{subselect.get_long_csi}}</option>{% endif %}
+                    {% if vendorselect %}<option selected hidden="hidden" value="{{vendorselect.csi}}">{{vendorselect.get_long_csi}}</option>{% endif %}
                     <option value="1">General Requirement</option>
                     <option value="2">Site Works</option>
                     <option value="3">Concrete</option>
@@ -51,7 +52,8 @@
             <div style="display: inline-block">
                 <label for="category">Category:</label>
                 <select name="category" id="category" class="input-field">
-                    <option selected hidden="hidden" value="{{subselect.category}}">{{subselect.get_long_category}}</option>
+                    {% if subselect %}<option selected hidden="hidden" value="{{subselect.category}}">{{subselect.get_long_category}}</option>{% endif %}
+                    {% if vendorselect %}<option selected hidden="hidden" value="{{vendorselect.category}}">{{vendorselect.get_long_category}}</option>{% endif %}
                     <option value="1">Civil Engineering</option>
                     <option value="2">Architecture</option>
                     <option value="3">Electrical Engineering</option>
@@ -77,14 +79,24 @@
             </div>
 
             <div style="display: inline-block">
-                <label for="sub">Subcontractor: </label>
+                <label for="sub">Vendor/Subcontractor: </label>
                 <select name="sub" id="sub" class="input-field">
                     {% for sub in subs %}
                         <option value="{{ sub.name }}">{{ sub.name }}</option>
                     {% endfor %}
+                    {% for vendor in vendors %}
+                        <option value="{{ vendor.name }}">{{ vendor.name }}</option>
+                    {% endfor %}
+                    {% if subselect %}
                     <option selected="selected" hidden="hidden" value="{{subselect.name}}">
                         {{subselect.name}}
                     </option>
+                    {% endif %}
+                    {% if vendorselect %}
+                    <option selected="selected" hidden="hidden" value="{{vendorselect.name}}">
+                        {{vendorselect.name}}
+                    </option>
+                    {% endif %}
                 </select>
             </div>
 
@@ -112,6 +124,7 @@
         </fieldset>
     </form>
     <br><br>
+    {% if invoice.check_set.all|length > 0 %}
     <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
         <legend><h1>Edit Checks</h1></legend>
 
@@ -186,4 +199,5 @@
 
             </div>
     </fieldset>
+    {% endif %}
 {% endblock %}

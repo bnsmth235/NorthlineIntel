@@ -74,12 +74,15 @@
             </div>
 
             <div style="display: inline-block">
-                <label for="sub">Subcontractor: </label>
-                <select name="sub" id="sub" class="input-field">
+                <label for="subven">Vendor/Subcontractor: </label>
+                <select name="subven" id="subven" class="input-field">
                     {% for sub in subs %}
                         <option value="{{ sub.name }}">{{ sub.name }}</option>
                     {% endfor %}
-                     {% if error_message %} <option selected value="{{subselect.name}}"></option> {% endif %}
+                    {% for vendor in vendors %}
+                        <option value="{{ vendor.name }}">{{ vendor.name }}</option>
+                    {% endfor %}
+                    {% if error_message %} <option selected value="{{subselect.name}}"></option> {% endif %}
                 </select>
             </div>
 

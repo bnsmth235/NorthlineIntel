@@ -7,25 +7,82 @@
         {% csrf_token %}
         <fieldset class="fieldset">
             <legend><h1>Edit Vendor</h1></legend>
-            <label for="name">Vendor Name:</label>
-            <input required="required" type="text" name="name" id="name" class="input-field" value="{{vendor.name}}">
 
-            <label for="address">Address:</label>
-            <input required="required" type="text" name="address" id="address" style="width:30%;" class="input-field" value="{{vendor.address}}">
+            <div style="display: inline-block">
+                <label for="name">Vendor Name:</label>
+                <input type="text" name="name" id="name" class="input-field" value="{{vendor.name}}">
+            </div>
 
-            <label for="cname">Contact Name:</label>
-            <input type="text" name="cname" id="cname" class="input-field" value="{{vendor.cname}}">
+            <div style="display: inline-block">
+                <label for="address">Address:</label>
+                <input type="text" name="address" id="address" style="width:fit-content%;" class="input-field" value="{{vendor.address}}">
+            </div>
 
-            <label for="cphone">Contact Phone:</label>
-            <input type="tel" name="cphone" id="cphone" class="input-field" value="{{vendor.cphone}}">
+            <div style="display: inline-block">
+                <label for="cname">Contact Name:</label>
+                <input type="text" name="cname" id="cname" style="width:fit-content%;" class="input-field" value="{{vendor.cname}}">
+            </div>
 
-            <label for="cemail">Contact Email:</label>
-            <input type="email" name="cemail" id="cemail" class="input-field" value="{{vendor.cemail}}">
+            <div style="display: inline-block">
+                <label for="cphone">Contact Phone:</label>
+                <input type="tel" name="cphone" id="cphone" class="input-field" value="{{vendor.cphone}}">
+            </div>
+
+            <div style="display: inline-block">
+                <label for="cemail">Contact Email:</label>
+                <input type="email" name="cemail" id="cemail" class="input-field" value="{{vendor.cemail}}">
+            </div>
+
+            <div style="display: inline-block">
+                <label for="w9">W9:</label>
+                <input type="number" name="w9" id="w9" class="input-field" value="{{vendor.w9}}">
+            </div>
+
+            <div style="display: inline-block">
+                <label for="csi">CSI Division:</label>
+                <select name="csi" id="csi" class="input-field">
+                    <option selected hidden="hidden" value="{{vendor.csi}}">{{vendor.get_long_csi}}</option>
+                    <option value="1">General Requirement</option>
+                    <option value="2">Site Works</option>
+                    <option value="3">Concrete</option>
+                    <option value="4">Masonry</option>
+                    <option value="5">Metals</option>
+                    <option value="6">Wood and Plastics</option>
+                    <option value="7">Thermal and Moisture Protection</option>
+                    <option value="8">Doors and Windows</option>
+                    <option value="9">Finishes</option>
+                    <option value="10">Specialties</option>
+                    <option value="11">Equipment</option>
+                    <option value="12">Furnishings</option>
+                    <option value="13">Special Construction</option>
+                    <option value="14">Conveying Systems</option>
+                    <option value="15">Mechanical/Plumbing</option>
+                    <option value="16">Electrical</option>
+                </select>
+            </div>
+
+            <div style="display: inline-block">
+                <label for="category">Category:</label>
+                <select name="category" id="category" class="input-field">
+                    <option selected hidden="hidden" value="{{vendor.category}}">{{vendor.get_long_category}}</option>
+                    <option value="1">Civil Engineering</option>
+                    <option value="2">Architecture</option>
+                    <option value="3">Electrical Engineering</option>
+                    <option value="4">Mechanical Engineering</option>
+                    <option value="5">Plumbing</option>
+                    <option value="6">Environmental</option>
+                    <option value="7">Health Department</option>
+                    <option value="8">Amenities</option>
+                    <option value="9">Landscape</option>
+                </select>
+            </div>
 
             <input class="input-field-save" type="submit" name="submit" value="Save">
 
             {% if error_message %}
-                <p><strong class="error">{{ error_message }}</strong></p>
+                <div style="display: block; margin-left: -75px; margin-top: -15px">
+                    <p><strong class="error">{{ error_message }}</strong></p>
+                </div>
             {% endif %}
         </fieldset>
     </form>

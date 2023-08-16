@@ -315,6 +315,8 @@ def all_subs(request):
         phone = request.POST.get('phone')
         email = request.POST.get('email')
         w9 = request.POST.get('w9')
+        csi = request.POST.get('csi')
+        category = request.POST.get('category')
 
         context = {
             'subs': subs,
@@ -322,7 +324,9 @@ def all_subs(request):
             'address': address,
             'phone': phone,
             'email': email,
-            'w9': w9
+            'w9': w9,
+            'csi': csi,
+            'category': category
         }
         if not name:
             context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
@@ -338,6 +342,8 @@ def all_subs(request):
         sub.phone = phone
         sub.email = email
         sub.w9 = w9
+        sub.csi = csi
+        sub.category = category
         sub.save()
 
         return redirect(reverse('reports:all_subs'))
@@ -354,6 +360,9 @@ def all_vendors(request):
         cname = request.POST.get('cname')
         cphone = request.POST.get('cphone')
         cemail = request.POST.get('cemail')
+        w9 = request.POST.get('w9')
+        csi = request.POST.get('csi')
+        category = request.POST.get('category')
 
         context = {
             'vendors': vendors,
@@ -362,7 +371,18 @@ def all_vendors(request):
             'cname': cname,
             'cphone': cphone,
             'cemail': cemail,
+            'w9': w9,
+            'csi': csi,
+            'category': category
         }
+
+        if not w9:
+            context.update({'error_message': "Please enter the vendor W9 name."})
+            return render(request, 'reports/all_vendors.html', context)
+        if not csi or not category:
+            context.update({'error_message': "Please enter the CSI Division and Category"})
+            return render(request, 'reports/all_vendors.html', context)
+
         if not name:
             context.update({'error_message': "Please enter the vendor name. (Less than 50 characters)"})
             return render(request, 'reports/all_vendors.html', context)
@@ -377,6 +397,9 @@ def all_vendors(request):
         vendor.cname = cname
         vendor.cphone = cphone
         vendor.cemail = cemail
+        vendor.w9 = w9
+        vendor.csi = csi
+        vendor.category =category
         vendor.save()
 
         return redirect(reverse('reports:all_vendors'))
@@ -1025,9 +1048,11 @@ def new_invoice(request, project_id, draw_id):
     project = get_object_or_404(Project, pk=project_id)
     draw = get_object_or_404(Draw, pk=draw_id)
     subs = Subcontractor.objects.order_by('name')
+    vendors = Vendor.objects.order_by('name')
 
     context = {
         'subs': subs,
+        'vendors': vendors,
         'project': project,
         'draw': draw,
         'method_choices': METHOD_OPTIONS,
@@ -1039,8 +1064,13 @@ def new_invoice(request, project_id, draw_id):
         csi = request.POST.get('csi')
         category = request.POST.get('category')
         method = request.POST.get('method')
-        sub_name = request.POST.get('sub')
-        sub = get_object_or_404(Subcontractor, name=sub_name)
+        subven_name = request.POST.get('subven')
+        try_sub = Subcontractor.objects.filter(name=subven_name).first()
+        if not try_sub:
+            sub = Vendor.objects.filter(name=subven_name).first()
+        else:
+            sub = try_sub
+
         invoice_total = request.POST.get('invoice_total')
         description = request.POST.get('description')
         w9 = sub.w9
@@ -1067,7 +1097,10 @@ def new_invoice(request, project_id, draw_id):
         invoice.csi = csi
         invoice.category = category
         invoice.method = method
-        invoice.sub_id = sub
+        try:
+            invoice.sub_id = sub
+        except:
+            invoice.vendor_id = sub
         invoice.invoice_total = invoice_total
         invoice.description = description
         invoice.w9 = w9
@@ -1382,12 +1415,20 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
     project = get_object_or_404(Project, pk=project_id)
     draw = get_object_or_404(Draw, pk=draw_id)
     invoice = get_object_or_404(Invoice, pk=invoice_id)
-    sub = get_object_or_404(Subcontractor, pk=invoice.sub_id.id)
+    sub = None
+    vendor = None
+    try:
+        sub = get_object_or_404(Subcontractor, pk=invoice.sub_id.id)
+    except:
+        vendor = get_object_or_404(Vendor, pk=invoice.vendor_id.id)
     subs = Subcontractor.objects.order_by('name')
+    vendors = Vendor.objects.order_by('name')
 
     context = {
         'subs': subs,
+        'vendors': vendors,
         'subselect': sub,
+        'vendorselect': vendor,
         'project': project,
         'invoice': invoice,
         'draw': draw,
@@ -1400,8 +1441,12 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
         csi = request.POST.get('csi')
         category = request.POST.get('category')
         method = request.POST.get('method')
-        sub_name = request.POST.get('sub')
-        sub = get_object_or_404(Subcontractor, name=sub_name)
+        subven_name = request.POST.get('sub')
+        try_sub = Subcontractor.objects.filter(name=subven_name).first()
+        if not try_sub:
+            sub = Vendor.objects.filter(name=subven_name).first()
+        else:
+            sub = try_sub
         invoice_total = request.POST.get('invoice_total')
         description = request.POST.get('description')
         lien_release_type = request.POST.get('lien_release_type')

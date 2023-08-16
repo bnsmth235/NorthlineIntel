@@ -87,9 +87,24 @@ class Vendor(models.Model):
     cname = models.CharField(max_length=50, default="")
     cphone = models.CharField(max_length=11, default="")
     cemail = models.EmailField(default="")
+    w9 = models.CharField(max_length=20)
+    csi = models.CharField(max_length=2, choices=DIVISION_CHOICES)
+    category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
 
     def __str__(self):
         return self.name
+
+    def get_long_csi(self):
+        for choice in self._meta.get_field("csi").choices:
+            if choice[0] == self.csi:
+                return choice[1]
+        return ""
+
+    def get_long_category(self):
+        for choice in self._meta.get_field("category").choices:
+            if choice[0] == self.category:
+                return choice[1]
+        return ""
 
 class Plan(models.Model):
     name = models.CharField(max_length=100)
@@ -215,7 +230,8 @@ class Invoice(models.Model):
     category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
     method = models.CharField(max_length=1, default="I",
                               choices=[("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")])
-    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
+    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     invoice_total = models.FloatField(default=0.00)
     description = models.TextField()
     invoice_pdf = models.FileField(default=None, upload_to='static/reports/invoices/')
@@ -264,3 +280,14 @@ class Check(models.Model):
             if choice[0] == self.lien_release_type:
                 return choice[1]
         return ""
+
+
+class Group(models.Model):
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    name= models.CharField(max_length=20)
+
+class Subgroup(models.Model):
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE)
+    name= models.CharField(max_length=20)
+
+
