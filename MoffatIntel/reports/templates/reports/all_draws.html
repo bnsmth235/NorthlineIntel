@@ -2,7 +2,7 @@
 
 {% block title %}{{project.name}}{% endblock %}
 {% load static %}
-
+{% load custom_filters %}
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
 
@@ -14,12 +14,127 @@
     <p class="center-content-block">Updated: {{ project.date }}</p>
 </div>
 
-<div class="reports-list-div">
-    <table width="98%" height="98%" align="center" cellpadding="4" border="0">
-        <tr class="report-item headers" style="font-size: 12px">
+<div class="reports-list-div" style="align-items: center">
+    <div style="position: relative;">
+        <div class="horizontal-scroll">
+            {% for draw in draws %}
+                <div class="table-container">
+                    <table>
+                        <tr class="report-item headers" style="font-size: 12px">
+                            <td colspan="{% if not no_group and not no_group_subgroup %}{{groups|length}}{% else %}{{groups|length|add:1}}{% endif %}" class="group-row" style="text-align: center">
+                                Draw {{draw.num}}
+                            </td>
+                        </tr>
+                        <tr>
+                            {% for group in groups %}
+                                <td style="vertical-align: top">
+                                    <table width="100%" height="100%" cellpadding="10" border="1" style="border-collapse: collapse; border: 2px solid black;">
+                                        <tr class="report-item headers" style="font-size: 12px">
+                                            <td colspan="4" class="group-row" style="text-align: center">
+                                                {{group.name}}
+                                            </td>
+                                        </tr>
+                                        <tr style="font-size: 14px">
+                                            <td></td>
+                                            <td>Contracted Total</td>
+                                            <td>Total Paid</td>
+                                            <td>% Done</td>
+                                        </tr>
+                                        {% if group.subgroup_set.all.exists %}
+                                            {% for subgroup in group.subgroup_set.all %}
+                                                <tr>
+                                                    <td>{{ subgroup.name }}</td>
+                                                    <td style="text-align: right">
+                                                        ${% calculate_invoice_total group.id subgroup.id draw.id%}
+                                                    </td>
+                                                    <td style="text-align: right">
+                                                        ${% calculate_checks_total group.id subgroup.id draw.id%}
+                                                    </td>
+                                                    <td style="text-align: right">
+                                                        {% calculate_percentage group.id subgroup.id draw.id%}%
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
 
-        </tr>
-    </table>
+                                            {% if no_group %}
+                                            {% for draw_data in no_group %}
+                                            {% if forloop.counter == draw.num %}
+                                                <tr style="text-align: right">
+                                                    <td>N/A</td>
+                                                    <td>${{ draw_data.1 }}</td>
+                                                    <td>${{ draw_data.2 }}</td>
+                                                    <td>{{ draw_data.3 }}%</td>
+                                                </tr>
+                                            {% endif %}
+                                            {% endfor %}
+                                            {% endif %}
+
+                                        {% endif %}
+
+                                        {% for _ in group.subgroup_set.all|length|sub:max_rows|make_list %}
+                                            {% if forloop.counter < max_rows|add:1 %}
+                                                <tr>
+                                                    <td>&nbsp;</td>
+                                                    <td>&nbsp;</td>
+                                                    <td>&nbsp;</td>
+                                                    <td>&nbsp;</td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </table>
+                                </td>
+                            {% endfor %}
+                            {% if no_group_subgroup %}
+                            {% for draw_data in no_group_subgroup %}
+                            {% if forloop.counter == draw.num %}
+                                <td style="vertical-align: top">
+                                    <table width="100%" height="100%" cellpadding="10" border="1" style="border-collapse: collapse; border: 2px solid black; text-align: right">
+                                        <tr class="report-item headers" style="font-size: 12px">
+                                            <td colspan="4" class="group-row" style="text-align: center">
+                                                Other
+                                            </td>
+                                        </tr>
+                                        <tr style="font-size: 14px">
+                                            <td></td>
+                                            <td>Contracted Total</td>
+                                            <td>Total Paid</td>
+                                            <td>% Done</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td></td>
+                                            <td>${{ draw_data.1 }}</td>
+                                            <td>${{ draw_data.2 }}</td>
+                                            <td>{{ draw_data.3 }}%</td>
+                                        </tr>
+
+                                        {% for _ in 1|sub:max_rows|make_list %}
+                                            {% if forloop.counter < max_rows|add:1 %}
+                                                <tr>
+                                                    <td>&nbsp;</td>
+                                                    <td>&nbsp;</td>
+                                                    <td>&nbsp;</td>
+                                                    <td>&nbsp;</td>
+                                                </tr>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </table>
+                                </td>
+                            {% endif %}
+                            {% endfor %}
+                            {% endif %}
+                        </tr>
+                    </table>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+    <div style="text-align: center; width: 100%;">
+            <h2>Contracted Total: ${{contract_total|floatformat:2}}</h2>
+            <h2>Total Paid: ${{check_total|floatformat:2}}</h2>
+            <h2>% Complete: {{percent|floatformat:2}}%</h2>
+        </div>
 </div>
 
 
@@ -38,7 +153,7 @@
             </tr>
         {% for draw in draws %}
                 <tr class="report-item zebra">
-                    <td><a href="{% url 'reports:draw_view' project.id draw.id %}">Draw {{ draws|length }}</a></td>
+                    <td><a href="{% url 'reports:draw_view' project.id draw.id %}">Draw {{ draw.num}}</a></td>
                     <td><a href="{% url 'reports:draw_view' project.id draw.id %}">{{ draw.edited_by }}</a></td>
                     <td><a href="{% url 'reports:draw_view' project.id draw.id %}">{{ draw.date }}</a></td>
                     <td class="inline-edit-button"><a href=""><img src="{% static 'reports/images/pencil.png' %}" height="18px" width="auto">Edit</a></td>
@@ -69,6 +184,7 @@
 {% endif %}
 
 </table>
+
 
 {% endblock %}
 

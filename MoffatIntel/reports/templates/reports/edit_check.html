@@ -28,9 +28,10 @@
                 <label for="sub">Subcontractor: </label>
                 <select name="sub" id="sub" class="input-field">
                     {% for sub in subs %}
-                        <option value="{{ sub.name }}">{{ sub.name }}</option>
+                        <option value="{{ sub.name }}" {% if sub.name == subselect.name %}selected{% endif %}>
+                            {{ sub.name }}
+                        </option>
                     {% endfor %}
-                    <option selected hidden="hidden" value="{{subselect.name}}">{{subselect.name}}</option>
                 </select>
             </div>
 

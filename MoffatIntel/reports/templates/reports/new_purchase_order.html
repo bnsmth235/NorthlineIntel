@@ -33,9 +33,7 @@
                     <select name="vendor" id="vendor" class="input-field" v-model="vendor" data-vendorselect="{{ vendorselect.id|default_if_none:'' }}">
                         {% for vendor in vendors %}
                             <option value="{{ vendor.id }}">{{ vendor.name }}</option>
-                        {% endfor %}
-                        {% if vendorselect %}<option selected hidden="hidden" value="{{vendorselect.id}}">{{vendorselect.name}}</option>{% endif %}
-                    </select>
+                        {% endfor %}</select>
                 </div>
             </div>
 

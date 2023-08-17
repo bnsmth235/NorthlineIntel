@@ -68,7 +68,6 @@
             <div style="display: inline-block">
                 <label for="csi">CSI Division:</label>
                 <select name="csi" id="csi" class="input-field">
-                    {% if error_message %} <option selected value="{{csi}}">{{sub.get_long_csi}}</option> {% endif %}
                     <option value="1">General Requirement</option>
                     <option value="2">Site Works</option>
                     <option value="3">Concrete</option>
@@ -91,7 +90,6 @@
             <div style="display: inline-block">
                 <label for="category">Category:</label>
                 <select name="category" id="category" class="input-field">
-                    {% if error_message %}<option selected value="{{category}}">{{sub.get_long_category}}</option> {% endif %}
                     <option value="1">Civil Engineering</option>
                     <option value="2">Architecture</option>
                     <option value="3">Electrical Engineering</option>

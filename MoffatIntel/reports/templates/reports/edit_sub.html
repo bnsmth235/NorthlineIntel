@@ -36,7 +36,7 @@
             <div style="display: inline-block">
                 <label for="csi">CSI Division:</label>
                 <select name="csi" id="csi" class="input-field">
-                    <option selected hidden="hidden" value="{{sub.csi}}">{{sub.get_long_csi}}</option>
+                    <option hidden="hidden" value="{{ csi.0 }}" {% if csi.0 == sub.csi %}selected{% endif %}>{{ sub.get_long_csi }}</option>
                     <option value="1">General Requirement</option>
                     <option value="2">Site Works</option>
                     <option value="3">Concrete</option>
@@ -59,7 +59,7 @@
             <div style="display: inline-block">
                 <label for="category">Category:</label>
                 <select name="category" id="category" class="input-field">
-                    <option selected hidden="hidden" value="{{sub.category}}">{{sub.get_long_category}}</option>
+                    <option hidden="hidden" value="{{ category.0 }}" {% if category.0 == sub.category %}selected{% endif %}>{{ sub.get_long_category }}</option>
                     <option value="1">Civil Engineering</option>
                     <option value="2">Architecture</option>
                     <option value="3">Electrical Engineering</option>

@@ -28,8 +28,8 @@
             <div style="display: inline-block">
                 <label for="csi">CSI Division:</label>
                 <select name="csi" id="csi" class="input-field">
-                    {% if subselect %}<option selected hidden="hidden" value="{{subselect.csi}}">{{subselect.get_long_csi}}</option>{% endif %}
-                    {% if vendorselect %}<option selected hidden="hidden" value="{{vendorselect.csi}}">{{vendorselect.get_long_csi}}</option>{% endif %}
+                    {% if subselect %}<option hidden="hidden" value="{{ invoice.csi.0 }}" {% if csi.0 == subselect.csi %}selected{% endif %}>{{ subselect.get_long_csi }}</option>{% endif %}
+                    {% if vendorselect %}<option hidden="hidden" value="{{ invoice.csi.0 }}" {% if csi.0 == vendorselect.csi %}selected{% endif %}>{{ vendorselect.get_long_csi }}</option>{% endif %}
                     <option value="1">General Requirement</option>
                     <option value="2">Site Works</option>
                     <option value="3">Concrete</option>
@@ -52,8 +52,8 @@
             <div style="display: inline-block">
                 <label for="category">Category:</label>
                 <select name="category" id="category" class="input-field">
-                    {% if subselect %}<option selected hidden="hidden" value="{{subselect.category}}">{{subselect.get_long_category}}</option>{% endif %}
-                    {% if vendorselect %}<option selected hidden="hidden" value="{{vendorselect.category}}">{{vendorselect.get_long_category}}</option>{% endif %}
+                    {% if subselect %}<option hidden="hidden" value="{{ invoice.category.0 }}" {% if invoice.category.0 == subselect.category %}selected{% endif %}>{{ subselect.get_long_category }}</option>{% endif %}
+                    {% if vendorselect %}<option hidden="hidden" value="{{ invoice.category.0 }}" {% if invoice.category.0 == vendorselect.category %}selected{% endif %}>{{ vendorselect.get_long_category }}</option>{% endif %}
                     <option value="1">Civil Engineering</option>
                     <option value="2">Architecture</option>
                     <option value="3">Electrical Engineering</option>
@@ -66,39 +66,59 @@
                 </select>
             </div>
 
+
             <div style="display: inline-block">
-            <label for="method">Method:</label>
+                <label for="method">Method:</label>
                 <select name="method" id="method" class="input-field">
+                    <option hidden="hidden" value="{{invoice.method}}">{{invoice.get_method_display_long}}</option>
                     {% for choice in method_choices %}
-                        <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                        <option value="{{ choice.0 }}">
+                            {{ choice.1 }}
+                        </option>
                     {% endfor %}
-                    <option selected="selected" hidden="hidden" value="{{invoice.get_method_display_long}}">
-                            {{invoice.get_method_display_long}}
-                    </option>
                 </select>
             </div>
+
 
             <div style="display: inline-block">
                 <label for="sub">Vendor/Subcontractor: </label>
                 <select name="sub" id="sub" class="input-field">
+                    {% if subselect %}<option hidden="hidden">{{subselect.name}}</option>{% endif %}
                     {% for sub in subs %}
-                        <option value="{{ sub.name }}">{{ sub.name }}</option>
+                        <option>{{sub.name}}</option>
                     {% endfor %}
                     {% for vendor in vendors %}
-                        <option value="{{ vendor.name }}">{{ vendor.name }}</option>
+                        <option>{{vendor.name}}</option>
                     {% endfor %}
-                    {% if subselect %}
-                    <option selected="selected" hidden="hidden" value="{{subselect.name}}">
-                        {{subselect.name}}
-                    </option>
-                    {% endif %}
-                    {% if vendorselect %}
-                    <option selected="selected" hidden="hidden" value="{{vendorselect.name}}">
-                        {{vendorselect.name}}
-                    </option>
-                    {% endif %}
                 </select>
             </div>
+
+
+            <div style="display: inline-block">
+                <label for="group">Group:</label>
+                <select name="group" id="groupSelect" class="input-field">
+                    {% for group in groups %}
+                        <option value="{{group.id}}" {% if group.id == invoice.group_id.id %}selected{% endif %}>
+                            {{group.name}}
+                        </option>
+                    {% endfor %}
+                    <option value="None">None</option>
+                </select>
+            </div>
+
+
+            <div style="display: inline-block">
+                <label for="subgroup">Subgroup:</label>
+                <select name="subgroup" id="subgroupSelect" class="input-field">
+                    <option value="None">None</option>
+                    {% for subgroup in subgroups %}
+                        <option value="{{ subgroup.id }}" {% if subgroup.id == invoice.subgroup_id.id %}selected{% endif %}>
+                            {{ subgroup.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
 
             <div style="display: inline-block">
                 <label for="invoice_total">Invoice Total: $</label>
@@ -200,4 +220,39 @@
             </div>
     </fieldset>
     {% endif %}
+
+<script>
+    const groupSelect = document.getElementById('groupSelect');
+    const subgroupSelect = document.getElementById('subgroupSelect');
+    const groups = JSON.parse('{{ groups_json | escapejs }}');
+
+    function populateSubgroups(selectedGroupIndex) {
+        subgroupSelect.innerHTML = '';
+
+        const selectedGroup = groups[selectedGroupIndex];
+
+        const noneOption = document.createElement('option');
+        noneOption.value = 'None';
+        noneOption.textContent = 'None';
+        subgroupSelect.appendChild(noneOption);
+
+        selectedGroup.subgroups.forEach(subgroup => {
+            const option = document.createElement('option');
+            option.value = subgroup.id;
+            option.textContent = subgroup.name;
+            subgroupSelect.appendChild(option);
+        });
+    }
+
+    groupSelect.addEventListener('change', () => {
+        const selectedGroupIndex = groupSelect.selectedIndex;
+        console.log("Change")
+        populateSubgroups(selectedGroupIndex);
+    });
+
+    // Call the function initially with the default selected group index
+    const defaultSelectedGroupIndex = groupSelect.selectedIndex;
+    populateSubgroups(defaultSelectedGroupIndex);
+</script>
+
 {% endblock %}

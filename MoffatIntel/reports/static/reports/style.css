@@ -227,6 +227,20 @@ body{
     background-color: #ffffff;
     border-radius: 8px;
     border: 2px solid #7c0300;
+    overflow: hidden;
+    max-width: calc(100% - 20px);
+}
+
+.horizontal-scroll {
+    /* Add horizontal scrolling */
+    overflow-x: auto;
+    white-space: nowrap; /* Prevent tables from wrapping */
+}
+
+.table-container {
+    margin: 10px;
+    display: inline-block;
+    vertical-align: top; /* Align tables at the top */
 }
 
 .reports-list-div-small{
@@ -302,7 +316,6 @@ body{
   background-color: #7c0300ba;
 }
 
-
 .report-item.zebra:nth-child(even):hover {
   background-color: #7c0300ba;
 }
@@ -311,10 +324,26 @@ body{
   background-color: #7c0300ba;
 }
 
-.report-item.zebra.no-hover:hover {
-  background-color: initial;
+.no-hover:hover {
+  background-color: initial !important;
 }
 
+.group-row{
+    font-size: 16px;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: bold;
+    border: 2px solid #000;
+    background-color: #5f7c83;
+}
+
+.group-row-secondary{
+    font-size: 14px;
+    text-align: center;
+    vertical-align: middle;
+    font-weight: bold;
+    border: 2px solid #5f7c83;
+}
 
 .headers{
     text-align: center;
@@ -429,8 +458,6 @@ progress{
     width: 100%;
     height: 60px;
 }
-
-
 
 .add-new a{
     text-decoration: none;

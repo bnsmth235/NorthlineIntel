@@ -38,7 +38,7 @@
                 <label for="zip">Zip Code:</label>
                 <input type="number" name="zip" id="zip" class="input-field" width="50px">
             </div>
-            <br>
+            <br><br>
             <div style="display: inline-block">
                 <label for="groups">Groups/Subgroups:</label>
                 <div id="groupsContainer">
@@ -59,6 +59,7 @@
 <script>
         const groupsContainer = document.getElementById('groupsContainer');
         const addGroupBtn = document.getElementById('addGroupBtn');
+        let groupIndex = -1;
 
         function createGroupDiv() {
             const groupDiv = document.createElement('div');
@@ -66,6 +67,7 @@
 
             const groupInput = document.createElement('input');
             groupInput.type = 'text';
+            groupInput.name = `group_${groupIndex}`
             groupInput.placeholder = 'Enter Group Name';
             groupInput.className = 'input-field';
 
@@ -79,6 +81,7 @@
             addSubgroupBtn.addEventListener('click', () => {
                 const subgroupInput = document.createElement('input');
                 subgroupInput.type = 'text';
+                subgroupInput.name = `subgroup_${groupIndex}`
                 subgroupInput.placeholder = 'Enter Subgroup Name';
                 subgroupInput.className = 'input-field';
 
@@ -115,8 +118,9 @@
         }
 
         addGroupBtn.addEventListener('click', () => {
-            const groupDiv = createGroupDiv();
+            const groupDiv = createGroupDiv(groupIndex);
             groupsContainer.appendChild(groupDiv);
+            groupIndex++; // Increment the group index
         });
     </script>
 

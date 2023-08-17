@@ -444,6 +444,34 @@ def new_proj(request):
         project.save()
         print("Project " + project.name + " has been saved")
 
+        group_index = 0
+
+        for key in request.POST:
+            if key.startswith('group_'):
+                print("********************")
+                print("Found key")
+                print("********************")
+                group_name = request.POST[key]
+                print("********************")
+                print("Group Name: " + group_name)
+                print("********************")
+                subgroup_key = f'subgroup_{group_index}'
+                subgroup_names = request.POST.getlist(subgroup_key)
+
+                if group_name:
+                    group = Group(name=group_name, project_id=project)
+                    group.save()
+
+                    for subgroup_name in subgroup_names:
+                        print("********************")
+                        print("Found Subgroup: " + subgroup_name)
+                        print("********************")
+                        if subgroup_name:
+                            subgroup = Subgroup(name=subgroup_name, group_id=group)
+                            subgroup.save()
+
+                group_index += 1
+
         return redirect('reports:home')
 
     return render(request, 'reports/new_proj.html', {"state_options": STATE_OPTIONS})
@@ -1049,11 +1077,19 @@ def new_invoice(request, project_id, draw_id):
     draw = get_object_or_404(Draw, pk=draw_id)
     subs = Subcontractor.objects.order_by('name')
     vendors = Vendor.objects.order_by('name')
+    groups = Group.objects.filter(project_id=project)
+    subgroups = Subgroup.objects.filter(group_id__in=groups)
+
+    groups_json = json.dumps(
+        [{'id': group.id, 'subgroups': list(subgroups.filter(group_id=group.id).values('id', 'name'))} for group in groups])
 
     context = {
         'subs': subs,
         'vendors': vendors,
         'project': project,
+        'groups': groups,
+        'groups_json': groups_json,
+        'subgroups': subgroups,
         'draw': draw,
         'method_choices': METHOD_OPTIONS,
     }
@@ -1072,6 +1108,11 @@ def new_invoice(request, project_id, draw_id):
             sub = try_sub
 
         invoice_total = request.POST.get('invoice_total')
+        group = request.POST.get('group')
+        subgroup = request.POST.get('subgroup')
+        print("*******************")
+        print(group, subgroup)
+        print("*******************")
         description = request.POST.get('description')
         w9 = sub.w9
 
@@ -1103,6 +1144,15 @@ def new_invoice(request, project_id, draw_id):
             invoice.vendor_id = sub
         invoice.invoice_total = invoice_total
         invoice.description = description
+        try:
+            invoice.group_id = get_object_or_404(Group, pk=group)
+        except:
+            pass
+
+        try:
+            invoice.subgroup_id = get_object_or_404(Subgroup, pk=subgroup)
+        except:
+            pass
         invoice.w9 = w9
 
         # Handle invoice PDF
@@ -1135,9 +1185,14 @@ def new_draw(request, project_id):
     project.date = datetime.datetime.now()
     project.edited_by = request.user.username
 
-    cur_draw = Draw(date=datetime.datetime.now(), project_id=project, edited_by=request.user.username)
+    draw = Draw()
+    draw.date = datetime.datetime.now()
+    draw.project_id = project
+    draw.edited_by = request.user.username
+    draw.start_date = datetime.datetime.now()
+    draw.num = len(Draw.objects.filter(project_id=project)) + 1
 
-    cur_draw.save()
+    draw.save()
     project.save()
 
     return redirect('reports:all_draws', project_id=project_id)
@@ -1167,9 +1222,73 @@ def add_signature(request, invoice_id):
 @login_required(login_url='reports:login')
 def all_draws(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
-    draws = Draw.objects.order_by('-date').filter(project_id=project.id)
+    draws = Draw.objects.order_by('-num').filter(project_id=project)
+    groups = Group.objects.filter(project_id=project)
+    subgroups = Subgroup.objects.filter(group_id__in=groups)
+    exhibits = Exhibit.objects.filter(project_id=project)
+    invoices = Invoice.objects.filter(draw_id__in=draws)
+    checks = Check.objects.filter(invoice_id__in=invoices)
 
-    context = {'draws': draws, 'project': project}
+    contract_total = 0
+    for exhibit in exhibits:
+        contract_total += exhibit.total
+
+    check_total = 0
+    for check in checks:
+        check_total += check.check_total
+
+    try:
+        percent = (check_total / contract_total) * 100
+    except:
+        percent = 0
+
+    no_group_subgroup = None
+    no_group = None
+    invoices_with_none_group_subgroup = Invoice.objects.filter(group_id=None, subgroup_id=None)
+    invoices_with_none_group = Invoice.objects.filter(group_id=None, subgroup_id=None)
+
+    if invoices_with_none_group_subgroup:
+        no_group_subgroup = [[0,0,0,0]] * invoices_with_none_group_subgroup.values('draw_id').distinct().count()
+        for invoice in invoices_with_none_group_subgroup:
+            no_group_subgroup[invoice.draw_id.num - 1][0] = invoice.draw_id.num - 1
+            no_group_subgroup[invoice.draw_id.num - 1][1] + invoice.invoice_total
+            for check in Check.objects.filter(invoice_id=invoice):
+                no_group_subgroup[invoice.draw_id.num - 1][2] + check.check_total
+            try:
+                no_group_subgroup[invoice.draw_id.num - 1][3] = (no_group_subgroup[invoice.draw_id.num - 1][2] / no_group_subgroup[invoice.draw_id.num - 1][1]) * 100
+            except:
+                no_group_subgroup[invoice.draw_id.num - 1][3] = 0
+
+    if invoices_with_none_group:
+        no_group = [[0, 0, 0, 0]] * invoices_with_none_group.values('draw_id').distinct().count()
+        for invoice in invoices_with_none_group:
+            no_group[invoice.draw_id.num - 1][0] = invoice.draw_id.num - 1
+            no_group[invoice.draw_id.num - 1][1] + invoice.invoice_total
+            for check in Check.objects.filter(invoice_id=invoice):
+                no_group[invoice.draw_id.num - 1][2] + check.check_total
+            try:
+                no_group[invoice.draw_id.num - 1][3] = (no_group[invoice.draw_id.num - 1][2] / no_group[invoice.draw_id.num - 1][1]) * 100
+            except:
+                no_group[invoice.draw_id.num - 1][3] = 0
+
+    try:
+        max_rows = max(len(subgroup.subgroup_set.all()) for subgroup in groups)
+    except:
+        max_rows = 0
+    print("Max rows: ", max_rows)
+
+    context = {
+        'draws': draws,
+        'project': project,
+        'groups': groups,
+        'subgroups': subgroups,
+        'max_rows': max_rows,
+        'no_group_subgroup':no_group_subgroup,
+        'no_group': no_group,
+        'contract_total': contract_total,
+        'check_total': check_total,
+        'percent': percent
+    }
 
     return render(request, 'reports/all_draws.html', context)
 
@@ -1423,6 +1542,12 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
         vendor = get_object_or_404(Vendor, pk=invoice.vendor_id.id)
     subs = Subcontractor.objects.order_by('name')
     vendors = Vendor.objects.order_by('name')
+    groups = Group.objects.filter(project_id=project)
+    subgroups = Subgroup.objects.filter(group_id__in=groups)
+
+    groups_json = json.dumps(
+        [{'id': group.id, 'subgroups': list(subgroups.filter(group_id=group.id).values('id', 'name'))} for group in
+         groups])
 
     context = {
         'subs': subs,
@@ -1431,6 +1556,9 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
         'vendorselect': vendor,
         'project': project,
         'invoice': invoice,
+        'groups': groups,
+        'subgroups': subgroups,
+        'groups_json': groups_json,
         'draw': draw,
         'method_choices': METHOD_OPTIONS,
     }
@@ -1444,28 +1572,32 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
         subven_name = request.POST.get('sub')
         try_sub = Subcontractor.objects.filter(name=subven_name).first()
         if not try_sub:
-            sub = Vendor.objects.filter(name=subven_name).first()
+            invoice.sub_id = None
+            invoice.vendor_id = Vendor.objects.filter(name=subven_name).first()
+            invoice.w9 = invoice.vendor_id.w9
         else:
             sub = try_sub
+            invoice.vendor_id = None
+            invoice.sub_id = sub
+            invoice.w9 = sub.w9
+
         invoice_total = request.POST.get('invoice_total')
         description = request.POST.get('description')
-        lien_release_type = request.POST.get('lien_release_type')
 
-        if not invoice_date or not invoice_num or not csi or not category or not method or not sub or not invoice_total or not description:
-            context.update({'error_message': "Please fill out all fields"})
-            return render(request, 'reports/edit_invoice.html', context)
-
-        invoice.invoice_date = invoice_date
-        invoice.invoice_num = invoice_num
-        invoice.csi = csi
-        invoice.category = category
-        invoice.category = category
-        invoice.method = method
-        invoice.sub = sub
-        invoice.invoice_total = invoice_total
-        invoice.description = description
-        invoice.lien_release_type = lien_release_type
-        invoice.w9 = sub.w9
+        if invoice_date:
+            invoice.invoice_date = invoice_date
+        if invoice_num:
+            invoice.invoice_num = invoice_num
+        if csi:
+            invoice.csi = csi
+        if category:
+            invoice.category = category
+        if method:
+            invoice.method = method
+        if invoice_total:
+            invoice.invoice_total = invoice_total
+        if description:
+            invoice.description = description
 
         # Handle invoice PDF
         if 'invoice_pdf' in request.FILES:
@@ -1473,16 +1605,6 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
             if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
                 return render(request, 'reports/edit_invoice.html', context)
-
-        # Handle lien release PDF
-        if 'lien_release_pdf' in request.FILES:
-            invoice.lien_release_pdf = request.FILES['lien_release_pdf']
-            if not invoice.lien_release_pdf.file.content_type.startswith('application/pdf'):
-                context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
-                return render(request, 'reports/edit_invoice.html', context)
-
-        else:
-            invoice.signed = None
 
         # Save invoice and related objects
         project.edited_by = request.user.username
@@ -1506,11 +1628,13 @@ def draw_view(request, project_id, draw_id):
     contracts = Contract.objects.order_by('-date').filter(project_id=project.id)
     draws = Draw.objects.order_by('-date').filter(project_id=project.id)
     invoices = Invoice.objects.order_by('-invoice_date').order_by('sub_id').filter(draw_id=draw.id)
-    checks = Check.objects.order_by('-check_date').order_by('invoice_id')
+    checks = Check.objects.order_by('-check_date').order_by('invoice_id').filter(invoice_id__in=invoices)
+    groups = Group.objects.filter(project_id=project)
+    subgroups = Subgroup.objects.filter(group_id__in=groups)
 
     total_invoice_amount = invoices.aggregate(total=Sum('invoice_total'))['total']
 
-    return render(request, 'reports/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project, 'contracts': contracts, 'checks': checks})
+    return render(request, 'reports/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project, 'contracts': contracts, 'checks': checks, 'groups': groups, 'subgroups': subgroups})
 
 
 @login_required(login_url='reports:login')

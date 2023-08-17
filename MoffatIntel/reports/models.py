@@ -56,6 +56,13 @@ class Project(models.Model):
                 return choice[1]
         return ""
 
+class Group(models.Model):
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    name= models.CharField(max_length=20)
+
+class Subgroup(models.Model):
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE)
+    name= models.CharField(max_length=20)
 
 class Subcontractor(models.Model):
     name = models.CharField(max_length=50)
@@ -214,6 +221,7 @@ class PurchaseOrder(models.Model):
 
 class Draw(models.Model):
     date = models.DateTimeField('Last Modified')
+    num = models.IntegerField(default=1)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     edited_by = models.CharField(max_length=20)
     start_date = models.DateTimeField('Start Date', default=datetime.datetime.now())
@@ -232,6 +240,8 @@ class Invoice(models.Model):
                               choices=[("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")])
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
     vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
+    subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
     invoice_total = models.FloatField(default=0.00)
     description = models.TextField()
     invoice_pdf = models.FileField(default=None, upload_to='static/reports/invoices/')
@@ -273,21 +283,12 @@ class Check(models.Model):
     signed = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.invoice_num
+        return self.check_num.__str__()
 
     def get_LR_type_display_long(self):
         for choice in self._meta.get_field("lien_release_type").choices:
             if choice[0] == self.lien_release_type:
                 return choice[1]
         return ""
-
-
-class Group(models.Model):
-    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    name= models.CharField(max_length=20)
-
-class Subgroup(models.Model):
-    group_id = models.ForeignKey(Group, on_delete=models.CASCADE)
-    name= models.CharField(max_length=20)
 
 
