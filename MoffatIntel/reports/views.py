@@ -10,6 +10,7 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, resolve_url, get_object_or_404
 from django.contrib.auth import authenticate, logout, login
 import base64
@@ -1110,9 +1111,6 @@ def new_invoice(request, project_id, draw_id):
         invoice_total = request.POST.get('invoice_total')
         group = request.POST.get('group')
         subgroup = request.POST.get('subgroup')
-        print("*******************")
-        print(group, subgroup)
-        print("*******************")
         description = request.POST.get('description')
         w9 = sub.w9
 
@@ -1226,12 +1224,21 @@ def all_draws(request, project_id):
     groups = Group.objects.filter(project_id=project)
     subgroups = Subgroup.objects.filter(group_id__in=groups)
     exhibits = Exhibit.objects.filter(project_id=project)
+    cos = ChangeOrder.objects.filter(project_id=project)
+    dcos = DeductiveChangeOrder.objects.filter(project_id=project)
+    pos = PurchaseOrder.objects.filter(project_id=project)
     invoices = Invoice.objects.filter(draw_id__in=draws)
     checks = Check.objects.filter(invoice_id__in=invoices)
 
     contract_total = 0
     for exhibit in exhibits:
         contract_total += exhibit.total
+    for co in cos:
+        contract_total += co.total
+    for dco in dcos:
+        contract_total -= dco.total
+    for po in pos:
+        contract_total += po.total
 
     check_total = 0
     for check in checks:
@@ -1580,10 +1587,19 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
             invoice.vendor_id = None
             invoice.sub_id = sub
             invoice.w9 = sub.w9
-
+        group = request.POST.get('group')
+        subgroup = request.POST.get('subgroup')
         invoice_total = request.POST.get('invoice_total')
         description = request.POST.get('description')
 
+        if group != 'None':
+            invoice.group_id = get_object_or_404(Group, pk=group)
+        if group == 'None':
+            invoice.group_id = None
+        if subgroup and subgroup != 'None':
+            invoice.subgroup_id = get_object_or_404(Subgroup, pk=subgroup)
+        if subgroup == 'None':
+            invoice.subgroup_id = None
         if invoice_date:
             invoice.invoice_date = invoice_date
         if invoice_num:
@@ -1777,9 +1793,11 @@ def delete_estimate(request, estimate_id):
 def plan_view(request, plan_id, project_id):
     plan = get_object_or_404(Plan, pk=plan_id)
     pdf_bytes = plan.pdf.read()
-    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/plan_view.html', {'pdf_data': pdf_data, 'plan': plan})
 
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{plan.pdf.name}"'
+
+    return response
 
 @login_required(login_url='reports:login')
 def delete_check(request, check_id):
@@ -2417,7 +2435,6 @@ def create_purchase_order(project, vendor, rows):
     return po
 
 
-
 def create_change_order(POST, type, rows):
     contract = get_object_or_404(Contract, pk=POST.get('contract'))
     project = contract.project_id
@@ -2426,7 +2443,6 @@ def create_change_order(POST, type, rows):
     file_name = type + " " + str(datetime.datetime.now().strftime("%B-%d-%Y"))
 
     if os.path.exists(file_name + ".pdf"):
-        print("***********Check 4**********")
         counter = 1
         while os.path.exists(file_name + "(" + str(counter) + ")" + ".pdf"):
             counter += 1

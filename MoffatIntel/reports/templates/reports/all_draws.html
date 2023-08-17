@@ -5,6 +5,7 @@
 {% load custom_filters %}
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
+<h3 style="margin-bottom: -50px"><a href="{% url 'reports:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
 
 <div style="text-align: center">
     <br>
@@ -130,11 +131,11 @@
         </div>
 
     </div>
-    <div style="text-align: center; width: 100%;">
-            <h2>Contracted Total: ${{contract_total|floatformat:2}}</h2>
-            <h2>Total Paid: ${{check_total|floatformat:2}}</h2>
-            <h2>% Complete: {{percent|floatformat:2}}%</h2>
-        </div>
+    <div style="text-align: center; display: flex; width: 100%;">
+        <h2 style="flex: 1;">Contracted Total: ${{contract_total|floatformat:2}}</h2>
+        <h2 style="flex: 1;">Total Paid: ${{check_total|floatformat:2}}</h2>
+        <h2 style="flex: 1;">% Complete: {{percent|floatformat:2}}%</h2>
+    </div>
 </div>
 
 

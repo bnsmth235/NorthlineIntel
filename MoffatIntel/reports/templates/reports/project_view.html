@@ -3,6 +3,8 @@
 {% block title %}{{project.name}}{% endblock %}
 {% load static %}
 {% block content %}
+<h3 style="margin-bottom: -50px"><a href="{% url 'reports:home' %}" style="text-decoration: none; color: #000">< Home</a></h3>
+
     <h1 style="text-align: center; font-size: 50px">{{project.name|upper}}</h1>
     <hr color="#560200" width="90%" size="4">
     <div style="text-align: center">

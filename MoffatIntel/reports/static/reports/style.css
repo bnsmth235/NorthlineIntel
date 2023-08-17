@@ -367,6 +367,10 @@ td a {
     color: black;
 }
 
+a {
+    text-decoration: none;
+}
+
 #pick{
     list-style-type: none;
     padding: 0;

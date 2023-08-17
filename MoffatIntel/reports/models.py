@@ -118,7 +118,7 @@ class Plan(models.Model):
     date = models.DateTimeField('Last Modified')
     edited_by = models.CharField(max_length=20)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    pdf = models.FileField(upload_to='static/reports/plans/', default=None)
+    pdf = models.FileField(upload_to='reports/plans/', default=None)
 
     def __str__(self):
         return self.name
@@ -131,7 +131,7 @@ class Estimate(models.Model):
     total = models.FloatField(default=0.00)
     csi = models.CharField(max_length=2, choices=DIVISION_CHOICES)
     category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
-    pdf = models.FileField(upload_to='static/reports/estimates/', default=None)
+    pdf = models.FileField(upload_to='reports/estimates/', default=None)
 
     def __str__(self):
         return self.name
@@ -155,7 +155,7 @@ class SWO(models.Model):
     total = models.FloatField()
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    pdf = models.FileField(upload_to='static/reports/SWOs')
+    pdf = models.FileField(upload_to='reports/SWOs')
 
     def __str__(self):
         return self.name
@@ -167,7 +167,7 @@ class Exhibit(models.Model):
     total = models.FloatField(default=0.00)
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    pdf = models.FileField(upload_to='static/reports/exhibits/', default=None)
+    pdf = models.FileField(upload_to='reports/exhibits/', default=None)
 
     def __str__(self):
         return self.name
@@ -179,7 +179,7 @@ class Contract(models.Model):
     total = models.FloatField()
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    pdf = models.FileField(upload_to='static/reports/contracts')
+    pdf = models.FileField(upload_to='reports/contracts')
 
     def __str__(self):
         return self.pdf.name
@@ -191,7 +191,7 @@ class ChangeOrder(models.Model):
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     total = models.FloatField(default=0.00)
-    pdf = models.FileField(upload_to='static/reports/change_orders')
+    pdf = models.FileField(upload_to='reports/change_orders')
     def __str__(self):
         return self.order_number
 
@@ -201,7 +201,7 @@ class DeductiveChangeOrder(models.Model):
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     total = models.FloatField(default=0.00)
-    pdf = models.FileField(upload_to='static/reports/deductive_change_orders')
+    pdf = models.FileField(upload_to='reports/deductive_change_orders')
 
     def __str__(self):
         return self.order_number
@@ -214,7 +214,7 @@ class PurchaseOrder(models.Model):
     vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     total = models.FloatField(default=0.00)
-    pdf = models.FileField(upload_to='static/reports/purchase_orders')
+    pdf = models.FileField(upload_to='reports/purchase_orders')
     def __str__(self):
         return self.name
 
@@ -244,7 +244,7 @@ class Invoice(models.Model):
     subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
     invoice_total = models.FloatField(default=0.00)
     description = models.TextField()
-    invoice_pdf = models.FileField(default=None, upload_to='static/reports/invoices/')
+    invoice_pdf = models.FileField(default=None, upload_to='reports/invoices/')
 
     def __str__(self):
         return self.invoice_num
@@ -276,10 +276,10 @@ class Check(models.Model):
     check_num = models.IntegerField()
     check_total = models.FloatField(default=0.00)
     distributed = models.CharField(max_length=50)
-    check_pdf = models.FileField(default=None, upload_to='static/reports/checks/')
+    check_pdf = models.FileField(default=None, upload_to='reports/checks/')
     lien_release_type = models.CharField(max_length=20, default="N",
                                          choices=[("F", "Final"), ("C", "Conditional"), ("N", "N/A")])
-    lien_release_pdf = models.FileField(default=None, upload_to='static/reports/lien_releases')
+    lien_release_pdf = models.FileField(default=None, upload_to='reports/lien_releases')
     signed = models.BooleanField(default=False)
 
     def __str__(self):

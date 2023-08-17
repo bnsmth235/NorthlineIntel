@@ -5,6 +5,7 @@
 
 {% block content %}
 <script src="{% static 'reports/deleteConfirm.js' %}"></script>
+<h3 style="margin-bottom: -10px"><a href="{% url 'reports:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
 
 <h1 class="section-header">Estimates for {{project.name}}</h1>
 

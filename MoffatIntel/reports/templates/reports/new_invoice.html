@@ -133,17 +133,17 @@
 
         const selectedGroup = groups[selectedGroupIndex];
 
-        const noneOption = document.createElement('option');
-        noneOption.value = 'None';
-        noneOption.textContent = 'None';
-        subgroupSelect.appendChild(noneOption);
-
         selectedGroup.subgroups.forEach(subgroup => {
             const option = document.createElement('option');
             option.value = subgroup.id;
             option.textContent = subgroup.name;
             subgroupSelect.appendChild(option);
         });
+
+        const noneOption = document.createElement('option');
+        noneOption.value = 'None';
+        noneOption.textContent = 'None';
+        subgroupSelect.appendChild(noneOption);
     }
 
     groupSelect.addEventListener('change', () => {

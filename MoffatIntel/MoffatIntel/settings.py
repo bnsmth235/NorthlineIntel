@@ -119,6 +119,9 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static\\reports')
 
+MEDIA_URL = '/files/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'files')
+
 LOGIN_URL = 'reports:login'
 
 # Default primary key field type

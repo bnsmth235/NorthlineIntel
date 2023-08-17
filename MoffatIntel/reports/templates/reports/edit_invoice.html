@@ -95,12 +95,15 @@
 
 
             <div style="display: inline-block">
-                <label for="group">Group:</label>
+                <label for="groupSelect">Group:</label>
                 <select name="group" id="groupSelect" class="input-field">
+                    {% if invoice.group_id%}
+                        <option hidden="hidden" value="{{invoice.group_id.id}}">{{invoice.group_id.name}}</option>
+                    {% else %}
+                        <option hidden="hidden" value="None">None</option>
+                    {% endif %}
                     {% for group in groups %}
-                        <option value="{{group.id}}" {% if group.id == invoice.group_id.id %}selected{% endif %}>
-                            {{group.name}}
-                        </option>
+                        <option value="{{group.id}}">{{group.name}}</option>
                     {% endfor %}
                     <option value="None">None</option>
                 </select>
@@ -108,14 +111,14 @@
 
 
             <div style="display: inline-block">
-                <label for="subgroup">Subgroup:</label>
+                <label for="subgroupSelect">Subgroup:</label>
                 <select name="subgroup" id="subgroupSelect" class="input-field">
+                    {% if invoice.subgroup_id%}
+                        <option hidden="hidden" value="{{invoice.subgroup_id.id}}">{{invoice.subgroup_id.name}}</option>
+                    {% else %}
+                        <option hidden="hidden" value="None">None</option>
+                    {% endif %}
                     <option value="None">None</option>
-                    {% for subgroup in subgroups %}
-                        <option value="{{ subgroup.id }}" {% if subgroup.id == invoice.subgroup_id.id %}selected{% endif %}>
-                            {{ subgroup.name }}
-                        </option>
-                    {% endfor %}
                 </select>
             </div>
 
@@ -231,28 +234,24 @@
 
         const selectedGroup = groups[selectedGroupIndex];
 
-        const noneOption = document.createElement('option');
-        noneOption.value = 'None';
-        noneOption.textContent = 'None';
-        subgroupSelect.appendChild(noneOption);
-
         selectedGroup.subgroups.forEach(subgroup => {
             const option = document.createElement('option');
             option.value = subgroup.id;
             option.textContent = subgroup.name;
             subgroupSelect.appendChild(option);
         });
+
+        const noneOption = document.createElement('option');
+        noneOption.value = 'None';
+        noneOption.textContent = 'None';
+        subgroupSelect.appendChild(noneOption);
     }
 
     groupSelect.addEventListener('change', () => {
-        const selectedGroupIndex = groupSelect.selectedIndex;
+        const selectedGroupIndex = groupSelect.selectedIndex - 1 ;
         console.log("Change")
         populateSubgroups(selectedGroupIndex);
     });
-
-    // Call the function initially with the default selected group index
-    const defaultSelectedGroupIndex = groupSelect.selectedIndex;
-    populateSubgroups(defaultSelectedGroupIndex);
 </script>
 
 {% endblock %}
