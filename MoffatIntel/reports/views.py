@@ -129,22 +129,22 @@ def index(request):
                     return redirect('reports:home')
         else:
             if (username == "" and password == ""):
-                return render(request, 'reports/login.html', {'error_message': "Please input login credentials"})
+                return render(request, 'registration/login.html', {'error_message': "Please input login credentials"})
             else:
-                return render(request, 'reports/login.html',
+                return render(request, 'registration/login.html',
                               {'error_message': "The provided credentials are incorrect"})
     else:
-        return render(request, 'reports/login.html')
+        return render(request, 'registration/login.html')
 
 
 def log_out(request):
     logout(request)
-    return render(request, 'reports/login.html')
+    return render(request, 'registration/login.html')
 
 
 @login_required(login_url='reports:login')
 def input_data(request):
-    return render(request, 'reports/input_data.html')
+    return render(request, 'data/input_data.html')
 
 
 @login_required(login_url='reports:login')
@@ -168,7 +168,7 @@ def edit_estimate(request, estimate_id):
 
         if not date or not sub or not csi or not category or not total:
             context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
-            return render(request, 'reports/edit_estimate.html', context)
+            return render(request, 'estimates/edit_estimate.html', context)
 
         estimate.date = date
         estimate.sub_id = get_object_or_404(Subcontractor, pk=sub)
@@ -180,7 +180,7 @@ def edit_estimate(request, estimate_id):
             estimate.pdf = request.FILES['pdf']
             if not estimate.pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
-                return render(request, 'reports/edit_invoice.html', context)
+                return render(request, 'draws/edit_invoice.html', context)
 
         estimate.save()
 
@@ -212,19 +212,19 @@ def edit_sub(request, sub_id):
 
         if not name:
             context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
-            return render(request, 'reports/edit_sub.html', context)
+            return render(request, 'data/edit_sub.html', context)
 
         if not address and not phone and not email:
             context.update({'error_message': "Please enter at least one form of contact"})
-            return render(request, 'reports/edit_sub.html', context)
+            return render(request, 'data/edit_sub.html', context)
 
         if not csi:
             context.update({'error_message': "Select a CSI division"})
-            return render(request, 'reports/edit_sub.html', context)
+            return render(request, 'data/edit_sub.html', context)
 
         if not category:
             context.update({'error_message': "Select a category"})
-            return render(request, 'reports/edit_sub.html', context)
+            return render(request, 'data/edit_sub.html', context)
 
         sub.name = name
         sub.address = address
@@ -238,7 +238,7 @@ def edit_sub(request, sub_id):
 
         return redirect('reports:all_subs')
 
-    return render(request, 'reports/edit_sub.html', {'sub': sub})
+    return render(request, 'data/edit_sub.html', {'sub': sub})
 
 
 @login_required(login_url='reports:login')
@@ -251,10 +251,10 @@ def edit_vendor(request, vendor_id):
         cphone = request.POST.get('cphone')
         cemail = request.POST.get('cemail')
         if not name:
-            return render(request, 'reports/edit_vendor.html', {'error_message': "Please enter the vendor name. (Less than 50 characters)", 'vendor': vendor})
+            return render(request, 'data/edit_vendor.html', {'error_message': "Please enter the vendor name. (Less than 50 characters)", 'vendor': vendor})
 
         if not address and not cphone and not cemail:
-            return render(request, 'reports/edit_vendor.html', {'error_message': "Please enter at least one form of contact", 'vendor': vendor})
+            return render(request, 'data/edit_vendor.html', {'error_message': "Please enter at least one form of contact", 'vendor': vendor})
 
         vendor.name = name
         vendor.addresss = address
@@ -266,7 +266,7 @@ def edit_vendor(request, vendor_id):
 
         return redirect('reports:all_vendors')
 
-    return render(request, 'reports/edit_vendor.html', {'vendor': vendor})
+    return render(request, 'data/edit_vendor.html', {'vendor': vendor})
 
 
 @login_required(login_url='reports:login')
@@ -305,7 +305,7 @@ def sub_select(request, project_id):
     subs = Subcontractor.objects.order_by("name")
     project = get_object_or_404(Project, pk=project_id)
 
-    return render(request, 'reports/sub_select.html', {'subs': subs, 'project': project})
+    return render(request, 'contracts/sub_select.html', {'subs': subs, 'project': project})
 
 @login_required(login_url='reports:login')
 def all_subs(request):
@@ -331,11 +331,11 @@ def all_subs(request):
         }
         if not name:
             context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
-            return render(request, 'reports/all_subs.html', context)
+            return render(request, 'data/all_subs.html', context)
 
         if not address and not phone and not email:
             context.update({'error_message': "Please enter at least one form of contact"})
-            return render(request, 'reports/all_subs.html', context)
+            return render(request, 'data/all_subs.html', context)
 
         sub = Subcontractor()
         sub.name = name
@@ -349,7 +349,7 @@ def all_subs(request):
 
         return redirect(reverse('reports:all_subs'))
 
-    return render(request, 'reports/all_subs.html', {'subs': subs})
+    return render(request, 'data/all_subs.html', {'subs': subs})
 
 
 @login_required(login_url='reports:login')
@@ -377,20 +377,20 @@ def all_vendors(request):
             'category': category
         }
 
-        if not w9:
-            context.update({'error_message': "Please enter the vendor W9 name."})
-            return render(request, 'reports/all_vendors.html', context)
+        #if not w9:
+         #   context.update({'error_message': "Please enter the vendor W9."})
+          #  return render(request, 'data/all_vendors.html', context)
         if not csi or not category:
             context.update({'error_message': "Please enter the CSI Division and Category"})
-            return render(request, 'reports/all_vendors.html', context)
+            return render(request, 'data/all_vendors.html', context)
 
         if not name:
             context.update({'error_message': "Please enter the vendor name. (Less than 50 characters)"})
-            return render(request, 'reports/all_vendors.html', context)
+            return render(request, 'data/all_vendors.html', context)
 
         if not address and not cname and not cphone and not cemail:
             context.update({'error_message': "Please enter at least one form of contact"})
-            return render(request, 'reports/all_vendors.html', context)
+            return render(request, 'data/all_vendors.html', context)
 
         vendor = Vendor()
         vendor.name = name
@@ -405,19 +405,19 @@ def all_vendors(request):
 
         return redirect(reverse('reports:all_vendors'))
 
-    return render(request, 'reports/all_vendors.html', {'vendors': vendors})
+    return render(request, 'data/all_vendors.html', {'vendors': vendors})
 
 @login_required(login_url='reports:login')
 def home(request):
     recent_projects = Project.objects.order_by('-date', '-status')[:5]
     context = {'recent_projects': recent_projects}
-    return render(request, 'reports/home.html', context)
+    return render(request, 'projects/home.html', context)
 
 @login_required(login_url='reports:login')
 def all(request):
     projects = Project.objects.order_by('-date', '-status')
     context = {'projects': projects}
-    return render(request, 'reports/all_proj.html', context)
+    return render(request, 'projects/all_proj.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -433,11 +433,11 @@ def new_proj(request):
         status = "I"
 
         if not name or not address or not city or not state or not zip:
-            return render(request, 'reports/new_proj.html', {'error_message': "Please fill out all fields",
+            return render(request, 'projects/new_proj.html', {'error_message': "Please fill out all fields",
                                                              'state_options': STATE_OPTIONS})
 
         if int(zip) < 10000 and zip != "":
-            return render(request, 'reports/new_proj.html', {'error_message': "Zip code incorrect",
+            return render(request, 'projects/new_proj.html', {'error_message': "Zip code incorrect",
                                                              'state_options': STATE_OPTIONS})
 
         project = Project(name=name, date=date, edited_by=edited_by, status=status,
@@ -475,7 +475,7 @@ def new_proj(request):
 
         return redirect('reports:home')
 
-    return render(request, 'reports/new_proj.html', {"state_options": STATE_OPTIONS})
+    return render(request, 'projects/new_proj.html', {"state_options": STATE_OPTIONS})
 
 @login_required(login_url='reports:login')
 def new_exhibit(request, project_id, sub_id):
@@ -488,7 +488,7 @@ def new_exhibit(request, project_id, sub_id):
         return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
 
     print("*********Didn't work :(**************")
-    return render(request, 'reports/new_exhibit.html', {'project': project, 'sub': sub})
+    return render(request, 'contracts/new_exhibit.html', {'project': project, 'sub': sub})
 
 def check_space(self, required_height):
     if self.get_y() + required_height > self.page_break_trigger:
@@ -550,19 +550,19 @@ def new_contract(request, project_id = None, sub_id = None):
 
         if not project or not sub or not description or not contract_total or not contract_date:
             context.update({'error_message': "Please fill out all fields as specified (missing req data)"})
-            return render(request, 'reports/new_contract.html', context)
+            return render(request, 'contracts/new_contract.html', context)
 
         if listed_in_exhibit == listed_in_subcontract:
             context.update({'error_message': "Please fill out all fields as specified (sub/exhibit)"})
-            return render(request, 'reports/new_contract.html', context)
+            return render(request, 'contracts/new_contract.html', context)
 
         if (offsite_disposal + onsite_dumpster + onsite_dumpster_sub_pay) != 1:
             context.update({'error_message': "Please fill out all fields as specified (disposal)"})
-            return render(request, 'reports/new_contract.html', context)
+            return render(request, 'contracts/new_contract.html', context)
 
         if not project in projects or not sub in subs:
             context.update({'error_message': "Please pick an existing Project and Subcontractor"})
-            return render(request, 'reports/new_contract.html', context)
+            return render(request, 'contracts/new_contract.html', context)
 
         try:
             contract_total = float(contract_total)
@@ -570,7 +570,7 @@ def new_contract(request, project_id = None, sub_id = None):
                 raise
         except:
             context.update({'error_message': "Contract total must be a positive number"})
-            return render(request, 'reports/new_contract.html', context)
+            return render(request, 'contracts/new_contract.html', context)
 
         swo = SWO()
         swo.date = contract_date
@@ -699,7 +699,7 @@ def new_contract(request, project_id = None, sub_id = None):
 
         return redirect('reports:contract_view', project_id=project.id, sub_id=sub.id)
 
-    return render(request, 'reports/new_contract.html', context)
+    return render(request, 'contracts/new_contract.html', context)
 
 def create_exhibit(POST, project, sub):
     print("************METHOD CALLED************")
@@ -1023,7 +1023,7 @@ def new_check(request, project_id, draw_id, invoice_id):
 
         if not check_date or not check_number or not total or not sub:
             context.update({'error_message': "Please fill out all fields"})
-            return render(request, 'reports/new_check.html', context)
+            return render(request, 'draws/new_check.html', context)
 
         check = Check()
         check.date = datetime.datetime.now()
@@ -1042,14 +1042,14 @@ def new_check(request, project_id, draw_id, invoice_id):
             check.check_pdf = request.FILES['check_pdf']
             if not check.check_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
-                return render(request, 'reports/new_check.html', context)
+                return render(request, 'draws/new_check.html', context)
 
         # Handle lien release PDF
         if 'lien_release_pdf' in request.FILES:
             check.lien_release_pdf = request.FILES['lien_release_pdf']
             if not check.lien_release_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
-                return render(request, 'reports/new_check.html', context)
+                return render(request, 'draws/new_check.html', context)
 
         else:
             check.signed = False
@@ -1069,7 +1069,7 @@ def new_check(request, project_id, draw_id, invoice_id):
 
         return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
 
-    return render(request, 'reports/new_check.html', context)
+    return render(request, 'draws/new_check.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -1127,7 +1127,7 @@ def new_invoice(request, project_id, draw_id):
 
         if not csi or not category or not method or not sub or not invoice_total or not description:
             context.update({'error_message': "Please fill out all fields"})
-            return render(request, 'reports/new_invoice.html', context)
+            return render(request, 'draws/new_invoice.html', context)
 
         invoice = Invoice()
         invoice.draw_id = draw
@@ -1158,7 +1158,7 @@ def new_invoice(request, project_id, draw_id):
             invoice.invoice_pdf = request.FILES['invoice_pdf']
             if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
-                return render(request, 'reports/new_invoice.html', context)
+                return render(request, 'draws/new_invoice.html', context)
 
         # Save invoice and related objects
         project.edited_by = request.user.username
@@ -1173,7 +1173,7 @@ def new_invoice(request, project_id, draw_id):
 
         return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
 
-    return render(request, 'reports/new_invoice.html', context)
+    return render(request, 'draws/new_invoice.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -1204,7 +1204,7 @@ def todo(request):
         'invoices': invoices
     }
 
-    return render(request, 'reports/todo.html', context)
+    return render(request, 'misc/todo.html', context)
 
 
 
@@ -1297,7 +1297,7 @@ def all_draws(request, project_id):
         'percent': percent
     }
 
-    return render(request, 'reports/all_draws.html', context)
+    return render(request, 'draws/all_draws.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -1317,13 +1317,13 @@ def edit_proj(request, project_id):
         edited_by = request.user.username
 
         if not name or not address or not city or not state or not zip:
-            return render(request, 'reports/edit_project.html', {'error_message': "Please fill out all fields",
+            return render(request, 'projects/edit_project.html', {'error_message': "Please fill out all fields",
                                                                  'project': project,
                                                                  'state_options': STATE_OPTIONS,
                                                                  'status_options': STATUS_OPTIONS})
 
         if (int(zip) < 0 or int(zip) > 99999) and zip != "":
-            return render(request, 'reports/edit_project.html', {'error_message': "Zip code incorrect",
+            return render(request, 'projects/edit_project.html', {'error_message': "Zip code incorrect",
                                                                  'project': project,
                                                                  'state_options': STATE_OPTIONS,
                                                                  'status_options': STATUS_OPTIONS})
@@ -1340,7 +1340,7 @@ def edit_proj(request, project_id):
 
         return redirect('reports:home')
 
-    return render(request, 'reports/edit_project.html', {'project': project,
+    return render(request, 'projects/edit_project.html', {'project': project,
                                                          'state_options': STATE_OPTIONS,
                                                          'status_options': STATUS_OPTIONS})
 
@@ -1381,7 +1381,7 @@ def delete_draw(request, project_id):
 @login_required(login_url='reports:login')
 def project_view(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
-    return render(request, 'reports/project_view.html', {'project': project})
+    return render(request, 'projects/project_view.html', {'project': project})
 
 
 @login_required(login_url='reports:login')
@@ -1395,7 +1395,7 @@ def all_estimates(request, project_id):
         'divisions': DIVISION_CHOICES,
     }
 
-    return render(request, 'reports/all_estimates.html', context)
+    return render(request, 'estimates/all_estimates.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -1407,7 +1407,7 @@ def all_plans(request, project_id):
 
     context = {'plans': plans, 'project': project, 'form': form}
 
-    return render(request, 'reports/all_plans.html', context)
+    return render(request, 'plans/all_plans.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -1417,12 +1417,12 @@ def upload_plan(request, project_id):
         if form.is_valid():
             uploaded_file: UploadedFile = request.FILES['pdf']
             if uploaded_file.content_type != 'application/pdf':
-                return render(request, 'reports/all_plans.html', {'project': get_object_or_404(Project, pk=project_id), 'form': form, 'error_message': "Only PDF's allowed."})
+                return render(request, 'plans/all_plans.html', {'project': get_object_or_404(Project, pk=project_id), 'form': form, 'error_message': "Only PDF's allowed."})
 
             plan = form.save(commit=False)
             name = request.POST.get('name')
             if not name:
-                return render(request, 'reports/all_plans.html',
+                return render(request, 'plans/all_plans.html',
                               {'project': get_object_or_404(Project, pk=project_id), 'form': form,
                                'error_message': "Please enter a name for the plan."})
 
@@ -1435,11 +1435,11 @@ def upload_plan(request, project_id):
 
             return redirect('reports:all_plans', project_id=project_id)
         else:
-            return render(request, 'reports/all_plans.html', {'project': get_object_or_404(Project, pk=project_id), 'form': form, 'error_message': "File upload failed."})
+            return render(request, 'plans/all_plans.html', {'project': get_object_or_404(Project, pk=project_id), 'form': form, 'error_message': "File upload failed."})
     else:
         form = DocumentForm()
 
-    return render(request, 'reports/all_plans.html', {'project': get_object_or_404(Project, pk=project_id), 'form': form})
+    return render(request, 'plans/all_plans.html', {'project': get_object_or_404(Project, pk=project_id), 'form': form})
 
 
 @login_required(login_url='reports:login')
@@ -1458,7 +1458,7 @@ def delete_plan(request, project_id):
 
         return redirect('reports:all_plans', project_id=project_id)  # Redirect to a success page
 
-    return render(request, 'reports/all_plans.html', {'error_message': "Document could not be deleted."})
+    return render(request, 'plans/all_plans.html', {'error_message': "Document could not be deleted."})
 
 
 @login_required(login_url='reports:login')
@@ -1488,7 +1488,7 @@ def edit_check(request, check_id):
 
         if not check_date or not check_num or not sub or not check_total or not lien_release_type:
             context.update({'error_message': "Please fill out all fields"})
-            return render(request, 'reports/edit_check.html', context)
+            return render(request, 'draws/edit_check.html', context)
 
         check.date = datetime.datetime.now()
         check.check_date = check_date
@@ -1508,14 +1508,14 @@ def edit_check(request, check_id):
             invoice.invoice_pdf = request.FILES['check_pdf']
             if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Check PDF"})
-                return render(request, 'reports/edit_check.html', context)
+                return render(request, 'draws/edit_check.html', context)
 
         # Handle lien release PDF
         if 'lien_release_pdf' in request.FILES:
             invoice.lien_release_pdf = request.FILES['lien_release_pdf']
             if not invoice.lien_release_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
-                return render(request, 'reports/edit_check.html', context)
+                return render(request, 'draws/edit_check.html', context)
 
         else:
             check.signed = None
@@ -1535,7 +1535,7 @@ def edit_check(request, check_id):
 
         return redirect('reports:draw_view', project_id=project.id, draw_id=draw.id)  # Redirect to a success page
 
-    return render(request, 'reports/edit_check.html', context)
+    return render(request, 'draws/edit_check.html', context)
 @login_required(login_url='reports:login')
 def edit_invoice(request, project_id, draw_id, invoice_id):
     project = get_object_or_404(Project, pk=project_id)
@@ -1620,7 +1620,7 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
             invoice.invoice_pdf = request.FILES['invoice_pdf']
             if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
-                return render(request, 'reports/edit_invoice.html', context)
+                return render(request, 'draws/edit_invoice.html', context)
 
         # Save invoice and related objects
         project.edited_by = request.user.username
@@ -1635,7 +1635,7 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
 
         return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
 
-    return render(request, 'reports/edit_invoice.html', context)
+    return render(request, 'draws/edit_invoice.html', context)
 
 @login_required(login_url='reports:login')
 def draw_view(request, project_id, draw_id):
@@ -1650,7 +1650,7 @@ def draw_view(request, project_id, draw_id):
 
     total_invoice_amount = invoices.aggregate(total=Sum('invoice_total'))['total']
 
-    return render(request, 'reports/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project, 'contracts': contracts, 'checks': checks, 'groups': groups, 'subgroups': subgroups})
+    return render(request, 'draws/draw_view.html', {'draw': draw, 'draws': draws, 'invoices': invoices, 'total_invoice_amount':total_invoice_amount,'project': project, 'contracts': contracts, 'checks': checks, 'groups': groups, 'subgroups': subgroups})
 
 
 @login_required(login_url='reports:login')
@@ -1658,14 +1658,14 @@ def contract_pdf_view(request, contract_id):
     contract = get_object_or_404(Contract, pk=contract_id)
     pdf_bytes = contract.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'contract': contract})
+    return render(request, 'contracts/contract_pdf_view.html', {'pdf_data': pdf_data, 'contract': contract})
 
 @login_required(login_url='reports:login')
 def estimate_pdf_view(request, estimate_id):
     estimate = get_object_or_404(Estimate, pk=estimate_id)
     pdf_bytes = estimate.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/estimate_pdf_view.html', {'pdf_data': pdf_data, 'estimate': estimate})
+    return render(request, 'estimates/estimate_pdf_view.html', {'pdf_data': pdf_data, 'estimate': estimate})
 
 
 @login_required(login_url='reports:login')
@@ -1673,7 +1673,7 @@ def swo_pdf_view(request, swo_id):
     swo = get_object_or_404(SWO, pk=swo_id)
     pdf_bytes = swo.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'SWO': swo})
+    return render(request, 'contracts/contract_pdf_view.html', {'pdf_data': pdf_data, 'SWO': swo})
 
 
 @login_required(login_url='reports:login')
@@ -1681,14 +1681,14 @@ def co_pdf_view(request, co_id):
     co = get_object_or_404(ChangeOrder, pk=co_id)
     pdf_bytes = co.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'co': co})
+    return render(request, 'contracts/co_pdf_view.html', {'pdf_data': pdf_data, 'co': co})
 
 @login_required(login_url='reports:login')
 def po_pdf_view(request, po_id):
     po = get_object_or_404(PurchaseOrder, pk=po_id)
     pdf_bytes = po.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'po': po})
+    return render(request, 'contracts/po_pdf_view.html', {'pdf_data': pdf_data, 'po': po})
 
 
 @login_required(login_url='reports:login')
@@ -1696,7 +1696,7 @@ def dco_pdf_view(request, dco_id):
     dco = get_object_or_404(DeductiveChangeOrder, pk=dco_id)
     pdf_bytes = dco.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/contract_pdf_view.html', {'pdf_data': pdf_data, 'dco': dco})
+    return render(request, 'contracts/dco_pdf_view.html', {'pdf_data': pdf_data, 'dco': dco})
 
 
 @login_required(login_url='reports:login')
@@ -1704,7 +1704,7 @@ def exhibit_pdf_view(request, exhibit_id):
     exhibit = get_object_or_404(Exhibit, pk=exhibit_id)
     pdf_bytes = exhibit.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/exhibit_pdf_view.html', {'pdf_data': pdf_data, 'exhibit': exhibit})
+    return render(request, 'contracts/exhibit_pdf_view.html', {'pdf_data': pdf_data, 'exhibit': exhibit})
 
 
 @login_required(login_url='reports:login')
@@ -1835,7 +1835,7 @@ def delete_check(request, check_id):
 
         return redirect('reports:draw_view', project_id=project.id, draw_id=draw.id)  # Redirect to a success page
 
-    return render(request, 'reports/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
+    return render(request, 'draws/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
 
 
 @login_required(login_url='reports:login')
@@ -1864,7 +1864,7 @@ def delete_invoice(request, project_id, draw_id, invoice_id):
             invoice.delete()
         return redirect('reports:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
 
-    return render(request, 'reports/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
+    return render(request, 'draws/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
 
 
 @login_required(login_url='reports:login')
@@ -1900,7 +1900,7 @@ def new_purchase_order(request, project_id=None):
 
                 if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
                     context.update({'error_message': "All fields need to be filled."})
-                    return render(request, 'reports/new_purchase_order.html', context)
+                    return render(request, 'contracts/new_purchase_order.html', context)
 
                 try:
                     qty_value = int(qty_value)
@@ -1908,7 +1908,7 @@ def new_purchase_order(request, project_id=None):
                     totalprice_value = float(totalprice_value)  # Convert totalprice to float
                 except ValueError:
                     context.update({'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
-                    return render(request, 'reports/new_purchase_order.html', context)
+                    return render(request, 'contracts/new_purchase_order.html', context)
 
                 # Create a dictionary for the change order data
                 po_data = {
@@ -1924,7 +1924,7 @@ def new_purchase_order(request, project_id=None):
 
         return redirect('reports:purchase_orders', project_id=project.id)
 
-    return render(request, 'reports/new_purchase_order.html', context)
+    return render(request, 'contracts/new_purchase_order.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -1933,7 +1933,7 @@ def deductive_change_orders(request, project_id, sub_id):
     sub = get_object_or_404(Subcontractor, pk=sub_id)
     dcos = DeductiveChangeOrder.objects.order_by('-date').filter(project_id=project).filter(sub_id=sub)
 
-    return render(request, 'reports/deductive_change_orders.html', {'project': project, 'sub': sub, 'dcos': dcos})
+    return render(request, 'contracts/deductive_change_orders.html', {'project': project, 'sub': sub, 'dcos': dcos})
 
 
 @login_required(login_url='reports:login')
@@ -1988,7 +1988,7 @@ def new_deductive_change_order(request, project_id = None, sub_id = None):
 
                 if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
                     context.update({'error_message': "All fields need to be filled."})
-                    return render(request, 'reports/new_deductive_change_order.html', context)
+                    return render(request, 'contracts/new_deductive_change_order.html', context)
 
                 try:
                     qty_value = int(qty_value)
@@ -1996,7 +1996,7 @@ def new_deductive_change_order(request, project_id = None, sub_id = None):
                     totalprice_value = float(totalprice_value)  # Convert totalprice to float
                 except ValueError:
                     context.update({'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
-                    return render(request, 'reports/new_deductive_change_order.html', context)
+                    return render(request, 'contracts/new_deductive_change_order.html', context)
 
                 # Create a dictionary for the change order data
                 co_data = {
@@ -2012,7 +2012,7 @@ def new_deductive_change_order(request, project_id = None, sub_id = None):
 
         return redirect('reports:deductive_change_orders', project_id=project.id, sub_id=sub.id)
 
-    return render(request, 'reports/new_deductive_change_order.html', context)
+    return render(request, 'contracts/new_deductive_change_order.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -2021,7 +2021,7 @@ def change_orders(request, project_id, sub_id):
     sub = get_object_or_404(Subcontractor, pk=sub_id)
     cos = ChangeOrder.objects.order_by('-date').filter(project_id=project).filter(sub_id=sub)
 
-    return render(request, 'reports/change_orders.html', {'project': project, 'sub': sub, 'cos': cos})
+    return render(request, 'contracts/change_orders.html', {'project': project, 'sub': sub, 'cos': cos})
 
 
 @login_required(login_url='reports:login')
@@ -2029,7 +2029,7 @@ def purchase_orders(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
     pos = PurchaseOrder.objects.order_by('-date').order_by('vendor_id').filter(project_id=project)
 
-    return render(request, 'reports/purchase_orders.html', {'project': project, 'pos': pos})
+    return render(request, 'contracts/purchase_orders.html', {'project': project, 'pos': pos})
 
 
 @login_required(login_url='reports:login')
@@ -2084,7 +2084,7 @@ def new_change_order(request, project_id=None, sub_id=None):
 
                 if scope_value == "" or float(qty_value) <= 0 or float(unitprice_value) <= 0:
                     context.update({'error_message': "All fields need to be filled."})
-                    return render(request, 'reports/new_change_order.html', context)
+                    return render(request, 'contracts/new_change_order.html', context)
 
                 try:
                     qty_value = int(qty_value)
@@ -2092,7 +2092,7 @@ def new_change_order(request, project_id=None, sub_id=None):
                     totalprice_value = float(totalprice_value)  # Convert totalprice to float
                 except ValueError:
                     context.update({'error_message': "'Qty' and 'Unit Price' fields must be numbers."})
-                    return render(request, 'reports/new_change_order.html', context)
+                    return render(request, 'contracts/new_change_order.html', context)
 
                 # Create a dictionary for the change order data
                 co_data = {
@@ -2108,7 +2108,7 @@ def new_change_order(request, project_id=None, sub_id=None):
 
         return redirect('reports:change_orders', project_id=project.id, sub_id=sub.id)
 
-    return render(request, 'reports/new_change_order.html', context)
+    return render(request, 'contracts/new_change_order.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -2718,16 +2718,16 @@ def contract_view(request, project_id, sub_id):
                 swo.pdf = request.FILES['swo_pdf']
                 if not swo.pdf.file.content_type.startswith('application/pdf'):
                     context.update({'error_message': "Only PDFs are allowed for the SWO PDF"})
-                    return render(request, 'reports/contract_view.html', context)
+                    return render(request, 'contracts/contract_view.html', context)
 
             try:
                 swo.total = float(swo.total)
                 if swo.total <= 0:
                     context.update({'error_message': "Total must be a positive number and not 0"})
-                    return render(request, 'reports/contract_view.html', context)
+                    return render(request, 'contracts/contract_view.html', context)
             except:
                 context.update({'error_message': "Total must be a number"})
-                return render(request, 'reports/contract_view.html', context)
+                return render(request, 'contracts/contract_view.html', context)
 
             swo.save()
             return redirect('reports:contract_view', project_id, sub_id)
@@ -2743,16 +2743,16 @@ def contract_view(request, project_id, sub_id):
                 exhibit.pdf = request.FILES['exhibit_pdf']
                 if not exhibit.pdf.file.content_type.startswith('application/pdf'):
                     context.update({'error_message': "Only PDFs are allowed for the Exhibit PDF"})
-                    return render(request, 'reports/contract_view.html', context)
+                    return render(request, 'contracts/contract_view.html', context)
 
             try:
                 exhibit.total = float(exhibit.total)
                 if exhibit.total <= 0:
                     context.update({'error_message': "Total must be a positive number and not 0"})
-                    return render(request, 'reports/contract_view.html', context)
+                    return render(request, 'contracts/contract_view.html', context)
             except:
                 context.update({'error_message': "Total must be a number"})
-                return render(request, 'reports/contract_view.html', context)
+                return render(request, 'contracts/contract_view.html', context)
 
             exhibit.save()
             return redirect('reports:contract_view', project_id, sub_id)
@@ -2768,21 +2768,21 @@ def contract_view(request, project_id, sub_id):
                 contract.pdf = request.FILES['contract_pdf']
                 if not contract.pdf.file.content_type.startswith('application/pdf'):
                     context.update({'error_message': "Only PDFs are allowed for the Contract PDF"})
-                    return render(request, 'reports/contract_view.html', context)
+                    return render(request, 'contracts/contract_view.html', context)
 
             try:
                 contract.total = float(contract.total)
                 if contract.total <= 0:
                     context.update({'error_message': "Total must be a positive number and not 0"})
-                    return render(request, 'reports/contract_view.html', context)
+                    return render(request, 'contracts/contract_view.html', context)
             except:
                 context.update({'error_message': "Total must be a number"})
-                return render(request, 'reports/contract_view.html', context)
+                return render(request, 'contracts/contract_view.html', context)
 
             contract.save()
             return redirect('reports:contract_view', project_id, sub_id)
 
-    return render(request, 'reports/contract_view.html', context)
+    return render(request, 'contracts/contract_view.html', context)
 
 
 @login_required(login_url='reports:login')
@@ -2790,7 +2790,7 @@ def invoice_view(request, invoice_id):
     invoice = get_object_or_404(Invoice, pk=invoice_id)
     pdf_bytes = invoice.invoice_pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/invoice_view.html', {'pdf_data': pdf_data, 'invoice': invoice})
+    return render(request, 'contracts/invoice_view.html', {'pdf_data': pdf_data, 'invoice': invoice})
 
 
 @login_required(login_url='reports:login')
@@ -2798,13 +2798,13 @@ def check_view(request, check_id):
     check = get_object_or_404(Check, pk=check_id)
     pdf_bytes = check.check_pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/check_view.html', {'pdf_data': pdf_data, 'check': check})
+    return render(request, 'draws/check_view.html', {'pdf_data': pdf_data, 'check': check})
 
 @login_required(login_url='reports:login')
 def lr_view(request, check_id):
     check = get_object_or_404(Check, pk=check_id)
     pdf_bytes = check.lien_release_pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'reports/check_view.html', {'pdf_data': pdf_data, 'check': check})
+    return render(request, 'draws/check_view.html', {'pdf_data': pdf_data, 'check': check})
 
 
