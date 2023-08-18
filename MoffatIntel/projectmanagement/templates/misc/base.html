@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}{{ section.title}}{% endblock %} </title>
+        {% load static %}
+        <link rel="stylesheet" href="{% static 'projectmanagement/style.css' %}">
+        <script src="{% static 'projectmanagement/csrf.js' %}"></script>
+        <link rel="shortcut icon" type="image/png" href="{% static 'projectmanagement/images/favicon.ico' %}"/>
+    </head>
+    <body>
+        <div style="height: inherit;">
+            <div>
+                <img src="{% static 'projectmanagement/images/logo_onlyM.png' %}" class="logo">
+
+                <h2 class="logo-label">MOFFAT INTEL</h2>
+
+                <a href="/projectmanagement/log_out" class="logout">
+                    <img style="width: 30px; height: auto;" src="{% static 'projectmanagement/images/logout_icon.png' %}">
+                    <span style="margin-top: 3px;">LOG OUT</span>
+                </a>
+                <hr color="#560200" width="100%" size="10">
+            </div>
+            <div class="nav">
+                <nav role="navigation">
+                        <ul id="menu">
+                            <div><a class="menu-icon" href="/projectmanagement/home"><img style="width: 42px; height: auto;" src="{% static 'projectmanagement/images/home.png' %}"><li style="margin-left: -22px">Home</li>
+                            </a><br><br></div>
+                            <a class="menu-icon" href="{% url 'projectmanagement:all' %}"><img style="width: 52px; height: auto;" src="{% static 'projectmanagement/images/files.png' %}"><li style="margin-left:-28px">All Projects</li></a><br><br><br>
+                            <a class="menu-icon" href="{% url 'projectmanagement:reports' %}"><img style="width: 50px; height: auto;" src="{% static 'projectmanagement/images/paper.png' %}"><li style="margin-left: -28px">Reports</li></a><br><br>
+                            <a class="menu-icon" href="{% url 'projectmanagement:all_subs' %}"><img style="width: 50px; height: auto;" src="{% static 'projectmanagement/images/sub.png' %}"><li style="margin-left: -18px">Subs</li></a><br><br>
+                            <a class="menu-icon" href="{% url 'projectmanagement:all_vendors' %}"><img style="width: 50px; height: auto;" src="{% static 'projectmanagement/images/vendor.png' %}"><li style="margin-left: -28px">Vendors</li></a><br><br>
+                            <a class="menu-icon" href="{% url 'projectmanagement:input_data' %}"><img style="width: 52px; height: auto;" src="{% static 'projectmanagement/images/pencil.png' %}"><li>New Files</li></a><br><br><br><br>
+                        </ul>
+                </nav>
+            </div>
+            <div class="vl"></div>
+        </div>
+        <div class="content-block">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </body>
+</html>
+

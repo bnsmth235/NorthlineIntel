@@ -7,5 +7,6 @@ __pycache__
 *.zip
 *.bak
 *.idea
-MoffatIntel/static/reports/*
+MoffatIntel/files/*
+qodana.yaml
 

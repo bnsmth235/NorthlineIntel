@@ -1,0 +1,19 @@
+{% extends "misc/base.html" %}
+
+{% block title %}Input Data{% endblock %}
+{% load static %}
+{% block content %}
+<div  class="multi-option-header">
+    <h1>INPUT DATA</h1>
+    <hr color="#560200" width="90%" size="4">
+</div>
+
+    <div style="text-align: center; padding: 3em">
+        <div style="display: inline-block"><a class="pick-icon" href="{% url 'projectmanagement:all_subs' %}"><img style="width: 225px; height: auto;" src="{% static 'projectmanagement/images/sub.png' %}"><li>Subcontractors</li></a></div>
+        <div style="display: inline-block"><a class="pick-icon" href="{% url 'projectmanagement:all_vendors' %}"><img style="width: 225px; height: auto;" src="{% static 'projectmanagement/images/vendor.png' %}"><li>Vendors</li></a></div>
+        <div style="display: inline-block"><a class="pick-icon" href="{% url 'projectmanagement:new_contract' %}"><img style="width: auto; height: 225px;" src="{% static 'projectmanagement/images/contract.png' %}"><li>New Contract</li></a></div>
+        <div style="display: inline-block"><a class="pick-icon" href="{% url 'projectmanagement:new_change_order' %}"><img style="width: 225px; height: auto;" src="{% static 'projectmanagement/images/change_order.png' %}"><li>New Change Order</li></a></div>
+        <div style="display: inline-block"><a class="pick-icon" href="{% url 'projectmanagement:new_deductive_change_order' %}"><img style="width: 225px; height: auto;" src="{% static 'projectmanagement/images/deductive_change_order.png' %}"><li>New Deductive Change Order</li></a></div>
+        <div style="display: inline-block"><a class="pick-icon" href="{% url 'projectmanagement:new_purchase_order' %}"><img style="width: 225px; height: auto;" src="{% static 'projectmanagement/images/purchase_order.png' %}"><li>New Purchase Order</li></a></div>
+    </div>
+{% endblock %}

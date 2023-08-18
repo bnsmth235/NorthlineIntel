@@ -1,0 +1,306 @@
+{% extends "misc/base.html" %}
+
+{% block title %}Contract {{contract.name}}{% endblock %}
+
+{% block content %}
+{% load static %}
+<script src="{% static 'projectmanagement/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<div id="app">
+
+<div class="multi-option-header">
+    <h1>{{project.name|upper}} : {{sub.name|upper}}</h1>
+    <hr color="#560200" width="90%" size="4">
+</div>
+
+{% if error_message %}
+    <p><strong class="error">{{ error_message }}</strong></p>
+{% endif %}
+
+{% if contracts or SWOs %}
+<div style="text-align: center">
+    <div style="display:inline-block"><a class="pick-icon" href="{% url 'projectmanagement:change_orders' project.id sub.id %}"><img src="{% static 'projectmanagement/images/change_order.png' %}"><li>Change Orders</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="{% url 'projectmanagement:deductive_change_orders' project.id sub.id %}"><img src="{% static 'projectmanagement/images/deductive_change_order.png' %}"><li>Deductive Change Orders</li></a></div>
+    <div style="display:inline-block"><a class="pick-icon" href="{% url 'projectmanagement:purchase_orders' project.id %}"><img src="{% static 'projectmanagement/images/purchase_order.png' %}"><li>Purchase Orders</li></a></div>
+</div>
+
+<div display="block">
+
+
+<h1 class="section-header">SWOs</h1>
+
+<div class="add-button" v-on:click="showSWO()" v-if="!isSWOVisible">
+    <button>+ Upload SWO</button>
+</div>
+
+<div class="add-button" v-on:click="showSWO()" v-if="isSWOVisible">
+    <button>Cancel</button>
+</div>
+
+<div v-if="isSWOVisible">
+    <form method="post" enctype="multipart/form-data" action="{% url 'projectmanagement:contract_view' project.id sub.id%}">
+        <fieldset class="fieldset-table">
+            <legend><h2>Upload SWO</h2></legend>
+            {% csrf_token %}
+            <input hidden="hidden" name="form-type" value="swo">
+
+            <label for="contract_pdf">PDF: </label>
+            <input type="file" name="swo_pdf" id="swo_pdf" class="input-field" required="required">
+
+            <label for="total">SWO Total: $</label>
+            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+
+            <div class="add-new"><a href="{% url 'projectmanagement:new_contract' project.id sub.id %}">+ New SWO</a></div>
+
+            <div class="add-button"><button type="submit">Upload</button></div>
+        </fieldset>
+    </form>
+</div>
+
+{% if SWOs %}
+    <div class="reports-list-div">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers">
+                <th></th>
+                <th>File Name</th>
+                <th>Contract Date</th>
+                <th>Description</th>
+            </tr>
+            {% for SWO in SWOs %}
+                <tr class="report-item zebra">
+                    <td width="25px"><a href="{% url 'projectmanagement:swo_pdf_view' SWO.id %}"><img src="{% static 'projectmanagement/images/pdf_icon.png' %}" height="22" width="22" style="margin-bottom: -4px;margin-left:2px"></a></td>
+
+                    <td width="23%"><a href="#">{{SWO.pdf.name|slice:"20:"}}</a></td>
+                    <td width="75px" style="text-align: center"><a href="#">{{SWO.date|date:"m/d/y"}}</a></td>
+
+                    <td width="fit-content"><a href="#">{{SWO.description}}</a></td>
+
+
+                    <td width="80px">
+                      <form id="delete-form4" method="post" data-delete-url="{% url 'projectmanagement:delete_swo' SWO.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="contract_id" value="{{ contract.id }}">
+                        <input type="hidden" name="username" id="username">
+                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'projectmanagement/images/trash.png' %}" height="18" width="18"> Delete
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr>
+                <td>There are currently no SWOs available.</td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
+
+
+<h1 class="section-header">Exhibits</h1>
+
+<div class="add-button" v-on:click="showExhibit()" v-if="!isExhibitVisible">
+    <button>+ Upload Exhibit</button>
+</div>
+
+<div class="add-button" v-on:click="showExhibit()" v-if="isExhibitVisible">
+    <button>Cancel</button>
+</div>
+
+<div v-if="isExhibitVisible">
+    <form method="post" enctype="multipart/form-data" action="{% url 'projectmanagement:contract_view' project.id sub.id%}">
+        <fieldset class="fieldset-table">
+            <legend><h2>Upload Exhibit</h2></legend>
+            {% csrf_token %}
+            <input hidden="hidden" name="form-type" value="exhibit">
+
+            <label for="exhibit_pdf">PDF: </label>
+            <input type="file" name="exhibit_pdf" id="exhibit_pdf" class="input-field" required="required">
+
+            <label for="total">Exhibit Total: $</label>
+            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+
+            <div class="add-new"><a href="{% url 'projectmanagement:new_exhibit' project.id sub.id %}">+ New Exhibit</a></div>
+
+            <div class="add-button"><button type="submit">Upload</button></div>
+        </fieldset>
+    </form>
+</div>
+
+{% if exhibits %}
+    <div class="reports-list-div">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers">
+                <th></th>
+                <th>Exhibit</th>
+                <th>Date</th>
+                <th>Exhibit Total</th>
+            </tr>
+            {% for exhibit in exhibits %}
+                <tr class="report-item zebra" >
+                    <td width="25px"><a href="{% url 'projectmanagement:exhibit_pdf_view' exhibit.id %}"><img src="{% static 'projectmanagement/images/pdf_icon.png' %}" height="20" width="20" style="margin-bottom: -4px;margin-left:5px"></a></td>
+
+                    <td style="text-align: center">{{exhibit.name}}</a></td>
+                    <td width="75px" style="text-align: center">{{exhibit.date|date:"m/d/y"}}</a></td>
+                    <td style="text-align: center">${{exhibit.total}}</a></td>
+
+                    <td width="80px" style="text-align: center">
+                      <form id="delete-form3" method="post" data-delete-url="{% url 'projectmanagement:delete_exhibit' exhibit.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="contract_id" value="{{ exhibit.id }}">
+                        <input type="hidden" name="username">
+                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'projectmanagement/images/trash.png' %}" height="18" width="18">Delete
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr>
+                <td>There are currently no exhibits available.</td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
+
+{% endif %}
+{% if not contracts %}
+    <br><br>
+{% endif %}
+<h1 class="section-header">Contract</h1>
+
+
+<div class="add-button" v-on:click="showContract()" v-if="!isContractVisible">
+    <button>+ Upload Contract</button>
+</div>
+
+<div class="add-button" v-on:click="showContract()" v-if="isContractVisible">
+    <button>Cancel</button>
+</div>
+
+{% if contracts %}
+    <div v-if="isContractVisible">
+      <form method="post" enctype="multipart/form-data" action="{% url 'projectmanagement:contract_view' project.id sub.id%}">
+        <fieldset class="fieldset-table">
+            <legend><h2>Upload Contract</h2></legend>
+            {% csrf_token %}
+            <input hidden="hidden" name="form-type" value="contract">
+
+            <label for="contract_pdf">PDF: </label>
+            <input type="file" name="contract_pdf" id="contract_pdf" class="input-field" required="required">
+
+            <label for="total">Contract Total: $</label>
+            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+
+            <div class="add-new"><a href="{% url 'projectmanagement:new_contract' project.id sub.id %}">+ New Contract</a></div>
+
+            <div class="add-button"><button type="submit">Upload</button></div>
+        </fieldset>
+    </form>
+  </div>
+
+    <div class="reports-list-div">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="report-item headers">
+                <th></th>
+                <th>File Name</th>
+                <th>Contract Date</th>
+                <th>Description</th>
+            </tr>
+            {% for contract in contracts %}
+                <tr class="report-item zebra">
+                    <td width="25px"><a href="{% url 'projectmanagement:contract_pdf_view' contract.id %}"><img src="{% static 'projectmanagement/images/pdf_icon.png' %}" height="22" width="22" style="margin-bottom: -4px;margin-left:2px"></a></td>
+
+                    <td width="23%"><a href="#">{{contract.pdf.name|slice:"25:"}}</a></td>
+                    <td width="75px" style="text-align: center"><a href="#">{{contract.date|date:"m/d/y"}}</a></td>
+
+                    <td width="fit-content"><a href="#">{{contract.description}}</a></td>
+
+
+                    <td width="80px">
+                      <form id="delete-form4" method="post" data-delete-url="{% url 'projectmanagement:delete_contract' contract.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="contract_id" value="{{ contract.id }}">
+                        <input type="hidden" name="username" id="username">
+                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                          <img src="{% static 'projectmanagement/images/trash.png' %}" height="18" width="18"> Delete
+                        </button>
+                      </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+
+{% else %}
+
+    <div v-if="isContractVisible">
+      <form method="post" enctype="multipart/form-data" action="{% url 'projectmanagement:contract_view' project.id sub.id%}">
+        <fieldset class="fieldset-table">
+            <legend><h2>Upload Contract</h2></legend>
+            {% csrf_token %}
+            <input hidden="hidden" name="form-type" value="contract">
+
+            <label for="contract_pdf">PDF: </label>
+            <input type="file" name="contract_pdf" id="contract_pdf" class="input-field" required="required">
+
+            <label for="total">Contract Total: $</label>
+            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+
+            <div class="add-new"><a href="{% url 'projectmanagement:new_contract' project.id sub.id %}">+ New Contract</a></div>
+
+            <div class="add-button"><button type="submit">Upload</button></div>
+        </fieldset>
+    </form>
+  </div>
+
+    <div class="reports-list-div">
+        <table>
+            <tr>
+                <td>There are currently no contracts available.</td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
+</div>
+
+</div>
+
+<script>
+    const app = Vue.createApp({
+    data() {
+        return {
+            isContractVisible: false,
+            isExhibitVisible: false,
+            isSWOVisible: false,
+        };
+    },
+
+        methods: {
+            showContract() {
+                this.isContractVisible = !this.isContractVisible;
+            },
+            showExhibit() {
+                this.isExhibitVisible = !this.isExhibitVisible;
+            },
+            showSWO() {
+                this.isSWOVisible = !this.isSWOVisible;
+            },
+        },
+    });
+
+    const vm = app.mount("#app");
+</script>
+
+{% endblock %}

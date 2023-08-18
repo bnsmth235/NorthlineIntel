@@ -1,0 +1,65 @@
+{% extends "misc/base.html" %}
+
+{% block title %}Reports{% endblock %}
+{% load static %}
+
+{% block content %}
+<script src="{% static 'projectmanagement/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<div id="app">
+
+<h1 class="section-header">Reports</h1>
+
+{% if reports %}
+    <div class="reports-list-div">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="headers" style="background-color: initial;">
+                <th>Name</th>
+                <th>Edited By</th>
+                <th>Last Edited</th>
+            </tr>
+        {% for report in reports %}
+                <tr class="report-item zebra">
+                    <td>
+                        {{report.name}}
+                    </td>
+                </tr>
+
+        {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr class="report-item no-hover">
+                <td>There are currently no reports available.</td>
+            </tr>
+        </table>
+    </div>
+
+{% endif %}
+
+</table>
+
+</div>
+
+<script>
+    const app = Vue.createApp({
+  data() {
+    return {
+      isDivVisible: false,
+    };
+  },
+
+  methods: {
+    showDiv() {
+      this.isDivVisible = !this.isDivVisible;
+    },
+  },
+});
+
+const vm = app.mount("#app");
+</script>
+
+{% endblock %}
