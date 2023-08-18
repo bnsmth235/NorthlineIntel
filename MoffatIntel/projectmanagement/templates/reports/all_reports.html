@@ -15,15 +15,11 @@
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
             <tr class="headers" style="background-color: initial;">
-                <th>Name</th>
-                <th>Edited By</th>
-                <th>Last Edited</th>
+                <th hidden="hidden"></th>
             </tr>
         {% for report in reports %}
                 <tr class="report-item zebra">
-                    <td>
-                        {{report.name}}
-                    </td>
+                    <td><a href="#">{{report.name}}</a></td>
                 </tr>
 
         {% endfor %}

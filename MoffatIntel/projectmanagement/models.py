@@ -126,7 +126,6 @@ class Subgroup(models.Model):
 
 class Report(models.Model):
     name = models.CharField(max_length=150)
-    date = models.DateTimeField('Last run date')
 
 class Subcontractor(models.Model):
     name = models.CharField(max_length=50)
@@ -288,15 +287,15 @@ class Draw(models.Model):
     num = models.IntegerField(default=1)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     edited_by = models.CharField(max_length=20)
-    start_date = models.DateTimeField('Start Date', default=datetime.now())
+    start_date = models.DateTimeField('Start Date')
 
     def __str__(self):
         return str(self.id)
 
 class Invoice(models.Model):
-    date = models.DateTimeField('Last Modified', default=datetime.now())
+    date = models.DateTimeField('Last Modified')
     draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
-    invoice_date = models.DateTimeField('Invoice Date', default=datetime.now())
+    invoice_date = models.DateTimeField('Invoice Date')
     invoice_num = models.CharField(default="", max_length=20)
     csi = models.CharField(max_length=50, choices=DIVISION_CHOICES)
     category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
@@ -332,11 +331,10 @@ class Invoice(models.Model):
                 return choice[1]
         return ""
 
-
 class Check(models.Model):
-    date = models.DateTimeField('Last Modified', default=datetime.now())
+    date = models.DateTimeField('Last Modified')
     invoice_id = models.ForeignKey(Invoice, on_delete=models.CASCADE)
-    check_date = models.DateTimeField('Check Date', default=datetime.now())
+    check_date = models.DateTimeField('Check Date')
     check_num = models.IntegerField()
     check_total = models.FloatField(default=0.00)
     distributed = models.CharField(max_length=50)
