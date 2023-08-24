@@ -212,6 +212,9 @@ class Estimate(models.Model):
         return ""
 
 class EstimateLineItem(models.Model):
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
+    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     group_id = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
     subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
     scope = models.CharField(max_length=500)
