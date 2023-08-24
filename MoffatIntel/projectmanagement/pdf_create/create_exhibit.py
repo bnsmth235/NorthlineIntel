@@ -1,12 +1,13 @@
 import os
+import tempfile
+
 from django.conf import settings
 from django.core.files.base import ContentFile
 from datetime import datetime
 from fpdf import FPDF
-from ..models import *
+from ..models import Exhibit, ExhibitLineItem
 
-def create_exhibit(POST, project, sub):
-    print("************METHOD CALLED************")
+def create_exhibit(line_items, project, sub):
     exhibits = Exhibit.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
 
     exhibit = Exhibit()
@@ -18,36 +19,34 @@ def create_exhibit(POST, project, sub):
     group_data = []
     total_total = 0.00
 
-    for group_index, group in enumerate(POST.getlist('groupTitle[]')):
-        print("**********Check 1***********")
-        group_name = POST.getlist("groupTitle[]")[group_index]
+    # Loop through line_items to organize data into groups
+    for line_item in line_items:
+        # Create a dictionary to represent the current row
+        row_data = {
+            'scope': line_item.scope,
+            'qty': line_item.qty,
+            'unit_price': line_item.unit_price,
+            'total_price': line_item.total
+        }
 
-        rows = []
-        row_index = 0
+        # Determine the group name based on the group_id
+        if line_item.group_id:
+            group_name = line_item.group_id.name
+        else:
+            group_name = 'Other'
 
-        while f"scope[{group_index}][0]" in POST:
-            print("***********Check 2**********")
-            while f"scope[{group_index}][{row_index}]" in POST:
-                print("***********Check 3**********")
-                scope = POST.get(f"scope[{group_index}][{row_index}]")
-                qty = POST.get(f"qty[{group_index}][{row_index}]")
-                unit_price = POST.get(f"unitprice[{group_index}][{row_index}]")
-                total_price = POST.get(f"totalprice[{group_index}][{row_index}]")
+        # Check if the group already exists in group_data
+        existing_group = next((group for group in group_data if group['group_name'] == group_name), None)
 
-                rows.append({
-                    'scope': scope,
-                    'qty': qty,
-                    'unit_price': unit_price,
-                    'total_price': total_price
-                })
-                row_index += 1
-
-            group_index += 1
-
-        group_data.append({
-            'group_name': group_name,
-            'rows': rows
-        })
+        if existing_group:
+            # Append the row to the existing group's rows list
+            existing_group['rows'].append(row_data)
+        else:
+            # Create a new group and add the current row to its rows list
+            group_data.append({
+                'group_name': group_name,
+                'rows': [row_data]
+            })
 
     file_name = exhibit.name + " " + str(exhibit.date)
 
@@ -202,8 +201,8 @@ def create_exhibit(POST, project, sub):
             pdf.cell((pdf.w - 20) * .475, 5, scope, 1, 0, 'L', True)
             pdf.cell((pdf.w - 20) * .15, 5, "$" + unit_price, 1, 0, 'L', True)
             pdf.cell((pdf.w - 20) * .1, 5, qty, 1, 0, 'C', True)
-            pdf.cell((pdf.w - 20) * .2, 5, "$" + total_price, 1, 1, 'L', True)
-            group_subtotal += float(total_price[0:])
+            pdf.cell((pdf.w - 20) * .2, 5, "$" + "{:.2f}".format(total_price), 1, 1, 'L', True)
+            group_subtotal += float(total_price)
 
         # Add a break after each group
         pdf.set_fill_color(217, 225, 242)
@@ -249,7 +248,7 @@ def create_exhibit(POST, project, sub):
                 pdf.set_xy(x + (col * col_width), pdf.get_y())
                 pdf.set_font("Arial", size=8)
                 pdf.cell(col_width, 12, cell_data + " \n\n\n\n\n\n\n", 1, 0, "L")
-            elif cell_data == "" or cell_data == "Greg Moffat":
+            elif cell_data == "" or cell_data == "Greg Moffat" or table_data.index(row) == 6:
                 pdf.set_font("Arial", size=12)
                 pdf.set_xy(x + (col * col_width), pdf.get_y())
                 pdf.cell(col_width, 12, cell_data, 1, 0, "C")
@@ -269,22 +268,23 @@ def create_exhibit(POST, project, sub):
     exhibit.total = total_total
 
     # Generate the full file path
-    ex_file_path = os.path.join(settings.STATIC_ROOT, "exhibits", file_name)
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    temp_file_path = temp_file.name
 
-    pdf.output(ex_file_path)
-    with open(ex_file_path, 'rb') as file:
+    pdf.output(temp_file_path)
+    with open(temp_file_path, 'rb') as file:
         file_content = file.read()
 
     file_data = ContentFile(file_content)
 
     exhibit.pdf.save(file_name, file_data)
-    print(exhibit.pdf.path)
 
     # Delete the temporary file
-    os.remove(ex_file_path)
+    temp_file.close()
+    os.remove(temp_file_path)
 
     project.date = datetime.now()
     project.save()
     exhibit.save()
-    print("***********Check Final**********")
+
     return exhibit

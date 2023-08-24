@@ -211,6 +211,16 @@ class Estimate(models.Model):
                 return choice[1]
         return ""
 
+class EstimateLineItem(models.Model):
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
+    subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
+    scope = models.CharField(max_length=500)
+    qty = models.IntegerField()
+    unit_price = models.FloatField()
+    total = models.FloatField()
+
+    def __str__(self):
+        return self.scope
 
 class SWO(models.Model):
     date = models.DateTimeField('Last Modified')
@@ -234,6 +244,20 @@ class Exhibit(models.Model):
 
     def __str__(self):
         return self.name
+
+class ExhibitLineItem(models.Model):
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
+    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
+    subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
+    scope = models.CharField(max_length=500)
+    qty = models.IntegerField()
+    unit_price = models.FloatField()
+    total = models.FloatField()
+
+    def __str__(self):
+        return self.scope
 
 
 class Contract(models.Model):
