@@ -17,14 +17,35 @@
                 <p><strong class="error">{{ error_message }}</strong></p>
             {% endif %}
 
-            {% verbatim %}
+
             <div class="reports-list-div">
                 <div v-for="(group, groupIndex) in groups" :key="groupIndex" class="zebra">
                     <table width="98%" height="98%" align="center" cellpadding="10" border="0" style="margin-bottom:20px">
                         <tr class="group-title">
-                            <th>Group Name:</th>
-                            <th><input type="text" v-model="group.group_name" name="groupTitle[]" class="input-field" style="margin: 0px; width: 100%"></th>
+                            <div style="margin-left: 75px">
+                                <div style="display: inline-block">
+                                    <label :for="`groupSelect${groupIndex}`">Group:</label>
+                                    <select required="required" class="input-field" :name="`group${groupIndex}`" :id="`groupSelect${groupIndex}`"
+                                        v-model="group.selectedGroupIndex"
+                                        :data-group-index="groupIndex">
+                                        {% for group in groups %}
+                                            <option value="{{group.id}}">{{group.name}}</option>
+                                        {% endfor %}
+                                        <option value="None">None</option>
+                                    </select>
+                                </div>
+
+                                <div style="display: inline-block">
+                                    <label :for="`subgroupSelect${groupIndex}`">Subgroup:</label>
+                                    <select class="input-field" :name="`subgroup${groupIndex}`" :id="`subgroupSelect${groupIndex}`">
+                                        <option value="None">None</option>
+                                        <!-- Options will be dynamically added here using JavaScript -->
+                                    </select>
+                                </div>
+                            </div>
+
                         </tr>
+            {% verbatim %}
                         <tr class="report-item headers">
                             <th width="10%">Number</th>
                             <th>Scope of Work</th>
@@ -70,80 +91,169 @@
 </div>
 
 <script>
-    const app = Vue.createApp({
-        data() {
-            return {
-                groups: [
-                    {
-                        group_name: '',
-                        rows: [
-                            {
-                                scope: '',
-                                qty: '',
-                                unitPrice: '',
-                            },
-                        ],
-                    },
-                ],
-                maxGroups: 50, // Maximum number of groups allowed
-            };
+const app = Vue.createApp({
+    data() {
+        return {
+            groups: [
+                {
+                    group_name: '',
+                    selectedGroupIndex: null, // To track the selected group index
+                    rows: [
+                        {
+                            scope: '',
+                            qty: '',
+                            unitPrice: '',
+                        },
+                    ],
+                },
+            ],
+            maxGroups: {{total_groups}}, // Maximum number of groups allowed
+        };
+    },
+    computed: {
+        rowIndexes() {
+            return this.groups.flatMap((group) => group.rows.map((_, index) => index));
         },
-        computed: {
-            rowIndexes() {
-                return this.groups.flatMap((group) => group.rows.map((_, index) => index));
-            },
-            totalPrices() {
-                return this.groups.map((group) =>
-                    group.rows.map((row) => {
-                        const qty = parseFloat(row.qty) || 0;
-                        const unitPrice = parseFloat(row.unitPrice) || 0;
-                        return (qty * unitPrice).toFixed(2);
-                    })
-                );
-            },
+        totalPrices() {
+            return this.groups.map((group) =>
+                group.rows.map((row) => {
+                    const qty = parseFloat(row.qty) || 0;
+                    const unitPrice = parseFloat(row.unitPrice) || 0;
+                    return (qty * unitPrice).toFixed(2);
+                })
+            );
         },
-        methods: {
-            addRow(groupIndex) {
-                this.groups[groupIndex].rows.push({
-                    scope: '',
-                    qty: '',
-                    unitPrice: '',
+    },
+    methods: {
+        addRow(groupIndex) {
+            this.groups[groupIndex].rows.push({
+                scope: '',
+                qty: '',
+                unitPrice: '',
+            });
+        },
+        removeRow(groupIndex) {
+            const rows = this.groups[groupIndex].rows;
+            if (rows.length > 1) {
+                rows.pop();
+            }
+        },
+        addGroup() {
+            if (this.groups.length < this.maxGroups) {
+                this.groups.push({
+                    group_name: '',
+                    selectedGroupIndex: null,
+                    rows: [
+                        {
+                            scope: '',
+                            qty: '',
+                            unitPrice: '',
+                        },
+                    ],
                 });
-            },
-            removeRow(groupIndex) {
-                const rows = this.groups[groupIndex].rows;
-                if (rows.length > 1) {
-                    rows.pop();
-                }
-            },
-            addGroup() {
-                if (this.groups.length < this.maxGroups) {
-                    this.groups.push({
-                        group_name: '',
-                        rows: [
-                            {
-                                scope: '',
-                                qty: '',
-                                unitPrice: '',
-                            },
-                        ],
-                    });
-                }
-            },
-            removeGroup() {
-                if (this.groups.length > 1) {
-                    this.groups.pop();
-                }
-            },
-            handleFormKeyDown(event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                }
-            },
+                this.$nextTick(() => {
+                    const newGroupSelect = document.getElementById(`groupSelect${this.groups.length - 1}`);
+                    if (newGroupSelect) {
+                        newGroupSelect.addEventListener('change', handleGroupSelectChange);
+                    }
+                });
+            }
         },
+        removeGroup() {
+            if (this.groups.length > 1) {
+                this.groups.pop();
+            }
+        },
+        handleFormKeyDown(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+            }
+        },
+
+    },
+    mounted() {
+    },
+});
+
+const vm = app.mount("#app");
+
+const groups = JSON.parse('{{ groups_json | escapejs }}');
+
+function populateSubgroups(selectedGroupIndex) {
+    console.log(selectedGroupIndex)
+    const groupSelect = document.getElementById(`groupSelect${selectedGroupIndex}`);
+    const subgroupSelect = document.getElementById(`subgroupSelect${selectedGroupIndex}`);
+    console.log(groupSelect); // Log the subgroupSelect element to see if it's null or not
+
+    if (subgroupSelect) {
+        console.log("subgroupSelect is not null"); // Log whether subgroupSelect is found
+    } else {
+        console.log("subgroupSelect is null"); // Log whether subgroupSelect is null
+    }
+
+    subgroupSelect.innerHTML = '';
+
+    const selectedGroup = groups[selectedGroupIndex];
+
+    selectedGroup.subgroups.forEach(subgroup => {
+        const option = document.createElement('option');
+        option.value = subgroup.id;
+        option.textContent = subgroup.name;
+        subgroupSelect.appendChild(option);
     });
 
-    const vm = app.mount("#app");
+    const noneOption = document.createElement('option');
+    noneOption.value = 'None';
+    noneOption.textContent = 'None';
+    subgroupSelect.appendChild(noneOption);
+}
+
+function handleGroupSelectChange(event) {
+    const groupIndex = parseInt(event.target.getAttribute('data-group-index'));
+    console.log("Selected Group Index:", groupIndex);
+
+    const selectedGroupIndex = vm.groups[groupIndex].selectedGroupIndex - 4;
+    console.log("Selected Group Index in groups array:", selectedGroupIndex);
+
+    const groupSelect = event.target;
+    const selectedOptionIndex = groupSelect.selectedIndex;
+    console.log("Selected Option Index:", selectedOptionIndex);
+
+    const subgroupSelect = document.getElementById(`subgroupSelect${groupIndex}`);
+    subgroupSelect.innerHTML = '';
+
+    if (groups[selectedGroupIndex] && groups[selectedGroupIndex].subgroups) {
+        const selectedGroup = groups[selectedGroupIndex];
+
+        selectedGroup.subgroups.forEach((subgroup, index) => {
+            const option = document.createElement('option');
+            option.value = subgroup.id;
+            option.textContent = subgroup.name;
+            subgroupSelect.appendChild(option);
+
+            if (index === selectedOptionIndex) {
+                option.selected = true;
+            }
+        });
+    } else {
+        console.log("Selected group or its subgroups not found.");
+    }
+
+    const noneOption = document.createElement('option');
+    noneOption.value = 'None';
+    noneOption.textContent = 'None';
+    subgroupSelect.appendChild(noneOption);
+}
+
+
+
+const groupSelects = document.querySelectorAll('[id^="groupSelect"]');
+groupSelects.forEach(select => {
+    select.addEventListener('change', handleGroupSelectChange);
+});
+
 </script>
+
+
 
 {% endblock %}

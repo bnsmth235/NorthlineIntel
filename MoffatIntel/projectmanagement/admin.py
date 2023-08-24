@@ -12,4 +12,5 @@ admin.site.register(Group)
 admin.site.register(Subgroup)
 admin.site.register(Invoice)
 admin.site.register(Check)
+admin.site.register(ExhibitLineItem)
 

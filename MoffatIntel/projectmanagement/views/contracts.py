@@ -11,9 +11,11 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.shortcuts import render, redirect, get_object_or_404
 import base64
 import PyPDF2
-from datetime import datetime
 from ..models import *
 from ..pdf_create.create_change_order import create_change_order
+from ..pdf_create.create_exhibit import create_exhibit
+from ..pdf_create.create_purchase_order import create_purchase_order
+from django.db import transaction
 
 
 @login_required(login_url='projectmanagement:login')
@@ -723,26 +725,95 @@ def exhibit_pdf_view(request, exhibit_id):
     return render(request, 'contracts/exhibit_pdf_view.html', {'pdf_data': pdf_data, 'exhibit': exhibit})
 
 
-
-
-
-
-
-
-
-
 @login_required(login_url='projectmanagement:login')
 def new_exhibit(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
-    sub = get_object_or_404(Subcontractor, pk=sub_id)
+    try:
+        sub = get_object_or_404(Subcontractor, pk=sub_id)
+    except:
+        sub = get_object_or_404(Vendor, pk=sub_id)
+    groups = Group.objects.filter(project_id=project)
+    subgroups = Subgroup.objects.filter(group_id__in=groups)
+    total_groups = len(groups) + len(subgroups)
+
+    groups_json = json.dumps(
+        [{'id': group.id, 'subgroups': list(subgroups.filter(group_id=group.id).values('id', 'name'))} for group in
+         groups])
 
     if request.method == 'POST':
-        exhibit = create_exhibit(request.POST, project, sub)
-        print(exhibit.pdf.path)
+        line_items = process_form_data(request, project, sub)
+        for line_item in line_items:
+            line_item.project_id = project
+            try:
+                line_item.sub_id = sub
+                line_item.vendor_id = None
+            except:
+                line_item.vendor_id = sub
+                line_item.sub_id = None
+            line_item.save()
+
+        exhibit = create_exhibit(line_items, project, sub)
+
+
         return redirect('projectmanagement:contract_view', project_id=project.id, sub_id=sub.id)
 
-    print("*********Didn't work :(**************")
-    return render(request, 'contracts/new_exhibit.html', {'project': project, 'sub': sub})
+    return render(request, 'contracts/new_exhibit.html', {'project': project, 'sub': sub, 'groups': groups, 'subgroups': subgroups, 'groups_json': groups_json, 'total_groups': total_groups})
+
+
+def process_form_data(request, project, sub):
+    grouped_data = []
+    line_items = []
+    current_group = None
+
+    for key, values in request.POST.lists():
+        if key.startswith('group'):
+            group_index = int(key[5:])
+            current_group = {'group': values[0], 'rows': []}
+            grouped_data.append(current_group)
+        elif key.startswith('subgroup'):
+            if current_group is not None:
+                current_group['subgroup'] = values[0]
+        elif key.startswith('scope'):
+            if current_group is not None:
+                row_index = int(key.split('[')[2].split(']')[0])
+                row_data = {
+                    'scope': values[0],
+                    'qty': request.POST.get(f'qty[{group_index}][{row_index}]'),
+                    'unitPrice': request.POST.get(f'unitprice[{group_index}][{row_index}]'),
+                    'totalPrice': request.POST.get(f'totalprice[{group_index}][{row_index}]'),
+                }
+                current_group['rows'].append(row_data)
+
+    for group in grouped_data:
+        for row in group['rows']:
+            line_item = ExhibitLineItem()
+
+            # Convert the string IDs to integers using int()
+            try:
+                group_id = int(group.get('group'))
+            except:
+                group_id = None
+            try:
+                subgroup_id = int(group.get('subgroup'))
+            except:
+                subgroup_id = None
+
+            # Set the group_id and subgroup_id fields
+            line_item.group_id = get_object_or_404(Group, id=group_id) if group_id else None
+            line_item.subgroup_id = get_object_or_404(Subgroup, id=subgroup_id)if subgroup_id else None
+
+            # Set the remaining fields
+            line_item.project_id_id = 1
+            line_item.sub_id_id = 1
+            line_item.vendor_id_id = 1
+            line_item.scope = row['scope']
+            line_item.qty = row['qty']
+            line_item.unit_price = row['unitPrice']
+            line_item.total = float(line_item.qty) * float(line_item.unit_price)
+
+            line_items.append(line_item)
+
+    return line_items
 
 
 @login_required(login_url='projectmanagement:login')
