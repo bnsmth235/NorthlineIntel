@@ -23,6 +23,8 @@ urlpatterns = [
     path('estimate_pdf_view/<int:estimate_id>', estimates.estimate_pdf_view, name='estimate_pdf_view'),
 
     path('delete_exhibit/<int:exhibit_id>/', contracts.delete_exhibit, name='delete_exhibit'),
+    path('delete_estimate/<int:estimate_id>/', estimates.delete_estimate, name='delete_estimate'),
+    path('delete_master/<int:master_id>/', estimates.delete_master, name='delete_master'),
     path('delete_contract/<int:contract_id>/', contracts.delete_contract, name='delete_contract'),
     path('delete_swo/<int:swo_id>/', contracts.delete_swo, name='delete_swo'),
     path('delete_estimate/<int:estimate_id>/', estimates.delete_estimate, name='delete_estimate'),
@@ -48,6 +50,7 @@ urlpatterns = [
     path('edit_check/<int:check_id>/', draws.edit_check, name='edit_check'),
     path('edit_vendor/<int:vendor_id>/', data.edit_vendor, name='edit_vendor'),
     path('edit_proj/<int:project_id>/', projects.edit_proj, name='edit_proj'),
+    path('edit_estimate/<int:estimate_id>/', estimates.edit_estimate, name='edit_estimate'),
 
     path('new_draw/<int:project_id>', draws.new_draw, name='new_draw'),
     path('new_invoice/<int:project_id>/<int:draw_id>/', draws.new_invoice, name='new_invoice'),
@@ -59,6 +62,7 @@ urlpatterns = [
     path('new_purchase_order/<int:project_id>/', contracts.new_purchase_order, name='new_purchase_order'),
     path('new_purchase_order/', contracts.new_purchase_order, name='new_purchase_order'),
     path('new_exhibit/<int:project_id>/<int:sub_id>/', contracts.new_exhibit, name='new_exhibit'),
+    path('new_master/<int:project_id>/', estimates.new_master, name='new_master'),
 
     path('contract_view/<int:project_id>/<int:sub_id>', contracts.contract_view, name='contract_view'),
     path('draw_view/<int:project_id>/<int:draw_id>/', draws.draw_view, name='draw_view'),

@@ -5,79 +5,263 @@
 
 {% block content %}
 <script src="{% static 'projectmanagement/deleteConfirm.js' %}"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
 <h3 style="margin-bottom: -10px"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
 
 <h1 class="section-header">Estimates for {{project.name}}</h1>
 
 <div class="add-new">
-    <a href="#">Generate</a>
+    <a href="{% url 'projectmanagement:new_master' project.id %}">Generate</a>
 </div>
 
+<div id="app">
 {% for division in divisions %}
 <div style="display: block; clear: both; margin-bottom: 10px">
     <fieldset class="fieldset">
         <legend><h2>Division {{division.0}}: {{division.1}}</h2></legend>
-        <div class="add-new" style="margin-right: 5px; margin-top: -30px; padding: 2px">
-            <a href="#" style="font-size: 14px">+ Upload</a>
+
+        <div class="add-button-small" style="float:right; margin-top: -30px;" v-on:click="show{{division.0}}()" v-if="!is{{division.0}}Visible">
+            <button>+ Upload</button>
         </div>
-        <div class="reports-list-div-small">
-            <table width="98%" height="98%" align="center" cellpadding="4" border="0">
-                <tr class="report-item headers">
-                    <td></td>
-                    <td>Subcontractor</td>
-                    <td>Category</td>
-                    <td>Bid Date</td>
-                    <td>Bid Amount</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                {% regroup estimates by csi as estimate_groups %}
-                {% for csi in estimate_groups %}
-                    {% if csi is division.id %}
-                        {% for estimate in csi.list %}
-                            <tr>
-                                <td width="6%">
-                                    <a href="{% url 'projectmanagement:estimate_pdf_view' estimate.id %}">
-                                        <img src="{% static 'projectmanagement/images/pdf_icon.png' %}" height="18px" width="auto"
+
+        <div class="add-button-small" style="float:right; margin-top: -30px; margin-right: 25px" v-on:click="show{{division.0}}()" v-if="is{{division.0}}Visible">
+            <button>Cancel</button>
+        </div>
+
+        <div v-if="is{{division.0}}Visible" style="margin-top:-50px">
+            <form method="post" enctype="multipart/form-data" action="">
+                <fieldset class="fieldset-table">
+                    <legend><h2>Upload Estimate</h2></legend>
+                    {% csrf_token %}
+                    <div style="margin-top: -20px">
+                        <input hidden="hidden" name="division" value="{{division.0}}">
+
+                        <div style="display: inline-block">
+                            <label for="master">Our Estimate</label>
+                            <select class="input-field" id="master" name="master">
+                                <option></option>
+                                {% for master in masters %}
+                                    {% if master.csi == division.0 %}
+                                        <option value="{{master.id}}">${{master.total|floatformat:2}} - {{master.get_long_category}}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div style="display: inline-block">
+                            <label for="sub">Vendor/Subcontractor: </label>
+                            <select name="sub" id="sub" class="input-field">
+                                <option></option>
+                                {% for sub in subs %}
+                                    <option value="{{ sub.id }}">{{ sub.name }}</option>
+                                {% endfor %}
+                                {% for vendor in vendors %}
+                                    <option value="{{ vendor.id }}">{{ vendor.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div style="display: inline-block">
+                            <label for="pdf">PDF: </label>
+                            <input type="file" name="pdf" id="pdf" class="input-field" required="required">
+                        </div>
+
+                        <div style="display: inline-block">
+                            <label for="total">Total: $</label>
+                            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
+                        </div>
+
+                        <div style="float: right">
+                            <div class="add-button"  style="margin-top: 15px"><button type="submit">Upload</button></div>
+                        </div>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+
+        <div class="reports-list-div-small" style="margin-top: 10px">
+            <table style="margin" width="98%" height="98%" align="center" cellpadding="4" border="0">
+                {% if masters %}
+                    <tr class="report-item headers">
+                        <td colspan="9">Master Estimates</td>
+                    </tr>
+                    {% for master in masters %}
+                        {% if master.csi == division.0 %}
+                            <tr class="report-item zebra no-hover">
+                                <td style="text-align: center">
+                                    <a href="{% url 'projectmanagement:estimate_pdf_view' master.id %}">
+                                        <img src="{% static 'projectmanagement/images/pdf_icon.png' %}" height="20" width="20"
                                             style="margin-bottom: -4px;margin-left:5px">
                                     </a>
                                 </td>
-                                <td>{{sub.name}}</td>
-                                <td>{{sub.get_long_category}}</td>
-                                <td>{{estimate.date}}</td>
-                                <td>{{estimate.amount}}</td>
+                                <td></td>   
+                                <td style="text-align: center">{{master.get_long_category}}</td>
+                                <td style="text-align: right">Our Estimate:</td>
+                                <td style="text-align: right">${{master.total|floatformat:2}}</td>
                                 <td width="5%" style="text-align: center">
-                                    <a href="{% url 'projectmanagement:edit_estimate' estimate.id%}">
-                                        <img src="{% static 'projectmanagement/images/pencil.png' %}" height="18px" width="auto"
+                                    <a href="{% url 'projectmanagement:edit_estimate' master.id %}">
+                                        <img src="{% static 'projectmanagement/images/pencil.png' %}" height="18" width="18"
                                             style="margin-bottom: -4px; margin-right: 2px"> Edit
                                     </a>
                                 </td>
                                 <td width="5%" style="text-align: center">
                                     <form id="delete-form" method="post"
-                                        data-delete-url="{% url 'projectmanagement:delete_estimate' estimate.id%}">
+                                        data-delete-url="{% url 'projectmanagement:delete_master' master.id%}">
                                         {% csrf_token %}
                                         <input type="hidden" name="estimate_id" value="{{ estimate.id }}">
                                         <input type="hidden" name="username" id="username">
                                         <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
-                                            <img src="{% static 'projectmanagement/images/trash.png' %}" height="15px" width="auto"> Delete
+                                            <img src="{% static 'projectmanagement/images/trash.png' %}" height="16" width="16"> Delete
                                         </button>
                                     </form>
                                 </td>
-                                <td>
-                                    <a href="#">Accept Bid</a>
-                                </td>
+                                <td></td>
 
                             </tr>
-                        {% endfor %}
-                    {% endif %}
-                {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+
+                    <tr class="report-item headers">
+                        <td width="5%"></td>
+                        <td width="20%">Subcontractor</td>
+                        <td width="20%">Category</td>
+                        <td width="10%">Bid Date</td>
+                        <td width="20%">Bid Amount</td>
+                        <td width="8%"></td>
+                        <td width="8%"></td>
+                        <td width="8%"></td>
+                    </tr>
+
+                    {% regroup estimates by csi as estimate_groups %}
+                    {% for csi in estimate_groups %}
+                        {% if csi.grouper == division.0 %}
+                            {% for estimate in csi.list %}
+                                <tr class="report-item zebra">
+                                    <td width="6%" style="text-align:center">
+                                        <a href="{% url 'projectmanagement:estimate_pdf_view' estimate.id %}">
+                                            <img src="{% static 'projectmanagement/images/pdf_icon.png' %}" height="20" width="20"
+                                                style="margin-bottom: -4px;margin-left:5px">
+                                        </a>
+                                    </td>
+                                    <td>{{estimate.sub_id.name}}</td>
+                                    <td>{{estimate.get_long_category}}</td>
+                                    <td style="text-align: center">{{estimate.date|date:"m/d/y"}}</td>
+                                    <td style="text-align: right">${{estimate.total|floatformat:2}}</td>
+                                    <td width="5%" style="text-align: center">
+                                        <a href="{% url 'projectmanagement:edit_estimate' estimate.id%}">
+                                            <img src="{% static 'projectmanagement/images/pencil.png' %}" height="18" width="18"
+                                                style="margin-bottom: -4px; margin-right: 2px"> Edit
+                                        </a>
+                                    </td>
+                                    <td width="5%" style="text-align: center">
+                                        <form id="delete-form" method="post"
+                                            data-delete-url="{% url 'projectmanagement:delete_estimate' estimate.id%}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="estimate_id" value="{{ estimate.id }}">
+                                            <input type="hidden" name="username" id="username">
+                                            <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                                                <img src="{% static 'projectmanagement/images/trash.png' %}" height="16" width="16"> Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <a href="#" style="font-weight: bold; text-align: center">✔ Accept Bid</a>
+                                    </td>
+
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="9">No estimates available for this division</td>
+                </tr>
+                {% endif %}
             </table>
         </div>
     </fieldset>
  </div>
 {% endfor %}
+</div>
 
+<script>
+    const app = Vue.createApp({
+        data() {
+            return {
+                is1Visible: false,
+                is2Visible: false,
+                is3Visible: false,
+                is4Visible: false,
+                is5Visible: false,
+                is6Visible: false,
+                is7Visible: false,
+                is8Visible: false,
+                is9Visible: false,
+                is10Visible: false,
+                is11Visible: false,
+                is12Visible: false,
+                is13Visible: false,
+                is14Visible: false,
+                is15Visible: false,
+                is16Visible: false,
+            };
+        },
+
+        methods: {
+            show1() {
+                this.is1Visible = !this.is1Visible;
+            },
+            show2() {
+                this.is2Visible = !this.is2Visible;
+            },
+            show3() {
+                this.is3Visible = !this.is3Visible;
+            },
+            show4() {
+                this.is4Visible = !this.is4Visible;
+            },
+            show5() {
+                this.is5Visible = !this.is5Visible;
+            },
+            show6() {
+                this.is6Visible = !this.is6Visible;
+            },
+            show7() {
+                this.is7Visible = !this.is7Visible;
+            },
+            show8() {
+                this.is8Visible = !this.is8Visible;
+            },
+            show9() {
+                this.is9Visible = !this.is9Visible;
+            },
+            show10() {
+                this.is10Visible = !this.is10Visible;
+            },
+            show11() {
+                this.is11Visible = !this.is11Visible;
+            },
+            show12() {
+                this.is12Visible = !this.is12Visible;
+            },
+            show13() {
+                this.is13Visible = !this.is13Visible;
+            },
+            show14() {
+                this.is14Visible = !this.is14Visible;
+            },
+            show15() {
+                this.is15Visible = !this.is15Visible;
+            },
+            show16() {
+                this.is16Visible = !this.is16Visible;
+            },
+        },
+    });
+
+    const vm = app.mount("#app");
+</script>
 
 
 {% endblock %}

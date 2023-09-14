@@ -876,40 +876,4 @@ def sub_select(request, project_id):
     return render(request, 'contracts/sub_select.html', {'subs': subs, 'project': project})
 
 
-@login_required(login_url='projectmanagement:login')
-def edit_estimate(request, estimate_id):
-    estimate = get_object_or_404(Estimate, pk=estimate_id)
-    project = get_object_or_404(Project, pk=estimate.project_id)
-    subs = Subcontractor.objects.order_by('name')
-
-    context = {
-        'estimate': estimate,
-        'project': project,
-        'subs': subs,
-    }
-
-    if request.method == 'POST':
-        date = request.POST.get('date')
-        sub = request.POST.get('sub')
-        csi = request.POST.get('csi')
-        category = request.POST.get('category')
-        total = request.POST.get('total')
-
-        if not date or not sub or not csi or not category or not total:
-            context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
-            return render(request, 'estimates/edit_estimate.html', context)
-
-        estimate.date = date
-        estimate.sub_id = get_object_or_404(Subcontractor, pk=sub)
-        estimate.csi = csi
-        estimate.category = category
-        estimate.total = total
-
-        if 'pdf' in request.FILES:
-            estimate.pdf = request.FILES['pdf']
-            if not estimate.pdf.file.content_type.startswith('application/pdf'):
-                context.update({'error_message': "Only PDFs are allowed for the Invoice PDF"})
-                return render(request, 'draws/edit_invoice.html', context)
-
-        estimate.save()
 
