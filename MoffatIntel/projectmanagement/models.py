@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.db import models
 
 STATE_OPTIONS = [
@@ -92,6 +90,7 @@ SUB_CATEGORIES = [
     ("8", "Amenities"),
     ("9", "Landscape"),
 ]
+
 class Project(models.Model):
     name = models.CharField(max_length=200)
     date = models.DateTimeField('Last Modified')
@@ -186,10 +185,11 @@ class Plan(models.Model):
     def __str__(self):
         return self.name
 
-
-class Estimate(models.Model):
+class MasterEstimate(models.Model):
+    name = models.CharField(max_length=50)
     date = models.DateTimeField('Last Modified')
-    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
+    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     total = models.FloatField(default=0.00)
     csi = models.CharField(max_length=2, choices=DIVISION_CHOICES)
@@ -211,16 +211,57 @@ class Estimate(models.Model):
                 return choice[1]
         return ""
 
-class EstimateLineItem(models.Model):
+class MasterEstimateLineItem(models.Model):
+    estimate_id = models.ForeignKey(MasterEstimate, on_delete=models.CASCADE)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
     vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     group_id = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
     subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
     scope = models.CharField(max_length=500)
-    qty = models.IntegerField()
-    unit_price = models.FloatField()
-    total = models.FloatField()
+    qty = models.IntegerField(default=0)
+    unit_price = models.FloatField(default=0)
+    total = models.FloatField(default=0)
+
+    def __str__(self):
+        return self.scope
+class Estimate(models.Model):
+    master_estimate = models.ForeignKey(MasterEstimate, on_delete=models.CASCADE)
+    name = models.CharField(max_length=50)
+    date = models.DateTimeField('Last Modified')
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
+    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    total = models.FloatField(default=0.00)
+    csi = models.CharField(max_length=2, choices=DIVISION_CHOICES)
+    category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
+    pdf = models.FileField(upload_to='projectmanagement/estimates/', default=None)
+
+    def __str__(self):
+        return self.name
+
+    def get_long_csi(self):
+        for choice in self._meta.get_field("csi").choices:
+            if choice[0] == self.csi:
+                return choice[1]
+        return ""
+
+    def get_long_category(self):
+        for choice in self._meta.get_field("category").choices:
+            if choice[0] == self.category:
+                return choice[1]
+        return ""
+
+class EstimateLineItem(models.Model):
+    estimate_id = models.ForeignKey(Estimate, on_delete=models.CASCADE)
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
+    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
+    subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
+    scope = models.CharField(max_length=500)
+    qty = models.IntegerField(default=0)
+    unit_price = models.FloatField(default=0)
+    total = models.FloatField(default=0)
 
     def __str__(self):
         return self.scope

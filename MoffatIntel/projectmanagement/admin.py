@@ -13,4 +13,7 @@ admin.site.register(Subgroup)
 admin.site.register(Invoice)
 admin.site.register(Check)
 admin.site.register(ExhibitLineItem)
+admin.site.register(Estimate)
+admin.site.register(MasterEstimate)
+admin.site.register(EstimateLineItem)
 
