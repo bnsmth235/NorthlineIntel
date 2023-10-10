@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'axes'
 ]
 
 MIDDLEWARE = [
@@ -48,9 +49,21 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'axes.middleware.AxesMiddleware'
 ]
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',  # Default Django authentication backend
+    'axes.backends.AxesStandaloneBackend',         # Axes standalone backend for login attempts tracking
+)
+
+
+AXES_LOCKOUT_CALLABLE = "projectmanagement.views.registration.lockout"
+
 ROOT_URLCONF = 'MoffatIntel.urls'
+
+LOGIN_URL = ''  # Your login URL
+LOGOUT_URL = '/log_out/'
 
 TEMPLATES = [
     {
@@ -131,3 +144,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Session expires after one day
 SESSION_COOKIE_AGE = 86400
+
+# Lock out a user after 5 failed login attempts
+AXES_FAILURE_LIMIT = 5
+
+# Lockout duration in minutes (e.g., 15 minutes)
+AXES_LOCK_OUT_AT_FAILURE = True
+AXES_COOLOFF_TIME = 1
+
+# Block by Username only (i.e.: Same user different IP is still blocked, but different user same IP is not)
+AXES_LOCKOUT_PARAMETERS = ["username"]
+
+

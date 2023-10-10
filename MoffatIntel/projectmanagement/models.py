@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.db import models
 
 STATE_OPTIONS = [
@@ -92,6 +90,7 @@ SUB_CATEGORIES = [
     ("8", "Amenities"),
     ("9", "Landscape"),
 ]
+
 class Project(models.Model):
     name = models.CharField(max_length=200)
     date = models.DateTimeField('Last Modified')
