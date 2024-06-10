@@ -1,8 +1,13 @@
 import json
+import time
+
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import datetime
+
+from django.utils.baseconv import base64
+
 from ..models import *
 
 @login_required(login_url='projectmanagement:login')
@@ -170,7 +175,7 @@ def new_invoice(request, project_id, draw_id):
         invoice_date = request.POST.get('invoice_date')
         invoice_num = request.POST.get('invoice_num')
         csi = request.POST.get('csi')
-        category = request.POST.get('category')
+        csi = csi.replace(' ', '')
         method = request.POST.get('method')
         subven_name = request.POST.get('subven')
         try_sub = Subcontractor.objects.filter(name=subven_name).first()
@@ -189,23 +194,22 @@ def new_invoice(request, project_id, draw_id):
             'invoice_date': invoice_date,
             'invoice_num': invoice_num,
             'csi': csi,
-            'category': category,
             'methodselect': method,
             'subselect': sub,
             'invoice_total': invoice_total,
             'description': description
         })
 
-        if not csi or not category or not method or not sub or not invoice_total or not description:
+        if not csi or not method or not sub or not invoice_total or not description or not invoice_date:
             context.update({'error_message': "Please fill out all fields"})
             return render(request, 'draws/new_invoice.html', context)
 
         invoice = Invoice()
+        invoice.date = datetime.now()
         invoice.draw_id = draw
         invoice.invoice_date = invoice_date
         invoice.invoice_num = invoice_num
         invoice.csi = csi
-        invoice.category = category
         invoice.method = method
         try:
             invoice.sub_id = sub
@@ -285,7 +289,6 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
         invoice_date = request.POST.get('invoice_date')
         invoice_num = request.POST.get('invoice_num')
         csi = request.POST.get('csi')
-        category = request.POST.get('category')
         method = request.POST.get('method')
         subven_name = request.POST.get('sub')
         try_sub = Subcontractor.objects.filter(name=subven_name).first()
@@ -317,8 +320,6 @@ def edit_invoice(request, project_id, draw_id, invoice_id):
             invoice.invoice_num = invoice_num
         if csi:
             invoice.csi = csi
-        if category:
-            invoice.category = category
         if method:
             invoice.method = method
         if invoice_total:
@@ -456,7 +457,7 @@ def new_check(request, project_id, draw_id, invoice_id):
         check.signed = signed
         check.distributed = distributed
 
-        # Handle lien release PDF
+        # Handle check PDF
         if 'check_pdf' in request.FILES:
             check.check_pdf = request.FILES['check_pdf']
             if not check.check_pdf.file.content_type.startswith('application/pdf'):

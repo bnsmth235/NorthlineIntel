@@ -4,7 +4,7 @@
 {% load static %}
 
 {% block content %}
-<script src="{% static 'projectmanagement/deleteConfirm.js' %}"></script>
+<script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
 <h3 style="margin-bottom: -10px"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
@@ -16,10 +16,10 @@
 </div>
 
 <div id="app">
-{% for division in divisions %}
+{% for key, value in divisions.items %}
 <div style="display: block; clear: both; margin-bottom: 10px">
     <fieldset class="fieldset">
-        <legend><h2>Division {{division.0}}: {{division.1}}</h2></legend>
+        <legend><h2>Division {{ key }}: {{ value }}</h2></legend>
 
         <div class="add-button-small" style="float:right; margin-top: -30px;" v-on:click="show{{division.0}}()" v-if="!is{{division.0}}Visible">
             <button>+ Upload</button>
@@ -42,8 +42,8 @@
                             <select class="input-field" id="master" name="master">
                                 <option></option>
                                 {% for master in masters %}
-                                    {% if master.csi == division.0 %}
-                                        <option value="{{master.id}}">${{master.total|floatformat:2}} - {{master.get_long_category}}</option>
+                                    {% if master.csi|slice:":2" == division.0 %}
+                                        <option value="{{master.id}}">${{master.total|floatformat:2}} - {{master.get_long_csi}}</option>
                                     {% endif %}
                                 {% endfor %}
                             </select>
@@ -87,7 +87,7 @@
                         <td colspan="9">Master Estimates</td>
                     </tr>
                     {% for master in masters %}
-                        {% if master.csi == division.0 %}
+                        {% if master.csi|slice:":2" == division.0 %}
                             <tr class="report-item zebra no-hover">
                                 <td style="text-align: center">
                                     <a href="{% url 'projectmanagement:estimate_pdf_view' master.id %}">
@@ -96,7 +96,7 @@
                                     </a>
                                 </td>
                                 <td></td>   
-                                <td style="text-align: center">{{master.get_long_category}}</td>
+                                <td style="text-align: center">{{master.get_long_csi}}</td>
                                 <td style="text-align: right">Our Estimate:</td>
                                 <td style="text-align: right">${{master.total|floatformat:2}}</td>
                                 <td width="5%" style="text-align: center">
@@ -133,7 +133,7 @@
                         <td width="8%"></td>
                     </tr>
 
-                    {% regroup estimates by csi as estimate_groups %}
+                    {% regroup estimates by csi|slice:":2" as estimate_groups %}
                     {% for csi in estimate_groups %}
                         {% if csi.grouper == division.0 %}
                             {% for estimate in csi.list %}
@@ -145,7 +145,7 @@
                                         </a>
                                     </td>
                                     <td>{{estimate.sub_id.name}}</td>
-                                    <td>{{estimate.get_long_category}}</td>
+                                    <td>{{estimate.get_long_csi}}</td>
                                     <td style="text-align: center">{{estimate.date|date:"m/d/y"}}</td>
                                     <td style="text-align: right">${{estimate.total|floatformat:2}}</td>
                                     <td width="5%" style="text-align: center">
@@ -262,7 +262,6 @@
 
     const vm = app.mount("#app");
 </script>
-
 
 {% endblock %}
 

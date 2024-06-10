@@ -8,8 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import datetime
 
-from ..models import Project, Estimate, DIVISION_CHOICES, Subcontractor, ExhibitLineItem, Group, Subgroup, Vendor, \
-    EstimateLineItem, MasterEstimate, MasterEstimateLineItem
+from ..models import Project, Estimate, Subcontractor, ExhibitLineItem, Group, Subgroup, Vendor, \
+    EstimateLineItem, MasterEstimate, MasterEstimateLineItem, csi_data
 from ..pdf_create.create_estimate import create_estimate
 
 
@@ -20,13 +20,19 @@ def all_estimates(request, project_id):
     subs = Subcontractor.objects.order_by('name')
     vendors = Vendor.objects.order_by('name')
     estimates = Estimate.objects.filter(master_estimate__in=masters)
+
+    divisions = {}
+    for division_code, division_info in csi_data.items():
+        if len(division_code) == 2:  # Check if it's a division code
+            divisions[division_code] = division_info['name']
+
     context = {
         'project': project,
         'estimates': estimates,
         'masters': masters,
         'subs': subs,
         'vendors': vendors,
-        'divisions': DIVISION_CHOICES,
+        'divisions': divisions,
     }
 
     if request.method == 'POST':
@@ -44,10 +50,9 @@ def all_estimates(request, project_id):
 
         estimate = Estimate()
         estimate.master_estimate = master
-        estimate.name = f"{project.name} {sub.name} {master.csi} {master.category} Estimate"
+        estimate.name = f"{project.name} {sub.name} {master.csi} Estimate"
         estimate.date = datetime.now()
         estimate.csi = master.csi
-        estimate.category = master.category
         try:
             estimate.sub_id = sub
         except:
@@ -159,17 +164,15 @@ def edit_estimate(request, estimate_id):
         date = request.POST.get('date')
         sub = request.POST.get('sub')
         csi = request.POST.get('csi')
-        category = request.POST.get('category')
         total = request.POST.get('total')
 
-        if not date or not sub or not csi or not category or not total:
+        if not date or not sub or not csi or not total:
             context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
             return render(request, 'estimates/edit_estimate.html', context)
 
         estimate.date = date
         estimate.sub_id = get_object_or_404(Subcontractor, pk=sub)
         estimate.csi = csi
-        estimate.category = category
         estimate.total = total
 
         if 'pdf' in request.FILES:
@@ -197,14 +200,12 @@ def new_master(request, project_id):
 
     if request.method == 'POST':
         csi = request.POST.get('csi')
-        category = request.POST.get('category')
         master = MasterEstimate()
-        master.name = f"{project.name} {csi} {category} Master Estimate"
+        master.name = f"{project.name} {csi} Master Estimate"
         master.date = datetime.now()
         master.project_id = project
         master.total = 0
         master.csi = csi
-        master.category = category
         master.save()
 
         line_items = process_form_data(request, project)

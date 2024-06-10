@@ -80,6 +80,7 @@ urlpatterns = [
 
     path('log_out/', registration.log_out, name='logout'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('get-master-format/', misc.get_master_format, name='get_master_format'),
 ]
 app_name = "projectmanagement"
 
