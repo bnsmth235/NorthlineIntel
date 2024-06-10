@@ -14,7 +14,6 @@ def all_vendors(request):
         cemail = request.POST.get('cemail')
         w9 = request.POST.get('w9')
         csi = request.POST.get('csi')
-        category = request.POST.get('category')
 
         context = {
             'vendors': vendors,
@@ -24,15 +23,14 @@ def all_vendors(request):
             'cphone': cphone,
             'cemail': cemail,
             'w9': w9,
-            'csi': csi,
-            'category': category
+            'csi': csi
         }
 
         #if not w9:
          #   context.update({'error_message': "Please enter the vendor W9."})
           #  return render(request, 'data/all_vendors.html', context)
-        if not csi or not category:
-            context.update({'error_message': "Please enter the CSI Division and Category"})
+        if not csi:
+            context.update({'error_message': "Please enter the CSI Division"})
             return render(request, 'data/all_vendors.html', context)
 
         if not name:
@@ -51,7 +49,6 @@ def all_vendors(request):
         vendor.cemail = cemail
         vendor.w9 = w9
         vendor.csi = csi
-        vendor.category =category
         vendor.save()
 
         return redirect(reverse('projectmanagement:all_vendors'))
@@ -70,7 +67,6 @@ def all_subs(request):
         email = request.POST.get('email')
         w9 = request.POST.get('w9')
         csi = request.POST.get('csi')
-        category = request.POST.get('category')
 
         context = {
             'subs': subs,
@@ -80,7 +76,6 @@ def all_subs(request):
             'email': email,
             'w9': w9,
             'csi': csi,
-            'category': category
         }
         if not name:
             context.update({'error_message': "Please enter the subcontractor name. (Less than 50 characters)"})
@@ -97,7 +92,6 @@ def all_subs(request):
         sub.email = email
         sub.w9 = w9
         sub.csi = csi
-        sub.category = category
         sub.save()
 
         return redirect(reverse('projectmanagement:all_subs'))
@@ -121,7 +115,6 @@ def edit_sub(request, sub_id):
         email = request.POST.get('email')
         w9 = request.POST.get('w9')
         csi = request.POST.get('csi')
-        category = request.POST.get('category')
 
         context = {
             'sub': sub,
@@ -131,7 +124,6 @@ def edit_sub(request, sub_id):
             'email': email,
             'w9': w9,
             'csi': csi,
-            'category': category,
         }
 
         if not name:
@@ -146,17 +138,12 @@ def edit_sub(request, sub_id):
             context.update({'error_message': "Select a CSI division"})
             return render(request, 'data/edit_sub.html', context)
 
-        if not category:
-            context.update({'error_message': "Select a category"})
-            return render(request, 'data/edit_sub.html', context)
-
         sub.name = name
         sub.address = address
         sub.phone = phone
         sub.email = email
         sub.w9 = w9
         sub.csi = csi
-        sub.category = category
 
         sub.save()
 

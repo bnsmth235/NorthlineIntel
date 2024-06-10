@@ -4,8 +4,9 @@
 
 {% block content %}
 {% load static %}
-<script src="{% static 'projectmanagement/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
+<script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="{% static 'projectmanagement/javascript/csi-division-codes.js' %}"></script>
 
 <div id="app">
 
@@ -66,40 +67,7 @@
             </div>
 
             <div style="display: inline-block">
-                <label for="csi">CSI Division:</label>
-                <select name="csi" id="csi" class="input-field">
-                    <option value="1">General Requirement</option>
-                    <option value="2">Site Works</option>
-                    <option value="3">Concrete</option>
-                    <option value="4">Masonry</option>
-                    <option value="5">Metals</option>
-                    <option value="6">Wood and Plastics</option>
-                    <option value="7">Thermal and Moisture Protection</option>
-                    <option value="8">Doors and Windows</option>
-                    <option value="9">Finishes</option>
-                    <option value="10">Specialties</option>
-                    <option value="11">Equipment</option>
-                    <option value="12">Furnishings</option>
-                    <option value="13">Special Construction</option>
-                    <option value="14">Conveying Systems</option>
-                    <option value="15">Mechanical/Plumbing</option>
-                    <option value="16">Electrical</option>
-                </select>
-            </div>
-
-            <div style="display: inline-block">
-                <label for="category">Category:</label>
-                <select name="category" id="category" class="input-field">
-                    <option value="1">Civil Engineering</option>
-                    <option value="2">Architecture</option>
-                    <option value="3">Electrical Engineering</option>
-                    <option value="4">Mechanical Engineering</option>
-                    <option value="5">Plumbing</option>
-                    <option value="6">Environmental</option>
-                    <option value="7">Health Department</option>
-                    <option value="8">Amenities</option>
-                    <option value="9">Landscape</option>
-                </select>
+                {% include 'components/csi_division_search.html' %}
             </div>
 
             <input class="input-field-save" type="submit" name="submit" value="Save">
@@ -118,7 +86,6 @@
                 <th>Email</th>
                 <th>W9</th>
                 <th>CSI</th>
-                <th>Category</th>
             </tr>
         {% for sub in subs %}
                 <tr class="report-item zebra" >
@@ -128,7 +95,6 @@
                     <td>{{ sub.email }}</td>
                     <td style="text-align: center" >{{ sub.w9 }}</td>
                     <td style="text-align: center">{{ sub.get_long_csi }}</td>
-                    <td style="text-align: center">{{ sub.get_long_category }}</td>
                     <td class="inline-edit-button"><a href="{% url 'projectmanagement:edit_sub' sub.id %}"><img src="{% static 'projectmanagement/images/pencil.png' %}" height="20" width="20">Edit</a></td>
                     <td style="width: 6.5%; text-align: center">
                       <form id="delete-form" method="post" data-delete-url="{% url 'projectmanagement:delete_sub' sub.id %}">

@@ -4,7 +4,8 @@
 
 {% load static %}
 {% block content %}
-<script src="{% static 'projectmanagement/deleteConfirm.js' %}"></script>
+<script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}"></script>
+<script src="{% static 'projectmanagement/javascript/csi-division-codes.js' %}"></script>
 
     <form action="{% url 'projectmanagement:edit_invoice' project.id draw.id invoice.id%}" enctype="multipart/form-data" method="post">
         {% csrf_token %}
@@ -26,46 +27,8 @@
             </div>
 
             <div style="display: inline-block">
-                <label for="csi">CSI Division:</label>
-                <select name="csi" id="csi" class="input-field">
-                    {% if subselect %}<option hidden="hidden" value="{{ invoice.csi.0 }}" {% if csi.0 == subselect.csi %}selected{% endif %}>{{ subselect.get_long_csi }}</option>{% endif %}
-                    {% if vendorselect %}<option hidden="hidden" value="{{ invoice.csi.0 }}" {% if csi.0 == vendorselect.csi %}selected{% endif %}>{{ vendorselect.get_long_csi }}</option>{% endif %}
-                    <option value="1">General Requirement</option>
-                    <option value="2">Site Works</option>
-                    <option value="3">Concrete</option>
-                    <option value="4">Masonry</option>
-                    <option value="5">Metals</option>
-                    <option value="6">Wood and Plastics</option>
-                    <option value="7">Thermal and Moisture Protection</option>
-                    <option value="8">Doors and Windows</option>
-                    <option value="9">Finishes</option>
-                    <option value="10">Specialties</option>
-                    <option value="11">Equipment</option>
-                    <option value="12">Furnishings</option>
-                    <option value="13">Special Construction</option>
-                    <option value="14">Conveying Systems</option>
-                    <option value="15">Mechanical/Plumbing</option>
-                    <option value="16">Electrical</option>
-                </select>
+                {% include 'components/csi_division_search.html' %}
             </div>
-
-            <div style="display: inline-block">
-                <label for="category">Category:</label>
-                <select name="category" id="category" class="input-field">
-                    {% if subselect %}<option hidden="hidden" value="{{ invoice.category.0 }}" {% if invoice.category.0 == subselect.category %}selected{% endif %}>{{ subselect.get_long_category }}</option>{% endif %}
-                    {% if vendorselect %}<option hidden="hidden" value="{{ invoice.category.0 }}" {% if invoice.category.0 == vendorselect.category %}selected{% endif %}>{{ vendorselect.get_long_category }}</option>{% endif %}
-                    <option value="1">Civil Engineering</option>
-                    <option value="2">Architecture</option>
-                    <option value="3">Electrical Engineering</option>
-                    <option value="4">Mechanical Engineering</option>
-                    <option value="5">Plumbing</option>
-                    <option value="6">Environmental</option>
-                    <option value="7">Health Department</option>
-                    <option value="8">Amenities</option>
-                    <option value="9">Landscape</option>
-                </select>
-            </div>
-
 
             <div style="display: inline-block">
                 <label for="method">Method:</label>
@@ -78,7 +41,6 @@
                     {% endfor %}
                 </select>
             </div>
-
 
             <div style="display: inline-block">
                 <label for="sub">Vendor/Subcontractor: </label>

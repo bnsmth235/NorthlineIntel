@@ -1,4 +1,7 @@
+import json
+import os
 from django.db import models
+from pathlib import Path
 
 STATE_OPTIONS = [
     ("AL", "Alabama"),
@@ -53,43 +56,17 @@ STATE_OPTIONS = [
     ("WY", "Wyoming"),
 ]
 
-DIVISION_CHOICES = [
-    ("1", "General Requirement"),
-    ("2", "Site Works"),
-    ("3", "Concrete"),
-    ("4", "Masonry"),
-    ("5", "Metals"),
-    ("6", "Wood and Plastics"),
-    ("7", "Thermal and Moisture Protection"),
-    ("8", "Doors and Windows"),
-    ("9", "Finishes"),
-    ("10", "Specialties"),
-    ("11", "Equipment"),
-    ("12", "Furnishings"),
-    ("13", "Special Construction"),
-    ("14", "Conveying Systems"),
-    ("15", "Mechanical/Plumbing"),
-    ("16", "Electrical"),
-    ]
+csi_data_path = os.path.join(Path(__file__).resolve().parent.parent, "projectmanagement/static/projectmanagement/data/master_format.json")
+with open(csi_data_path, 'r') as file:
+    csi_data = json.load(file)
+
+CSI_DIVISIONS = csi_data
 
 STATUS_OPTIONS = [("I", "In Progress"), ("C", "Completed"), ("O", "On Hold")]
 
 METHOD_OPTIONS = [("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")]
 
 LIEN_RELEASE_OPTIONS = [("F", "Final"), ("C", "Conditional"), ("N", "N/A")]
-
-
-SUB_CATEGORIES = [
-    ("1", "Civil Engineering"),
-    ("2", "Architecture"),
-    ("3", "Electrical Engineering"),
-    ("4", "Mechanical Engineering"),
-    ("5", "Plumbing"),
-    ("6", "Environmental"),
-    ("7", "Health Department"),
-    ("8", "Amenities"),
-    ("9", "Landscape"),
-]
 
 class Project(models.Model):
     name = models.CharField(max_length=200)
@@ -117,11 +94,11 @@ class Project(models.Model):
 
 class Group(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    name= models.CharField(max_length=20)
+    name = models.CharField(max_length=20)
 
 class Subgroup(models.Model):
     group_id = models.ForeignKey(Group, on_delete=models.CASCADE)
-    name= models.CharField(max_length=20)
+    name = models.CharField(max_length=20)
 
 class Report(models.Model):
     name = models.CharField(max_length=150)
@@ -132,22 +109,29 @@ class Subcontractor(models.Model):
     phone = models.CharField(max_length=11)
     email = models.EmailField()
     w9 = models.CharField(max_length=20)
-    csi = models.CharField(max_length=2, choices=DIVISION_CHOICES)
-    category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
+    csi = models.CharField(max_length=6)
     def __str__(self):
         return self.name
 
     def get_long_csi(self):
-        for choice in self._meta.get_field("csi").choices:
-            if choice[0] == self.csi:
-                return choice[1]
-        return ""
+        # Parse the CSI code
+        division = self.csi[:2]
+        section = self.csi[2:4]
+        subsection = self.csi[4:6]
 
-    def get_long_category(self):
-        for choice in self._meta.get_field("category").choices:
-            if choice[0] == self.category:
-                return choice[1]
-        return ""
+        # Traverse the CSI data
+        description = ''
+        current = csi_data.get(division, None)
+        if current:
+            description += current['name']
+            current = current.get(section, None)
+            if current:
+                description += f" > {current['name']}"
+                current = current.get(subsection, None)
+                if current:
+                    description += f" > {current['name']}"
+
+        return description
 
 
 class Vendor(models.Model):
@@ -157,23 +141,30 @@ class Vendor(models.Model):
     cphone = models.CharField(max_length=11, default="")
     cemail = models.EmailField(default="")
     w9 = models.CharField(max_length=20)
-    csi = models.CharField(max_length=2, choices=DIVISION_CHOICES)
-    category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
+    csi = models.CharField(max_length=6)
 
     def __str__(self):
         return self.name
 
     def get_long_csi(self):
-        for choice in self._meta.get_field("csi").choices:
-            if choice[0] == self.csi:
-                return choice[1]
-        return ""
+        # Parse the CSI code
+        division = self.csi[:2]
+        section = self.csi[2:4]
+        subsection = self.csi[4:6]
 
-    def get_long_category(self):
-        for choice in self._meta.get_field("category").choices:
-            if choice[0] == self.category:
-                return choice[1]
-        return ""
+        # Traverse the CSI data
+        description = ''
+        current = csi_data.get(division, None)
+        if current:
+            description += current['name']
+            current = current.get(section, None)
+            if current:
+                description += f" > {current['name']}"
+                current = current.get(subsection, None)
+                if current:
+                    description += f" > {current['name']}"
+
+        return description
 
 class Plan(models.Model):
     name = models.CharField(max_length=100)
@@ -192,24 +183,31 @@ class MasterEstimate(models.Model):
     vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     total = models.FloatField(default=0.00)
-    csi = models.CharField(max_length=2, choices=DIVISION_CHOICES)
-    category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
+    csi = models.CharField(max_length=6)
     pdf = models.FileField(upload_to='projectmanagement/estimates/', default=None)
 
     def __str__(self):
         return self.name
 
     def get_long_csi(self):
-        for choice in self._meta.get_field("csi").choices:
-            if choice[0] == self.csi:
-                return choice[1]
-        return ""
+        # Parse the CSI code
+        division = self.csi[:2]
+        section = self.csi[2:4]
+        subsection = self.csi[4:6]
 
-    def get_long_category(self):
-        for choice in self._meta.get_field("category").choices:
-            if choice[0] == self.category:
-                return choice[1]
-        return ""
+        # Traverse the CSI data
+        description = ''
+        current = csi_data.get(division, None)
+        if current:
+            description += current['name']
+            current = current.get(section, None)
+            if current:
+                description += f" > {current['name']}"
+                current = current.get(subsection, None)
+                if current:
+                    description += f" > {current['name']}"
+
+        return description
 
 class MasterEstimateLineItem(models.Model):
     estimate_id = models.ForeignKey(MasterEstimate, on_delete=models.CASCADE)
@@ -232,24 +230,31 @@ class Estimate(models.Model):
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
     vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
     total = models.FloatField(default=0.00)
-    csi = models.CharField(max_length=2, choices=DIVISION_CHOICES)
-    category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
+    csi = models.CharField(max_length=6)
     pdf = models.FileField(upload_to='projectmanagement/estimates/', default=None)
 
     def __str__(self):
         return self.name
 
     def get_long_csi(self):
-        for choice in self._meta.get_field("csi").choices:
-            if choice[0] == self.csi:
-                return choice[1]
-        return ""
+        # Parse the CSI code
+        division = self.csi[:2]
+        section = self.csi[2:4]
+        subsection = self.csi[4:6]
 
-    def get_long_category(self):
-        for choice in self._meta.get_field("category").choices:
-            if choice[0] == self.category:
-                return choice[1]
-        return ""
+        # Traverse the CSI data
+        description = ''
+        current = csi_data.get(division, None)
+        if current:
+            description += current['name']
+            current = current.get(section, None)
+            if current:
+                description += f" > {current['name']}"
+                current = current.get(subsection, None)
+                if current:
+                    description += f" > {current['name']}"
+
+        return description
 
 class EstimateLineItem(models.Model):
     estimate_id = models.ForeignKey(Estimate, on_delete=models.CASCADE)
@@ -365,8 +370,7 @@ class Invoice(models.Model):
     draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
     invoice_date = models.DateTimeField('Invoice Date')
     invoice_num = models.CharField(default="", max_length=20)
-    csi = models.CharField(max_length=50, choices=DIVISION_CHOICES)
-    category = models.CharField(max_length=50, choices=SUB_CATEGORIES)
+    csi = models.CharField(max_length=6)
     method = models.CharField(max_length=1, default="I",
                               choices=[("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")])
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
@@ -393,11 +397,24 @@ class Invoice(models.Model):
         choices = [(sub.id, sub.name) for sub in subs]
         return choices
 
-    def get_long_category(self):
-        for choice in self._meta.get_field("category").choices:
-            if choice[0] == self.category:
-                return choice[1]
-        return ""
+        # Parse the CSI code
+        division = self.csi[:2]
+        section = self.csi[2:4]
+        subsection = self.csi[4:6]
+
+        # Traverse the CSI data
+        description = ''
+        current = csi_data.get(division, None)
+        if current:
+            description += current['name']
+            current = current.get(section, None)
+            if current:
+                description += f" > {current['name']}"
+                current = current.get(subsection, None)
+                if current:
+                    description += f" > {current['name']}"
+
+        return description
 
 class Check(models.Model):
     date = models.DateTimeField('Last Modified')
