@@ -1,5 +1,4 @@
-import json
-import os
+from datetime import datetime
 import time
 from io import BytesIO
 from PyPDF2.generic import NameObject
@@ -669,21 +668,12 @@ def delete_swo(request, swo_id):
 
     return redirect('projectmanagement:contract_view', project_id=project.id, sub_id=sub.id)
 
-
-
-
-
-
-
 @login_required(login_url='projectmanagement:login')
 def contract_pdf_view(request, contract_id):
     contract = get_object_or_404(Contract, pk=contract_id)
     pdf_bytes = contract.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'contracts/contract_pdf_view.html', {'pdf_data': pdf_data, 'contract': contract})
-
-
-
 
 @login_required(login_url='projectmanagement:login')
 def swo_pdf_view(request, swo_id):
@@ -692,14 +682,12 @@ def swo_pdf_view(request, swo_id):
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'contracts/contract_pdf_view.html', {'pdf_data': pdf_data, 'SWO': swo})
 
-
 @login_required(login_url='projectmanagement:login')
 def co_pdf_view(request, co_id):
     co = get_object_or_404(ChangeOrder, pk=co_id)
     pdf_bytes = co.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'contracts/co_pdf_view.html', {'pdf_data': pdf_data, 'co': co})
-
 
 @login_required(login_url='projectmanagement:login')
 def po_pdf_view(request, po_id):
@@ -708,14 +696,12 @@ def po_pdf_view(request, po_id):
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'contracts/po_pdf_view.html', {'pdf_data': pdf_data, 'po': po})
 
-
 @login_required(login_url='projectmanagement:login')
 def dco_pdf_view(request, dco_id):
     dco = get_object_or_404(DeductiveChangeOrder, pk=dco_id)
     pdf_bytes = dco.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'contracts/dco_pdf_view.html', {'pdf_data': pdf_data, 'dco': dco})
-
 
 @login_required(login_url='projectmanagement:login')
 def exhibit_pdf_view(request, exhibit_id):
@@ -724,14 +710,24 @@ def exhibit_pdf_view(request, exhibit_id):
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'contracts/exhibit_pdf_view.html', {'pdf_data': pdf_data, 'exhibit': exhibit})
 
-
 @login_required(login_url='projectmanagement:login')
 def new_exhibit(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
+    exhibit = Exhibit()
+
+    exhibit.date = datetime.now().strftime('%Y-%m-%d')
+
     try:
         sub = get_object_or_404(Subcontractor, pk=sub_id)
     except:
         sub = get_object_or_404(Vendor, pk=sub_id)
+
+    exhibits = Exhibit.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
+    exhibit.name = "Exhibit " + chr(len(exhibits) + 65)
+    exhibit.sub_id = sub
+    exhibit.project_id = project
+    exhibit.save()
+
     groups = Group.objects.filter(project_id=project)
     subgroups = Subgroup.objects.filter(group_id__in=groups)
     total_groups = len(groups) + len(subgroups)
@@ -741,9 +737,10 @@ def new_exhibit(request, project_id, sub_id):
          groups])
 
     if request.method == 'POST':
-        line_items = process_form_data(request, project, sub)
+        line_items = process_form_data(request)
         for line_item in line_items:
             line_item.project_id = project
+            line_item.exhibit_id = exhibit
             try:
                 line_item.sub_id = sub
                 line_item.vendor_id = None
@@ -752,15 +749,14 @@ def new_exhibit(request, project_id, sub_id):
                 line_item.sub_id = None
             line_item.save()
 
-        exhibit = create_exhibit(line_items, project, sub)
-
+        exhibit = create_exhibit(exhibit, line_items, project, sub)
 
         return redirect('projectmanagement:contract_view', project_id=project.id, sub_id=sub.id)
 
     return render(request, 'contracts/new_exhibit.html', {'project': project, 'sub': sub, 'groups': groups, 'subgroups': subgroups, 'groups_json': groups_json, 'total_groups': total_groups})
 
 
-def process_form_data(request, project, sub):
+def process_form_data(request):
     grouped_data = []
     line_items = []
     current_group = None
@@ -787,7 +783,6 @@ def process_form_data(request, project, sub):
     for group in grouped_data:
         for row in group['rows']:
             line_item = ExhibitLineItem()
-
             # Convert the string IDs to integers using int()
             try:
                 group_id = int(group.get('group'))
@@ -829,10 +824,14 @@ def delete_exhibit(request, exhibit_id):
     print("Attempting to delete")
 
     if username == request.user.username:
-        if os.path.exists(exhibit.pdf.path):
-            time.sleep(3)
-            os.remove(exhibit.pdf.path)
-            exhibit.delete()
+        try:
+            if os.path.exists(exhibit.pdf.path):
+                time.sleep(3)
+                os.remove(exhibit.pdf.path)
+
+        except:
+            print("Could not delete exhibit, or file does not exist")
+        exhibit.delete()
 
     return redirect('projectmanagement:contract_view', project_id=project.id, sub_id=sub.id)
 

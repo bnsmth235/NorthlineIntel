@@ -47,14 +47,12 @@ urlpatterns = [
     path('all_estimates/<int:project_id>', estimates.all_estimates, name='all_estimates'),
 
     path('edit_sub/<int:sub_id>/', data.edit_sub, name='edit_sub'),
-    path('edit_invoice/<int:project_id>/<int:draw_id>/<int:invoice_id>/', draws.edit_invoice, name='edit_invoice'),
     path('edit_check/<int:check_id>/', draws.edit_check, name='edit_check'),
     path('edit_vendor/<int:vendor_id>/', data.edit_vendor, name='edit_vendor'),
     path('edit_proj/<int:project_id>/', projects.edit_proj, name='edit_proj'),
     path('edit_estimate/<int:estimate_id>/', estimates.edit_estimate, name='edit_estimate'),
 
     path('new_draw/<int:project_id>', draws.new_draw, name='new_draw'),
-    path('new_invoice/<int:project_id>/<int:draw_id>/', draws.new_invoice, name='new_invoice'),
     path('new_check/<int:project_id>/<int:draw_id>/<int:invoice_id>', draws.new_check, name='new_check'),
     path('new_change_order/<int:project_id>/<int:sub_id>/', contracts.new_change_order, name='new_change_order'),
     path('new_change_order/', contracts.new_change_order, name='new_change_order'),
@@ -68,7 +66,6 @@ urlpatterns = [
     path('contract_view/<int:project_id>/<int:sub_id>', contracts.contract_view, name='contract_view'),
     path('draw_view/<int:project_id>/<int:draw_id>/', draws.draw_view, name='draw_view'),
     path('plan_view/<int:project_id>/<int:plan_id>/', plans.plan_view, name='plan_view'),
-    path('invoice_view/<int:invoice_id>/', draws.invoice_view, name='invoice_view'),
     path('check_view/<int:check_id>/', draws.check_view, name='check_view'),
     path('lr_view/<int:check_id>/', contracts.lr_view, name='lr_view'),
     path('project_view/<int:project_id>/', projects.project_view, name='project_view'),
@@ -80,7 +77,12 @@ urlpatterns = [
 
     path('log_out/', registration.log_out, name='logout'),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('get-master-format/', misc.get_master_format, name='get_master_format'),
+
+    #APIs
+    path('get_master_format/', misc.get_master_format, name='get_master_format'),
+    path('get_exhibits/<str:sub_name>', misc.get_exhibits, name='get_exhibits'),
+    path('get_exhibit_line_items/<int:exhibit_id>', misc.get_exhibit_line_items, name='get_exhibit_line_items'),
+    path('get_sub_data/<str:sub_name>', misc.get_sub_data, name='get_sub_data'),
 ]
 app_name = "projectmanagement"
 

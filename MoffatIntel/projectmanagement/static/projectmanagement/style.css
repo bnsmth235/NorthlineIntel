@@ -268,12 +268,10 @@ body{
 }
 
 .fieldset-table{
-    margin-top: 20px;
-    margin-left: 250px;
-    margin-right: 250px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
     position: relative;
-    padding-left: 30px;
-    padding-bottom: 30px;
     border-radius: 8px;
     border: 2px solid #7c0300;
 }
@@ -404,6 +402,8 @@ a {
 
 .add-button{
     float: right;
+    width: fit-content;
+    height: fit-content;
     margin-top: -15px;
     padding: 6px;
     margin-right: 31px;
@@ -421,6 +421,7 @@ a {
     border-radius:8px;
     border: 2px solid #7c0300;
     background-color: #7c0300;
+    cursor: pointer;
 }
 
 button{
@@ -444,6 +445,7 @@ button{
 
 .add-new{
     float: right;
+    width: fit-content;
     margin-top: -15px;
     padding: 6px;
     margin-right: 31px;
@@ -503,4 +505,19 @@ label{
 
 .autocomplete-suggestion:hover {
     background-color: #ddd;
+}
+
+table caption {
+  padding: .5em 0;
+}
+
+table.dataTable th,
+table.dataTable td {
+  white-space: nowrap;
+}
+
+.p {
+  text-align: center;
+  padding-top: 140px;
+  font-size: 14px;
 }

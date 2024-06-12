@@ -1,5 +1,5 @@
 let csiData = {};
-fetch('/projectmanagement/get-master-format/')
+fetch('/projectmanagement/get_master_format/')
     .then(response => response.json())
     .then(data => {
         csiData = data;
