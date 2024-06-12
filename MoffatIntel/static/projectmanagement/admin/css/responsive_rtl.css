@@ -46,7 +46,7 @@
     }
 
     [dir="rtl"] .object-tools li {
-        float: right;
+        align-self: flex-end;
     }
 
     [dir="rtl"] .object-tools li + li {

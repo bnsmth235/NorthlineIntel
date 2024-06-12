@@ -6,93 +6,93 @@
 {% block content %}
 <script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-<h3 style="margin-bottom: -10px"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
+<h3 style="align-self: flex-start"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
 
 <div id="app">
 
-<h1 class="section-header">Plans for {{project.name}}</h1>
+    <h1 class="section-header">Plans for {{project.name}}</h1>
 
-<div class="add-button" v-on:click="showDiv()" v-if="!isDivVisible">
-    <button>+ Upload Plan</button>
-</div>
+    <div class="add-button" v-on:click="showDiv()" v-if="!isDivVisible">
+        <button>+ Upload Plan</button>
+    </div>
 
-<div class="add-button" v-on:click="showDiv()" v-if="isDivVisible">
-    <button>Cancel</button>
-</div>
+    <div class="add-button" v-on:click="showDiv()" v-if="isDivVisible">
+        <button>Cancel</button>
+    </div>
 
-{% if error_message %}
-    <script>
-        window.addEventListener('DOMContentLoaded', function () {
-            vm.showDiv();
-        });
-    </script>
-{% endif %}
+    {% if error_message %}
+        <script>
+            window.addEventListener('DOMContentLoaded', function () {
+                vm.showDiv();
+            });
+        </script>
+    {% endif %}
 
 
-  <div v-if="isDivVisible">
-      <form method="post" enctype="multipart/form-data" action="{% url 'projectmanagement:upload_plan' project.id %}">
-        <fieldset class="fieldset-table">
-            <legend><h2>Upload Plan</h2></legend>
-            {% csrf_token %}
+      <div v-if="isDivVisible">
+          <form method="post" enctype="multipart/form-data" action="{% url 'projectmanagement:upload_plan' project.id %}">
+            <fieldset class="fieldset-table">
+                <legend><h2>Upload Plan</h2></legend>
+                {% csrf_token %}
 
-            {% if error_message %}
-                <p><strong class="error">{{ error_message }}</strong></p>
-            {% endif %}
-            <div class="form-field">
-                <label>PDF:  </label>
-                {{ form.pdf }}
-            </div>
-            <br>
-            <div class="form-field">
-                <label for="name" style="margin-right: 10px">Plan Name:</label>
-                <input type="text" name="name" id="name" class="input-field">
-            </div>
+                {% if error_message %}
+                    <p><strong class="error">{{ error_message }}</strong></p>
+                {% endif %}
+                <div class="form-field">
+                    <label>PDF:  </label>
+                    {{ form.pdf }}
+                </div>
+                <br>
+                <div class="form-field">
+                    <label for="name" style="margin-right: 10px">Plan Name:</label>
+                    <input type="text" name="name" id="name" class="input-field">
+                </div>
 
-            <div class="add-button"><button type="submit">Upload</button></div>
-        </fieldset>
-    </form>
-  </div>
+                <div class="add-button"><button type="submit">Upload</button></div>
+            </fieldset>
+        </form>
+      </div>
 
-{% if plans %}
-    <div class="reports-list-div">
-        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
-            <tr class="headers" style="background-color: initial;">
-                <th>Name</th>
-                <th>Edited By</th>
-                <th>Last Edited</th>
-            </tr>
-        {% for plan in plans %}
-                <tr class="report-item zebra">
-                    <td><a href="{% url 'projectmanagement:plan_view' plan.project_id.id plan.id%}">{{plan.name}}</a></td>
-                    <td><a href="{% url 'projectmanagement:plan_view' plan.project_id.id plan.id%}">{{ plan.edited_by }}</a></td>
-                    <td><a href="{% url 'projectmanagement:plan_view' plan.project_id.id plan.id%}">{{ plan.date }}</a></td>
-                    <td style="width: 6.5%; text-align: center">
-                      <form id="delete-form" method="post" data-delete-url="{% url 'projectmanagement:delete_plan' project.id %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="plan_id" value="{{ plan.id }}">
-                        <input type="hidden" name="username" id="username">
-                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
-                            <img src="{% static 'projectmanagement/images/trash.png' %}" height="14" width="14"> Delete
-                        </button>
-                      </form>
-                    </td>
+    {% if plans %}
+        <div class="reports-list-div">
+            <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+                <tr class="headers" style="background-color: initial;">
+                    <th>Name</th>
+                    <th>Edited By</th>
+                    <th>Last Edited</th>
                 </tr>
+            {% for plan in plans %}
+                    <tr class="report-item zebra">
+                        <td><a href="{% url 'projectmanagement:plan_view' plan.project_id.id plan.id%}">{{plan.name}}</a></td>
+                        <td><a href="{% url 'projectmanagement:plan_view' plan.project_id.id plan.id%}">{{ plan.edited_by }}</a></td>
+                        <td><a href="{% url 'projectmanagement:plan_view' plan.project_id.id plan.id%}">{{ plan.date }}</a></td>
+                        <td style="width: 6.5%; text-align: center">
+                          <form id="delete-form" method="post" data-delete-url="{% url 'projectmanagement:delete_plan' project.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="plan_id" value="{{ plan.id }}">
+                            <input type="hidden" name="username" id="username">
+                            <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                                <img src="{% static 'projectmanagement/images/trash.png' %}" height="14" width="14"> Delete
+                            </button>
+                          </form>
+                        </td>
+                    </tr>
 
-        {% endfor %}
-        </table>
-    </div>
-{% else %}
-    <div class="reports-list-div">
-        <table>
-            <tr class="report-item no-hover">
-                <td>There are currently no plans available.</td>
-            </tr>
-        </table>
-    </div>
+            {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <div class="reports-list-div">
+            <table>
+                <tr class="report-item no-hover">
+                    <td>There are currently no plans available.</td>
+                </tr>
+            </table>
+        </div>
 
-{% endif %}
+    {% endif %}
 
-</table>
+    </table>
 
 </div>
 

@@ -97,17 +97,23 @@ def all_draws(request, project_id):
 def draw_view(request, project_id, draw_id):
     project = get_object_or_404(Project, pk=project_id)
     draw = get_object_or_404(Draw, pk=draw_id)
+    draw_items = DrawLineItem.objects.filter(draw_id=draw)
     contracts = Contract.objects.order_by('-date').filter(project_id=project.id)
-    draws = Draw.objects.order_by('-date').filter(project_id=project.id)
-    #invoices = Invoice.objects.order_by('-invoice_date').order_by('sub_id').filter(draw_id=draw.id)
-    checks = Check.objects.order_by('-check_date').order_by('invoice_id').filter(draw_item_id=None)
+    checks = Check.objects.order_by('-check_date').order_by('draw_item_id').filter(draw_item_id__in=draw_items)
     groups = Group.objects.filter(project_id=project)
     subgroups = Subgroup.objects.filter(group_id__in=groups)
 
+    context = {
+        'draw': draw,
+        'draw_items': draw_items,
+        'project': project,
+        'contracts': contracts,
+        'checks': checks,
+        'groups': groups,
+        'subgroups': subgroups
+    }
 
-    return render(request, 'draws/draw_view.html', {'draw': draw, 'draws': draws, 'project': project, 'contracts': contracts, 'checks': checks, 'groups': groups, 'subgroups': subgroups})
-
-
+    return render(request, 'draws/draw_view.html', context)
 
 @login_required(login_url='projectmanagement:login')
 def new_draw(request, project_id):
@@ -214,7 +220,6 @@ def delete_check(request, check_id):
 
     return render(request, 'draws/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
 
-
 @login_required(login_url='projectmanagement:login')
 def check_view(request, check_id):
     check = get_object_or_404(Check, pk=check_id)
@@ -222,13 +227,11 @@ def check_view(request, check_id):
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'draws/check_view.html', {'pdf_data': pdf_data, 'check': check})
 
-
-
 @login_required(login_url='projectmanagement:login')
-def new_check(request, project_id, draw_id, invoice_id):
-    draw = get_object_or_404(Draw, pk=draw_id)
+def new_check(request, project_id, draw_item_id):
+    draw_item_id = get_object_or_404(DrawLineItem, pk=draw_item_id)
+    draw = get_object_or_404(Draw, pk=draw_item_id.draw_id)
     project = get_object_or_404(Project, pk=project_id)
-    #invoice = get_object_or_404(Invoice, pk=invoice_id)
     subs = Subcontractor.objects.order_by('name')
 
     context = {
@@ -299,7 +302,7 @@ def new_check(request, project_id, draw_id, invoice_id):
 
         check.save()
 
-        return redirect('projectmanagement:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
+        return redirect('projectmanagement:draw_view', project_id=project_id, draw_id=draw.id)  # Redirect to a success page
 
     return render(request, 'draws/new_check.html', context)
 

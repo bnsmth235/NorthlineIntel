@@ -7,7 +7,7 @@
 <script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-<h3 style="margin-bottom: -10px"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
+<h3 style="align-self: flex-start"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
 
 <div id="app">
 
@@ -21,10 +21,16 @@
 {% endif %}
 
 {% if contracts or SWOs %}
-<div style="text-align: center">
-    <div style="display:inline-block"><a class="pick-icon" href="{% url 'projectmanagement:change_orders' project.id sub.id %}"><img src="{% static 'projectmanagement/images/change_order.png' %}"><li>Change Orders</li></a></div>
-    <div style="display:inline-block"><a class="pick-icon" href="{% url 'projectmanagement:deductive_change_orders' project.id sub.id %}"><img src="{% static 'projectmanagement/images/deductive_change_order.png' %}"><li>Deductive Change Orders</li></a></div>
-    <div style="display:inline-block"><a class="pick-icon" href="{% url 'projectmanagement:purchase_orders' project.id %}"><img src="{% static 'projectmanagement/images/purchase_order.png' %}"><li>Purchase Orders</li></a></div>
+<div class="flex-container">
+    <div class="flex-item">
+        <div><a class="pick-icon" href="{% url 'projectmanagement:change_orders' project.id sub.id %}"><img src="{% static 'projectmanagement/images/change_order.png' %}"><li>Change Orders</li></a></div>
+    </div>
+    <div class="flex-item">
+        <div><a class="pick-icon" href="{% url 'projectmanagement:deductive_change_orders' project.id sub.id %}"><img src="{% static 'projectmanagement/images/deductive_change_order.png' %}"><li>Deductive Change Orders</li></a></div>
+    </div>
+    <div class="flex-item">
+        <div><a class="pick-icon" href="{% url 'projectmanagement:purchase_orders' project.id %}"><img src="{% static 'projectmanagement/images/purchase_order.png' %}"><li>Purchase Orders</li></a></div>
+    </div>
 </div>
 
 <div display="block">

@@ -225,7 +225,7 @@
 
 .change-list ul.toplinks {
     display: block;
-    float: left;
+    align-self: flex-start;
     padding: 0;
     margin: 0;
     width: 100%;

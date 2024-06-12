@@ -13,7 +13,7 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     </head>
-    <body>
+    <body style="display: flex; flex-direction: column; align-items: stretch">
         <div style="height: inherit;">
             <div>
                 <img src="{% static 'projectmanagement/images/logo_onlyM.png' %}" class="logo">
@@ -29,8 +29,7 @@
             <div class="nav">
                 <nav role="navigation">
                         <ul id="menu">
-                            <div><a class="menu-icon" href="/projectmanagement/home"><img style="width: 42px; height: auto;" src="{% static 'projectmanagement/images/home.png' %}"><li style="margin-left: -22px">Home</li>
-                            </a><br><br></div>
+                            <div><a class="menu-icon" href="/projectmanagement/home"><img style="width: 42px; height: auto;" src="{% static 'projectmanagement/images/home.png' %}"><li style="margin-left: -22px">Home</li></a></div>
                             <a class="menu-icon" href="{% url 'projectmanagement:all' %}"><img style="width: 52px; height: auto;" src="{% static 'projectmanagement/images/files.png' %}"><li style="margin-left:-28px">All Projects</li></a><br><br><br>
                             <a class="menu-icon" href="{% url 'projectmanagement:reports' %}"><img style="width: 50px; height: auto;" src="{% static 'projectmanagement/images/paper.png' %}"><li style="margin-left: -28px">Reports</li></a><br><br>
                             <a class="menu-icon" href="{% url 'projectmanagement:all_subs' %}"><img style="width: 50px; height: auto;" src="{% static 'projectmanagement/images/sub.png' %}"><li style="margin-left: -18px">Subs</li></a><br><br>

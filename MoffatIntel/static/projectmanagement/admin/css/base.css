@@ -370,7 +370,7 @@ table thead th.sorted:hover a.sortremove {
 table thead th.sorted .sortoptions {
     display: block;
     padding: 9px 5px 0 5px;
-    float: right;
+    align-self: flex-end;
     text-align: right;
 }
 
@@ -506,7 +506,7 @@ a.button {
 }
 
 .button.default, input[type=submit].default, .submit-row input.default {
-    float: right;
+    align-self: flex-end;
     border: none;
     font-weight: 400;
     background: var(--default-button-bg);
@@ -722,14 +722,14 @@ a.deletelink:focus, a.deletelink:hover {
     font-size: 0.625rem;
     font-weight: bold;
     padding-left: 0;
-    float: right;
+    align-self: flex-end;
     position: relative;
     margin-top: -48px;
 }
 
 .object-tools li {
     display: block;
-    float: left;
+    align-self: flex-start;
     margin-left: 5px;
     height: 16px;
 }
@@ -740,7 +740,7 @@ a.deletelink:focus, a.deletelink:hover {
 
 .object-tools a:link, .object-tools a:visited {
     display: block;
-    float: left;
+    align-self: flex-start;
     padding: 3px 12px;
     background: var(--object-tools-bg);
     color: var(--object-tools-fg);
@@ -824,12 +824,12 @@ a.deletelink:focus, a.deletelink:hover {
 }
 
 #content-main {
-    float: left;
+    align-self: flex-start;
     width: 100%;
 }
 
 #content-related {
-    float: right;
+    align-self: flex-end;
     width: 260px;
     position: relative;
     margin-right: -300px;
@@ -851,13 +851,13 @@ a.deletelink:focus, a.deletelink:hover {
 }
 
 .colSM #content-related {
-    float: left;
+    align-self: flex-start;
     margin-right: 0;
     margin-left: -300px;
 }
 
 .colSM #content-main {
-    float: right;
+    align-self: flex-end;
 }
 
 .popup .colM {
@@ -887,7 +887,7 @@ a.deletelink:focus, a.deletelink:hover {
 }
 
 #branding {
-    float: left;
+    align-self: flex-start;
 }
 
 #branding h1 {
@@ -926,7 +926,7 @@ a.deletelink:focus, a.deletelink:hover {
 }
 
 #user-tools {
-    float: right;
+    align-self: flex-end;
     margin: 0 0 0 20px;
     text-align: right;
 }

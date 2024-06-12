@@ -26,7 +26,7 @@ th {
 }
 
 .object-tools {
-    float: left;
+    align-self: flex-start;
 }
 
 thead th:first-child,
@@ -47,11 +47,11 @@ div.breadcrumbs {
 }
 
 #content-main {
-    float: right;
+    align-self: flex-end;
 }
 
 #content-related {
-    float: left;
+    align-self: flex-start;
     margin-left: -300px;
     margin-right: auto;
 }
@@ -64,7 +64,7 @@ div.breadcrumbs {
 /* SORTABLE TABLES */
 
 table thead th.sorted .sortoptions {
-   float: left;
+   align-self: flex-start;
 }
 
 thead th.sorted .text {
@@ -111,7 +111,7 @@ thead th.sorted .text {
 
 .aligned label {
     padding: 0 0 3px 1em;
-    float: right;
+    align-self: flex-end;
 }
 
 .submit-row {
@@ -119,7 +119,7 @@ thead th.sorted .text {
 }
 
 .submit-row p.deletelink-box {
-    float: right;
+    align-self: flex-end;
 }
 
 .submit-row input.default {
@@ -144,17 +144,17 @@ form .aligned ul {
 }
 
 form ul.inline li {
-    float: right;
+    align-self: flex-end;
     padding-right: 0;
     padding-left: 7px;
 }
 
 input[type=submit].default, .submit-row input.default {
-    float: left;
+    align-self: flex-start;
 }
 
 fieldset .fieldBox {
-    float: right;
+    align-self: flex-end;
     margin-left: 20px;
     margin-right: 0;
 }
@@ -200,7 +200,7 @@ fieldset .fieldBox {
 }
 
 .selector {
-    float: right;
+    align-self: flex-end;
 }
 
 .selector .selector-filter {
@@ -208,7 +208,7 @@ fieldset .fieldBox {
 }
 
 .inline-deletelink {
-    float: left;
+    align-self: flex-start;
 }
 
 form .form-row p.datetime {
@@ -216,7 +216,7 @@ form .form-row p.datetime {
 }
 
 .related-widget-wrapper {
-    float: right;
+    align-self: flex-end;
 }
 
 /* MISC */
