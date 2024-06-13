@@ -4,6 +4,7 @@ from .models import *
 admin.site.register(Project)
 admin.site.register(Report)
 admin.site.register(Draw)
+admin.site.register(DrawLineItem)
 admin.site.register(Plan)
 admin.site.register(ChangeOrder)
 admin.site.register(PurchaseOrder)

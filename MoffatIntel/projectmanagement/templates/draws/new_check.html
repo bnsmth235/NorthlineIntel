@@ -3,7 +3,7 @@
 {% block title %}New check{% endblock %}
 
 {% block content %}
-    <form action="{% url 'projectmanagement:new_check' project.id draw.id invoice.id%}" enctype="multipart/form-data" method="post">
+    <form action="{% url 'projectmanagement:new_check' draw_item.id %}" enctype="multipart/form-data" method="post">
         {% csrf_token %}
         <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
             <legend><h1>New Check</h1></legend>

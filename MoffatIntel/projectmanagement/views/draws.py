@@ -94,26 +94,25 @@ def all_draws(request, project_id):
 
 
 @login_required(login_url='projectmanagement:login')
-def draw_view(request, project_id, draw_id):
-    project = get_object_or_404(Project, pk=project_id)
+def draw_view(request, draw_id):
     draw = get_object_or_404(Draw, pk=draw_id)
-    draw_items = DrawLineItem.objects.filter(draw_id=draw)
-    contracts = Contract.objects.order_by('-date').filter(project_id=project.id)
-    checks = Check.objects.order_by('-check_date').order_by('draw_item_id').filter(draw_item_id__in=draw_items)
-    groups = Group.objects.filter(project_id=project)
-    subgroups = Subgroup.objects.filter(group_id__in=groups)
-
+    project = get_object_or_404(Project, pk=draw.project_id.id)
     context = {
         'draw': draw,
-        'draw_items': draw_items,
         'project': project,
-        'contracts': contracts,
-        'checks': checks,
-        'groups': groups,
-        'subgroups': subgroups
     }
 
     return render(request, 'draws/draw_view.html', context)
+
+@login_required(login_url='projectmanagement:login')
+def create_lr(request, draw_item_id, type):
+    draw_item = get_object_or_404(DrawLineItem, pk=draw_item_id)
+    lr = LienRelease()
+    lr.date = datetime.now()
+    lr.type = type
+    lr.draw_item_id = draw_item
+    lr.save()
+
 
 @login_required(login_url='projectmanagement:login')
 def new_draw(request, project_id):
@@ -149,7 +148,6 @@ def new_draw(request, project_id):
 
         for data in datas:
             if data:
-                print(data)
                 sub = get_object_or_404(Subcontractor, name=data['subcontractorName'])
 
                 drawItem = DrawLineItem()
@@ -228,14 +226,14 @@ def check_view(request, check_id):
     return render(request, 'draws/check_view.html', {'pdf_data': pdf_data, 'check': check})
 
 @login_required(login_url='projectmanagement:login')
-def new_check(request, project_id, draw_item_id):
-    draw_item_id = get_object_or_404(DrawLineItem, pk=draw_item_id)
-    draw = get_object_or_404(Draw, pk=draw_item_id.draw_id)
-    project = get_object_or_404(Project, pk=project_id)
+def new_check(request, draw_item_id):
+    draw_item = get_object_or_404(DrawLineItem, pk=draw_item_id)
+    draw = get_object_or_404(Draw, pk=draw_item.draw_id.id)
+    project = get_object_or_404(Project, pk=draw.project_id.id)
     subs = Subcontractor.objects.order_by('name')
 
     context = {
-        'draw': draw,
+        'draw_item': draw_item,
         'project': project,
         'subs': subs,
         'lien_release_type_choices': LIEN_RELEASE_OPTIONS
@@ -266,14 +264,10 @@ def new_check(request, project_id, draw_item_id):
 
         check = Check()
         check.date = datetime.now()
-        check.draw_id = draw
-        check.sub_id = sub
+        check.draw_item_id = draw_item
         check.check_date = check_date
         check.check_num = check_number
         check.check_total = total
-        check.lien_release_type = lien_release_type
-        check.signed = signed
-        check.distributed = distributed
 
         # Handle check PDF
         if 'check_pdf' in request.FILES:
@@ -289,9 +283,6 @@ def new_check(request, project_id, draw_item_id):
                 context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
                 return render(request, 'draws/new_check.html', context)
 
-        else:
-            check.signed = False
-
         project.edited_by = request.user.username
         project.date = datetime.now()
         project.save()
@@ -302,7 +293,7 @@ def new_check(request, project_id, draw_item_id):
 
         check.save()
 
-        return redirect('projectmanagement:draw_view', project_id=project_id, draw_id=draw.id)  # Redirect to a success page
+        return redirect('projectmanagement:draw_view', project_id=project.id, draw_id=draw.id)  # Redirect to a success page
 
     return render(request, 'draws/new_check.html', context)
 
@@ -344,10 +335,6 @@ def edit_check(request, check_id):
         check.lien_release_type = lien_release_type
         check.distributed = distributed
         check.signed = signed
-
-        print("******************************")
-        print(check.signed)
-        print("******************************")
 
         # Handle check PDF
         if 'check_pdf' in request.FILES:

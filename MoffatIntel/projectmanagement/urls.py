@@ -53,7 +53,7 @@ urlpatterns = [
     path('edit_estimate/<int:estimate_id>/', estimates.edit_estimate, name='edit_estimate'),
 
     path('new_draw/<int:project_id>', draws.new_draw, name='new_draw'),
-    path('new_check/<int:project_id>/<int:draw_id>/<int:invoice_id>', draws.new_check, name='new_check'),
+    path('new_check/<int:draw_item_id>', draws.new_check, name='new_check'),
     path('new_change_order/<int:project_id>/<int:sub_id>/', contracts.new_change_order, name='new_change_order'),
     path('new_change_order/', contracts.new_change_order, name='new_change_order'),
     path('new_deductive_change_order/<int:project_id>/<int:sub_id>/', contracts.new_deductive_change_order, name='new_deductive_change_order'),
@@ -64,10 +64,10 @@ urlpatterns = [
     path('new_master/<int:project_id>/', estimates.new_master, name='new_master'),
 
     path('contract_view/<int:project_id>/<int:sub_id>', contracts.contract_view, name='contract_view'),
-    path('draw_view/<int:project_id>/<int:draw_id>/', draws.draw_view, name='draw_view'),
+    path('draw_view/<int:draw_id>/', draws.draw_view, name='draw_view'),
     path('plan_view/<int:project_id>/<int:plan_id>/', plans.plan_view, name='plan_view'),
     path('check_view/<int:check_id>/', draws.check_view, name='check_view'),
-    path('lr_view/<int:check_id>/', contracts.lr_view, name='lr_view'),
+    path('lr_view/<int:lr_id>/', contracts.lr_view, name='lr_view'),
     path('project_view/<int:project_id>/', projects.project_view, name='project_view'),
     path('sub_select/<int:project_id>/', contracts.sub_select, name='sub_select'),
     path('change_orders/<int:project_id>/<int:sub_id>/', contracts.change_orders, name='change_orders'),
@@ -83,6 +83,9 @@ urlpatterns = [
     path('get_exhibits/<str:sub_name>', misc.get_exhibits, name='get_exhibits'),
     path('get_exhibit_line_items/<int:exhibit_id>', misc.get_exhibit_line_items, name='get_exhibit_line_items'),
     path('get_sub_data/<str:sub_name>', misc.get_sub_data, name='get_sub_data'),
+    path('get_draw_data/<int:draw_id>', misc.get_draw_data, name='get_draw_data'),
+    path('get_lr_for_draw_item/<int:draw_item_id>/<str:type>', misc.get_lr_for_draw_item, name='get_lr_for_draw_item'),
+    path('get_check_for_draw_item/<int:draw_item_id>', misc.get_check_for_draw_item, name='get_check_for_draw_item'),
 ]
 app_name = "projectmanagement"
 

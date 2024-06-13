@@ -369,21 +369,13 @@ class DrawLineItem(models.Model):
     draw_amount = models.FloatField(default=0.00)
     description = models.CharField(max_length=250)
 
-class Check(models.Model):
-    date = models.DateTimeField('Last Modified')
+class LienRelease(models.Model):
+    date = models.DateTimeField('Created Date')
     draw_item_id = models.ForeignKey(DrawLineItem, on_delete=models.CASCADE)
-    check_date = models.DateTimeField('Check Date')
-    check_num = models.IntegerField()
-    check_total = models.FloatField(default=0.00)
-    distributed = models.CharField(max_length=50)
-    check_pdf = models.FileField(default=None, upload_to='projectmanagement/checks/')
-    lien_release_type = models.CharField(max_length=20, default="N",
+    type = models.CharField(max_length=20, default="C",
                                          choices=[("F", "Final"), ("C", "Conditional"), ("N", "N/A")])
-    lien_release_pdf = models.FileField(default=None, upload_to='projectmanagement/lien_releases')
+    pdf = models.FileField(default=None, null=True, upload_to='projectmanagement/lien_releases')
     signed = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.check_num.__str__()
 
     def get_LR_type_display_long(self):
         for choice in self._meta.get_field("lien_release_type").choices:
@@ -391,4 +383,13 @@ class Check(models.Model):
                 return choice[1]
         return ""
 
+class Check(models.Model):
+    date = models.DateTimeField('Last Modified')
+    draw_item_id = models.ForeignKey(DrawLineItem, on_delete=models.CASCADE)
+    check_date = models.DateTimeField('Check Date')
+    check_num = models.CharField(max_length=12)
+    check_total = models.FloatField(default=0.00)
+    check_pdf = models.FileField(default=None, null=True, upload_to='projectmanagement/checks/')
 
+    def __str__(self):
+        return self.check_num.__str__()

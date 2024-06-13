@@ -6,7 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.forms import model_to_dict
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
-from ..models import Subcontractor, Exhibit, ExhibitLineItem
+from ..models import Subcontractor, Exhibit, ExhibitLineItem, Draw, DrawLineItem, Check, LienRelease
+from .draws import create_lr
 
 
 @login_required(login_url='projectmanagement:login')
@@ -60,3 +61,80 @@ def get_sub_data(request, sub_name):
     data = model_to_dict(subcontractor)
 
     return JsonResponse(data)
+
+@login_required(login_url='projectmanagement:login')
+def get_draw_data(request, draw_id):
+    draw = get_object_or_404(Draw, pk=draw_id)
+    draw_items = DrawLineItem.objects.filter(draw_id=draw.id)
+
+    subs = []
+    checks = []
+
+    for draw_item in draw_items:
+        sub = get_object_or_404(Subcontractor, pk=draw_item.sub_id.id)
+        if sub not in subs:
+            subs.append(sub)
+        check_set = Check.objects.filter(draw_item_id=draw.id)
+        for check in check_set:
+            if check not in checks:
+                checks.append(check)
+
+    data = {
+        'draw': model_to_dict(draw),
+        'draw_items': [model_to_dict(draw_item) for draw_item in draw_items],
+        'subs': [model_to_dict(sub) for sub in subs],
+        'checks': [model_to_dict(check) for check in checks],
+    }
+
+    return JsonResponse(data, safe=False)
+
+@login_required(login_url='projectmanagement:login')
+def get_lr_for_draw_item(request, draw_item_id, type):
+    lr = LienRelease.objects.filter(draw_item_id=draw_item_id).first()
+    if not lr:
+        print("Creating new lien release")
+        create_lr(request, draw_item_id, type)
+        lr = get_object_or_404(LienRelease, draw_item_id=draw_item_id)
+
+    lr = lr_to_dict(lr)
+
+    data = {
+        'lr': lr
+    }
+
+    return JsonResponse(data, safe=False)
+
+def lr_to_dict(lr):
+    print(lr)
+    return {
+        'id': lr.id,
+        'draw_item_id': lr.draw_item_id.id,
+        'type': lr.type,
+        'date': lr.date.isoformat(),
+        'pdf': lr.pdf.url if lr.pdf else None,
+    }
+
+
+@login_required(login_url='projectmanagement:login')
+def get_check_for_draw_item(request, draw_item_id):
+    check = Check.objects.filter(draw_item_id=draw_item_id).first()
+    if not check:
+        return JsonResponse(None, safe=False)
+
+    check = check_to_dict(check)
+
+    data = {
+        'check': check
+    }
+
+    return JsonResponse(data, safe=False)
+
+def check_to_dict(check):
+    return {
+        'id': check.id,
+        'check_date': check.check_date.isoformat(),
+        'check_num': check.check_num,
+        'check_total': check.check_total,
+        'date': check.date.isoformat(),
+        'pdf': check.check_pdf.url if check.pdf else None,
+    }
