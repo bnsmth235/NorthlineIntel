@@ -25,9 +25,9 @@ def get_master_format(request):
     return JsonResponse(data)
 
 @login_required(login_url='projectmanagement:login')
-def get_exhibits(request, sub_name):
+def get_exhibits(request, sub_name, project_id):
     subcontractor = Subcontractor.objects.filter(name=sub_name).first()
-    exhibits = Exhibit.objects.filter(sub_id=subcontractor)
+    exhibits = Exhibit.objects.filter(sub_id=subcontractor).filter(project_id=project_id)
 
     # Convert QuerySet to list of dictionaries
     exhibits_list = [exhibit_to_dict(exhibit) for exhibit in exhibits]
@@ -134,7 +134,6 @@ def check_to_dict(check):
         'id': check.id,
         'check_date': check.check_date.isoformat(),
         'check_num': check.check_num,
-        'check_total': check.check_total,
         'date': check.date.isoformat(),
         'pdf': check.check_pdf.url if check.pdf else None,
     }

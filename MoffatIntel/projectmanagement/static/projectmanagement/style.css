@@ -148,6 +148,10 @@ hr{
     margin-bottom: 20px;
 }
 
+th{
+    vertical-align: center;
+}
+
 .multi-option-header{
     text-align: center;
     font-size: 20px;

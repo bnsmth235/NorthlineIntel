@@ -378,8 +378,8 @@ class LienRelease(models.Model):
     signed = models.BooleanField(default=False)
 
     def get_LR_type_display_long(self):
-        for choice in self._meta.get_field("lien_release_type").choices:
-            if choice[0] == self.lien_release_type:
+        for choice in self._meta.get_field("type").choices:
+            if choice[0] == self.type:
                 return choice[1]
         return ""
 
@@ -388,8 +388,7 @@ class Check(models.Model):
     draw_item_id = models.ForeignKey(DrawLineItem, on_delete=models.CASCADE)
     check_date = models.DateTimeField('Check Date')
     check_num = models.CharField(max_length=12)
-    check_total = models.FloatField(default=0.00)
-    check_pdf = models.FileField(default=None, null=True, upload_to='projectmanagement/checks/')
+    pdf = models.FileField(default=None, null=True, upload_to='projectmanagement/checks/')
 
     def __str__(self):
         return self.check_num.__str__()

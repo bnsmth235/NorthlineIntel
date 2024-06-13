@@ -80,7 +80,7 @@ urlpatterns = [
 
     #APIs
     path('get_master_format/', misc.get_master_format, name='get_master_format'),
-    path('get_exhibits/<str:sub_name>', misc.get_exhibits, name='get_exhibits'),
+    path('get_exhibits/<str:sub_name>/<int:project_id>', misc.get_exhibits, name='get_exhibits'),
     path('get_exhibit_line_items/<int:exhibit_id>', misc.get_exhibit_line_items, name='get_exhibit_line_items'),
     path('get_sub_data/<str:sub_name>', misc.get_sub_data, name='get_sub_data'),
     path('get_draw_data/<int:draw_id>', misc.get_draw_data, name='get_draw_data'),

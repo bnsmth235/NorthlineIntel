@@ -46,7 +46,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         sumAmountRemaining += amountRemaining;
 
         const lr = await getLrForDrawItem(item, type);
-        const check = await getCheckForDrawItem(item);
+        let check = await getCheckForDrawItem(item);
+        try{
+            check = check.check
+        } catch (e) {
+            check = null;
+        }
 
         // Create a new table row
         const row = document.createElement('tr');
@@ -101,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if(lr.signed) {
             lrImage.src = pdfIconUrl;
         } else {
-            lrImage.src = pdfIconRedUrl;
+            lrImage.src = unsignedUrl;
             lrImage.setAttribute('data-bs-toggle', 'tooltip');
             lrImage.setAttribute('data-bs-placement', 'top');
             lrImage.setAttribute('title', 'Lien Release is not signed');
@@ -117,20 +122,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         row.appendChild(lrImageCell);
 
         if(check){
-            console.log("Check found", check)
             const checkNumberCell = document.createElement('td');
-
+            checkNumberCell.textContent = check.check_num;
             row.appendChild(checkNumberCell);
 
             const checkDateCell = document.createElement('td');
-
+            const formattedDate = new Date(check.check_date).toLocaleDateString();
+            checkDateCell.textContent = formattedDate;
             row.appendChild(checkDateCell);
 
             const checkImageCell = document.createElement('td');
+            const checkImage = document.createElement('img');
+            const checkLink = document.createElement('a');
 
+            if(check.pdf){
+                checkImage.src = pdfIconUrl;
+                checkLink.href = "#";
+            }else {
+                checkImage.src = pdfIconRedUrl;
+                checkImage.setAttribute('data-bs-toggle', 'tooltip');
+                checkImage.setAttribute('data-bs-placement', 'top');
+                checkImage.setAttribute('title', 'Check is not uploaded');
+                checkLink.href = "#";
+            }
+
+            checkImage.style.height = '23px';
+            checkImage.style.width = 'auto';
+            checkLink.appendChild(checkImage);
+            checkImageCell.appendChild(checkLink);
             row.appendChild(checkImageCell);
         } else {
-            console.log("Check not found")
             const addCheckCell = document.createElement('td');
             addCheckCell.colSpan = 3;
             addCheckCell.style.alignContent = 'center';
@@ -143,6 +164,28 @@ document.addEventListener('DOMContentLoaded', async function() {
             addCheckCell.appendChild(addCheckButton);
             row.appendChild(addCheckCell);
         }
+
+        const editCell = document.createElement('td');
+        const editImage = document.createElement('img');
+        editImage.src = editIconUrl;
+        editImage.style.height = '20px';
+        editImage.style.width = 'auto';
+        const editLink = document.createElement('a');
+        editLink.href = `#`;
+        editLink.appendChild(editImage);
+        editCell.appendChild(editLink);
+        row.appendChild(editCell);
+
+        const deleteCell = document.createElement('td');
+        const deleteImage = document.createElement('img');
+        deleteImage.src = deleteIconUrl;
+        deleteImage.style.height = '20px';
+        deleteImage.style.width = 'auto';
+        const deleteLink = document.createElement('a');
+        deleteLink.href = `#`;
+        deleteLink.appendChild(deleteImage);
+        deleteCell.appendChild(deleteLink);
+        row.appendChild(deleteCell);
 
         // Append the row to the table body
         tbody.appendChild(row);
@@ -200,7 +243,8 @@ function addTotalRow() {
 }
 
 async function getExhibitsForSub(sub) {
-    const response = await fetch('/projectmanagement/get_exhibits/' + sub.name);
+    const projectId = document.getElementById('projectId').textContent;
+    const response = await fetch(`/projectmanagement/get_exhibits/${sub.name}/${projectId}`);
     const exhibits = await response.json();
     for (let exhibit of exhibits) {
         const itemResponse = await fetch('/projectmanagement/get_exhibit_line_items/' + exhibit.id);

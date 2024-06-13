@@ -77,6 +77,12 @@ def all_draws(request, project_id):
     except:
         max_rows = 0
 
+    group_subgroup_totals = {}
+    for group in groups:
+        group_subgroup_totals[group] = {}
+        for subgroup in group.subgroup_set.all():
+            group_subgroup_totals[group][subgroup] = 0
+
     context = {
         'draws': draws,
         'project': project,
@@ -230,35 +236,25 @@ def new_check(request, draw_item_id):
     draw_item = get_object_or_404(DrawLineItem, pk=draw_item_id)
     draw = get_object_or_404(Draw, pk=draw_item.draw_id.id)
     project = get_object_or_404(Project, pk=draw.project_id.id)
-    subs = Subcontractor.objects.order_by('name')
+    lr = get_object_or_404(LienRelease, draw_item_id=draw_item_id)
 
     context = {
         'draw_item': draw_item,
+        'draw': draw,
         'project': project,
-        'subs': subs,
-        'lien_release_type_choices': LIEN_RELEASE_OPTIONS
+        'lr': lr
     }
 
     if request.method == 'POST':
         check_date = request.POST.get('check_date')
         check_number = request.POST.get('check_num')
-        sub = request.POST.get('sub')
-        total = request.POST.get('check_total')
-        lien_release_type = request.POST.get('lien_release_type')
-        distributed = request.POST.get('distributed')
-        signed = bool(request.POST.get('signed', False))
 
         context.update({
             'check_date': check_date,
             'check_number': check_number,
-            'sub': sub,
-            'check_total': total,
-            'lien_release_type': lien_release_type,
-            'distributed': distributed,
-            'signed': signed
         })
 
-        if not check_date or not check_number or not total or not sub:
+        if not check_date or not check_number:
             context.update({'error_message': "Please fill out all fields"})
             return render(request, 'draws/new_check.html', context)
 
@@ -267,19 +263,11 @@ def new_check(request, draw_item_id):
         check.draw_item_id = draw_item
         check.check_date = check_date
         check.check_num = check_number
-        check.check_total = total
 
         # Handle check PDF
         if 'check_pdf' in request.FILES:
             check.check_pdf = request.FILES['check_pdf']
             if not check.check_pdf.file.content_type.startswith('application/pdf'):
-                context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
-                return render(request, 'draws/new_check.html', context)
-
-        # Handle lien release PDF
-        if 'lien_release_pdf' in request.FILES:
-            check.lien_release_pdf = request.FILES['lien_release_pdf']
-            if not check.lien_release_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
                 return render(request, 'draws/new_check.html', context)
 
@@ -293,7 +281,7 @@ def new_check(request, draw_item_id):
 
         check.save()
 
-        return redirect('projectmanagement:draw_view', project_id=project.id, draw_id=draw.id)  # Redirect to a success page
+        return redirect('projectmanagement:draw_view', draw_id=draw.id)  # Redirect to a success page
 
     return render(request, 'draws/new_check.html', context)
 

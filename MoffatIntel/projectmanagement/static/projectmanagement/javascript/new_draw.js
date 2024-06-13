@@ -56,7 +56,9 @@ function stepTwo() {
 
 function fetchExhibitsAndGenerateInputs(subcontractors) {
     const promises = subcontractors.map((subcontractor, index) => {
-        return fetch(`/projectmanagement/get_exhibits/${subcontractor}`)
+        // Get project id from url
+        const projectId = window.location.pathname.split('/')[3];
+        return fetch(`/projectmanagement/get_exhibits/${subcontractor}/${projectId}`)
             .then(response => response.json())
             .then(exhibits => {
                 const tableBody = subcontractorPages[index].querySelector('tbody'); // Get the tbody of the correct page
@@ -193,9 +195,9 @@ function stepThreeBack(){
 function collectStepTwoData() {
     const data = subcontractorPages.map(page => {
         const subcontractorName = page.querySelector('#subName').textContent;
-        const totalSum = parseFloat(page.querySelector('.total-sum').textContent.replace('$', ''));
-        const totalPaid = parseFloat(page.querySelector('.total-paid').textContent.replace('$', ''));
-        const drawAmountSum = parseFloat(page.querySelector('.draw-amount-sum').textContent.replace('$', ''));
+        const totalSum = parseFloat(page.querySelector('.total-sum').textContent.replace('$', '').replace(',', ''));
+        const totalPaid = parseFloat(page.querySelector('.total-paid').textContent.replace('$', '').replace(',', ''));
+        const drawAmountSum = parseFloat(page.querySelector('.draw-amount-sum').textContent.replace('$', '').replace(',', ''));
         const remainingAmount = totalSum - drawAmountSum;
         const exhibitInputs = Array.from(page.querySelectorAll('input'));
         const lineItems = exhibitInputs.map(input => {
@@ -240,6 +242,7 @@ function nextPageOrStepThree() {
 
 async function stepThree(stepTwoData) {
     const datas = JSON.parse(stepTwoData);
+    console.log(datas)
     let totalContractAmount = 0;
     let totalDrawAmount = 0;
     let totalPreviousPaymentAmount = 0;
@@ -281,12 +284,12 @@ async function stepThree(stepTwoData) {
 
         // Add the contract amount
         const contractAmountCell = document.createElement('td');
-        contractAmountCell.textContent = `$${totalSum.toFixed(2)}`;
+        contractAmountCell.textContent = `$${totalSum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         payoutRow.appendChild(contractAmountCell);
 
         // Add the total paid
         const totalPaidCell = document.createElement('td');
-        totalPaidCell.textContent = `$${totalPreviousPaymentAmount.toFixed(2)}`;
+        totalPaidCell.textContent = `$${totalPreviousPaymentAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         payoutRow.appendChild(totalPaidCell);
 
         // Add the % Complete
@@ -296,12 +299,12 @@ async function stepThree(stepTwoData) {
 
         // Add the draw amount
         const drawAmountCell = document.createElement('td');
-        drawAmountCell.textContent = `$${drawAmountSum.toFixed(2)}`;
+        drawAmountCell.textContent = `$${drawAmountSum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         payoutRow.appendChild(drawAmountCell);
 
         // Add the remaining amount
         const remainingAmountCell = document.createElement('td');
-        remainingAmountCell.textContent = `$${remainingAmount.toFixed(2)}`;
+        remainingAmountCell.textContent = `$${remainingAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         payoutRow.appendChild(remainingAmountCell);
 
         const descriptionCell = document.createElement('td');
@@ -330,24 +333,25 @@ async function stepThree(stepTwoData) {
     totalsRow.appendChild(totalDivisionCell);
 
     const totalContractCell = document.createElement('td');
-    totalContractCell.textContent = `$${totalContractAmount.toFixed(2)}`;
+    totalContractCell.textContent = `$${totalContractAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     totalsRow.appendChild(totalContractCell);
 
     const totalPaidCell = document.createElement('td');
-    totalPaidCell.textContent = `$${totalPreviousPaymentAmount.toFixed(2)}`;
+    totalPaidCell.textContent = `$${totalPreviousPaymentAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     totalsRow.appendChild(totalPaidCell);
 
     const totalPercentCell = document.createElement('td');
-    totalPercentCell.textContent = `${((totalPreviousPaymentAmount + totalDrawAmount) / totalContractAmount * 100).toFixed(2)}%`;
+    totalPercentCell.textContent = `${((totalPreviousPaymentAmount + totalDrawAmount) / totalContractAmount * 100).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%`;
     totalsRow.appendChild(totalPercentCell);
 
     const totalDrawCell = document.createElement('td');
-    totalDrawCell.textContent = `$${totalDrawAmount.toFixed(2)}`;
+    totalDrawCell.textContent = `$${totalDrawAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     totalsRow.appendChild(totalDrawCell);
 
     const totalRemainingCell = document.createElement('td');
-    totalRemainingCell.textContent = `$${totalRemainingAmount.toFixed(2)}`;
+    totalRemainingCell.textContent = `$${totalRemainingAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     totalsRow.appendChild(totalRemainingCell);
+
 
     const spacer = document.createElement('td');
     spacer.colSpan = '3';
@@ -383,16 +387,16 @@ function calculateAndDisplayPayouts(page) {
         percentCompleteSum = ((totalPaidSum + drawAmountSum) / totalSum * 100);
 
         const payoutCell = input.parentNode.nextSibling; // Get the next sibling of the input's parent (td), which is the Draw Amount cell
-        payoutCell.textContent = ` $${payout.toFixed(2)}`; // Update the text content of the Draw Amount cell
+        payoutCell.textContent = ` $${payout.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`; // Update the text content of the Draw Amount cell
     });
 
     const sumRow = page.querySelector('.sum-row'); // Get the sum row
 
     // Update the text content of the sum cells
-    sumRow.querySelector('.total-sum').textContent = `$${totalSum.toFixed(2)}`;
-    sumRow.querySelector('.total-paid').textContent = `$${totalPaidSum.toFixed(2)}`;
-    sumRow.querySelector('.percent-complete').textContent = `${percentCompleteSum.toFixed(2)}%`;
-    sumRow.querySelector('.draw-amount-sum').textContent = `$${drawAmountSum.toFixed(2)}`;
+    sumRow.querySelector('.total-sum').textContent = `$${totalSum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    sumRow.querySelector('.total-paid').textContent = `$${totalPaidSum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    sumRow.querySelector('.percent-complete').textContent = `${percentCompleteSum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%`;
+    sumRow.querySelector('.draw-amount-sum').textContent = `$${drawAmountSum.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 }
 
 function generateTotalRow(page) {

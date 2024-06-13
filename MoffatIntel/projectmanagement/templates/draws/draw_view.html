@@ -11,6 +11,8 @@
 <script src="{% static 'projectmanagement/javascript/draw_view.js' %}"></script>
 
 <span id="drawId" style="display: none">{{draw.id}}</span>
+<span id="projectId" style="display: none">{{project.id}}</span>
+
 <div style="text-align: center">
     <br>
     <h1 class="center-content-block">Moffat Construction</h1>
@@ -38,6 +40,7 @@
                 <th>Check #</th>
                 <th>Check Date</th>
                 <th>Check</th>
+                <th colspan="2">Edit/Delete</th>
             </tr>
         </thead>
         <tbody>
@@ -51,6 +54,7 @@
 <script type="text/javascript">
     var pdfIconUrl = "{% static 'projectmanagement/images/pdf_icon.png' %}";
     var pdfIconRedUrl = "{% static 'projectmanagement/images/pdf_icon_red.png' %}";
+    var unsignedUrl = "{% static 'projectmanagement/images/unsigned.png' %}";
     var editIconUrl = "{% static 'projectmanagement/images/pencil.png' %}";
     var deleteIconUrl = "{% static 'projectmanagement/images/trash.png' %}";
 </script>
