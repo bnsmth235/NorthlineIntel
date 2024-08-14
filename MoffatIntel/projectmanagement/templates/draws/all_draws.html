@@ -8,10 +8,18 @@
 
 <h3 style="align-self: flex-start"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
 
+<div style="text-align: center; display: flex; width: 100%;">
+    {% load custom_filters %}
+    <h2 style="flex: 1;">Contracted Total: {{contract_total|currency}}</h2>
+    <h2 style="flex: 1;">Total Paid: {{check_total|currency}}</h2>
+    <h2 style="flex: 1;">% Complete: {{percent|floatformat:2}}%</h2>
+</div>
+
 <h1 class="section-header">Draws for {{project.name}}</h1>
 <div class="add-new">
     <a href="{% url 'projectmanagement:new_draw' project.id%}">+ New Draw</a>
 </div>
+
 
 {% if draws %}
     <div class="reports-list-div">
@@ -26,7 +34,7 @@
                     <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">Draw {{ draw.num}}</a></td>
                     <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.edited_by }}</a></td>
                     <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.date }}</a></td>
-                    <td class="inline-edit-button"><a href=""><img src="{% static 'projectmanagement/images/pencil.png' %}" height="18px" width="auto">Edit</a></td>
+                    <td class="inline-edit-button"><a href="#"><img src="{% static 'projectmanagement/images/pencil.png' %}" height="18px" width="auto">Edit</a></td>
                     <td style="width: 6.5%; text-align: center">
                       <form id="delete-form" method="post" data-delete-url="{% url 'projectmanagement:delete_draw' project.id %}">
                         {% csrf_token %}

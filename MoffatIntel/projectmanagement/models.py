@@ -366,12 +366,22 @@ class Draw(models.Model):
 class DrawLineItem(models.Model):
     draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    exhibit_item_id = models.ForeignKey(ExhibitLineItem, on_delete=models.CASCADE)
     draw_amount = models.FloatField(default=0.00)
+    description = models.CharField(max_length=250)
+
+class DrawSummaryLineItem(models.Model):
+    draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    contract_total = models.FloatField(default=0.00)
+    percent_complete = models.FloatField(default=0.00)
+    draw_amount = models.FloatField(default=0.00)
+    total_paid = models.FloatField(default=0.00)
     description = models.CharField(max_length=250)
 
 class LienRelease(models.Model):
     date = models.DateTimeField('Created Date')
-    draw_item_id = models.ForeignKey(DrawLineItem, on_delete=models.CASCADE)
+    draw_item_id = models.ForeignKey(DrawSummaryLineItem, on_delete=models.CASCADE)
     type = models.CharField(max_length=20, default="C",
                                          choices=[("F", "Final"), ("C", "Conditional"), ("N", "N/A")])
     pdf = models.FileField(default=None, null=True, upload_to='projectmanagement/lien_releases')
@@ -385,7 +395,7 @@ class LienRelease(models.Model):
 
 class Check(models.Model):
     date = models.DateTimeField('Last Modified')
-    draw_item_id = models.ForeignKey(DrawLineItem, on_delete=models.CASCADE)
+    draw_item_id = models.ForeignKey(DrawSummaryLineItem, on_delete=models.CASCADE)
     check_date = models.DateTimeField('Check Date')
     check_num = models.CharField(max_length=12)
     pdf = models.FileField(default=None, null=True, upload_to='projectmanagement/checks/')

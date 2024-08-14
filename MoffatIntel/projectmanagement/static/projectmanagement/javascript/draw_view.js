@@ -15,6 +15,31 @@ const percentFormatter = new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2
 });
 
+//wait until dom is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    const submitButton = document.getElementById('submitDraw');
+    submitButton.addEventListener('click', function() {
+      var myModal = new bootstrap.Modal(document.getElementById('submitDrawModal'), {});
+      myModal.show();
+      populateModalContent()
+    });
+});
+
+function populateModalContent(){
+    if(canDrawBeSubmitted()){
+        document.querySelector('.modal-body').textContent = 'Are you sure you want to submit this draw?';
+        const submitButton = document.getElementById('modalSubmitDraw');
+        submitButton.addEventListener('click', function() {
+            window.location.href = `/projectmanagement/submit_draw/${document.getElementById('drawId').textContent}`;
+        });
+    }
+    else{
+        document.querySelector('.modal-body').textContent = 'Each line item must have a check and a signed lien release before the draw can be submitted.'
+        const submitButton = document.getElementById('modalSubmitDraw');
+        submitButton.disabled = true;
+    }
+}
+
 // Fetch data from your server
 document.addEventListener('DOMContentLoaded', async function() {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -31,21 +56,25 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Loop through the draw items
     for (let item of data.draw_items) {
+        console.log(item)
         // Find the corresponding subcontractor
         const sub = data.subs.find(sub => sub.id === item.sub_id);
 
-        const exhibits = await getExhibitsForSub(sub);
-        const contractTotal = getContractTotal(exhibits);
-        const totalPaid = getTotalPaid(exhibits);
-        const amountRemaining = contractTotal - totalPaid - item.draw_amount;
+        const amountRemaining = item.contract_total - item.total_paid - item.draw_amount;
         const type =  amountRemaining > 0 ? 'C' : 'F';
 
-        sumContractTotal += contractTotal;
-        sumTotalPaid += totalPaid;
+        sumContractTotal += item.contract_total;
+        sumTotalPaid += item.total_paid;
         sumDrawAmount += item.draw_amount;
         sumAmountRemaining += amountRemaining;
 
-        const lr = await getLrForDrawItem(item, type);
+        let lr = await getLrForDrawItem(item, type);
+        try{
+            lr = lr.lr
+        }catch (e) {
+            lr = null;
+        }
+
         let check = await getCheckForDrawItem(item);
         try{
             check = check.check
@@ -70,17 +99,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         row.appendChild(subcontractorCell);
 
         const contractTotalCell = document.createElement('td');
-        contractTotalCell.textContent = currencyFormatter.format(contractTotal.toFixed(2));
+        contractTotalCell.textContent = currencyFormatter.format(item.contract_total.toFixed(2));
         contractTotalCell.style.textAlign = 'right';
         row.appendChild(contractTotalCell);
 
         const totalPaidCell = document.createElement('td');
-        totalPaidCell.textContent = currencyFormatter.format(totalPaid.toFixed(2));
+        totalPaidCell.textContent = currencyFormatter.format(item.total_paid.toFixed(2));
         totalPaidCell.style.textAlign = 'right';
         row.appendChild(totalPaidCell);
 
         const percentCompleteCell = document.createElement('td');
-        percentCompleteCell.textContent = percentFormatter.format(((totalPaid + item.draw_amount) / contractTotal).toFixed(2));        percentCompleteCell.style.textAlign = 'right';
+        percentCompleteCell.textContent = percentFormatter.format(((item.total_paid + item.draw_amount) / item.contract_total).toFixed(2));
+        percentCompleteCell.style.textAlign = 'right';
         row.appendChild(percentCompleteCell);
 
         const drawAmountCell = document.createElement('td');
@@ -105,6 +135,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const lrImage = document.createElement('img');
         if(lr.signed) {
             lrImage.src = pdfIconUrl;
+            lrImage.className = 'lr-image-signed';
         } else {
             lrImage.src = unsignedUrl;
             lrImage.setAttribute('data-bs-toggle', 'tooltip');
@@ -137,6 +168,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             if(check.pdf){
                 checkImage.src = pdfIconUrl;
+                checkImage.className = 'check-image';
                 checkLink.href = "#";
             }else {
                 checkImage.src = pdfIconRedUrl;
@@ -171,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         editImage.style.height = '20px';
         editImage.style.width = 'auto';
         const editLink = document.createElement('a');
-        editLink.href = `#`;
+        editLink.href = `/projectmanagement/edit_draw_summary_item/${item.id}`;
         editLink.appendChild(editImage);
         editCell.appendChild(editLink);
         row.appendChild(editCell);
@@ -284,5 +316,14 @@ function getTotalPaid(exhibits){
     });
 
     return total;
+}
+
+function canDrawBeSubmitted(){
+    // Each line item must have a check and a signed lien release
+    const checkImages = document.querySelectorAll('.check-image');
+    const lrImages = document.querySelectorAll('.lr-image-signed');
+    const drawItems = document.querySelectorAll('.table tbody tr');
+
+    return checkImages.length === lrImages.length && lrImages.length === drawItems.length;
 }
 

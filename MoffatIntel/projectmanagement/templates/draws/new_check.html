@@ -3,7 +3,7 @@
 {% block title %}New check{% endblock %}
 
 {% block content %}
-    <form action="{% url 'projectmanagement:new_check' draw_item.id %}" enctype="multipart/form-data" method="post">
+    <form action="{% url 'projectmanagement:new_check' draw_summary_item.id %}" enctype="multipart/form-data" method="post">
         {% csrf_token %}
         <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
             <legend><h1>New Check</h1></legend>
@@ -27,13 +27,13 @@
             <div style="display: inline-block">
                 <label for="sub">Subcontractor: </label>
                 <select name="sub" id="sub" class="input-field">
-                    <option selected value="">{{draw_item.sub_id.name}}</option>
+                    <option selected value="{{draw_summary_item.sub_id.id}}">{{draw_summary_item.sub_id.name}}</option>
                 </select>
             </div>
 
             <div style="display: inline-block">
                 <label for="check_total">Check Total: $</label>
-                <input type="number" min="0" step=".01" name="check_total" id="check_total" class="input-field"  value="{{draw_item.draw_amount|floatformat:2 }}">
+                <input type="number" min="0" step=".01" name="check_total" id="check_total" class="input-field"  value="{{draw_summary_item.draw_amount|floatformat:2 }}">
             </div>
 
             <div style="display: inline-block">
@@ -45,7 +45,7 @@
 
             <div style="display: inline-block">
                 <label style="position: relative">Check PDF: </label>
-                <input type="file" name="check_pdf" id="check_pdf">
+                <input type="file" name="pdf" id="pdf">
             </div>
 
             <input class="input-field-save" type="submit" name="submit" value="Save">

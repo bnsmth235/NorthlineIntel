@@ -1,16 +1,19 @@
-import json
+import base64
+import locale
 import time
-
-from django.contrib.auth.decorators import login_required
-from django.db.models import Sum
-from django.forms import model_to_dict
-from django.http import JsonResponse
-from django.shortcuts import render, redirect, get_object_or_404
 from datetime import datetime
+from io import BytesIO
 
-from django.utils.baseconv import base64
+import PyPDF2
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.core.files import File
+from django.shortcuts import render, redirect, get_object_or_404
 
 from ..models import *
+
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+
 
 @login_required(login_url='projectmanagement:login')
 def all_draws(request, project_id):
@@ -103,6 +106,7 @@ def all_draws(request, project_id):
 def draw_view(request, draw_id):
     draw = get_object_or_404(Draw, pk=draw_id)
     project = get_object_or_404(Project, pk=draw.project_id.id)
+
     context = {
         'draw': draw,
         'project': project,
@@ -112,12 +116,68 @@ def draw_view(request, draw_id):
 
 @login_required(login_url='projectmanagement:login')
 def create_lr(request, draw_item_id, type):
-    draw_item = get_object_or_404(DrawLineItem, pk=draw_item_id)
+    draw_item = get_object_or_404(DrawSummaryLineItem, pk=draw_item_id)
     lr = LienRelease()
     lr.date = datetime.now()
     lr.type = type
     lr.draw_item_id = draw_item
     lr.save()
+
+    file_path = os.path.join(settings.STATIC_ROOT, f'pdf_templates\lr_{lr.get_LR_type_display_long().lower()}_template.pdf')
+
+    output_path = draw_item.sub_id.name + "_LR_D" + str(draw_item.draw_id.num)
+
+    if os.path.exists(output_path + ".pdf"):
+        counter = 1
+        while os.path.exists(output_path + "(" + str(counter) + ")" + ".pdf"):
+            counter += 1
+        output_path += "(" + str(counter) + ")"
+
+    output_path += ".pdf"
+
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as file:
+            input_pdf = PyPDF2.PdfReader(file)
+            output_pdf = PyPDF2.PdfWriter()
+
+            fields = input_pdf.get_fields()
+            for field in fields:
+                default = ''
+                try:
+                    if fields[field]['/DV'] != "":
+                        default = fields[field]['/DV']
+                    fields[field] = default
+                except:
+                    fields[field] = ''
+
+            fields['project_name'] = draw_item.draw_id.project_id.name
+            fields['project_address'] = draw_item.draw_id.project_id.address + ", " + draw_item.draw_id.project_id.city + ", " + draw_item.draw_id.project_id.state + " " + str(draw_item.draw_id.project_id.zip)
+            fields['lr_date'] = lr.date.strftime('%m/%d/%Y')
+            fields['draw_total'] = locale.currency(draw_item.draw_amount, grouping=True)
+            fields['sub_name_1'] = draw_item.sub_id.name
+            fields['sub_name_2'] = draw_item.sub_id.name
+            fields['sub_address'] = draw_item.sub_id.address
+
+            for page_num in range(input_pdf._get_num_pages()):
+                page = input_pdf._get_page(page_num)
+                output_pdf.add_page(page)
+                output_pdf.update_page_form_field_values(output_pdf.get_page(page_num), fields)
+
+            with BytesIO() as output_buffer:
+                output_pdf.write(output_buffer)
+
+                # Set the file pointer to the beginning of the BytesIO object
+                output_buffer.seek(0)
+
+                # Create a Django File object from the BytesIO object
+                lr_pdf = File(output_buffer, name=output_path)
+
+                # Assign the File object to the pdf field of the Contract model
+                lr.pdf = lr_pdf
+                lr.save()
+
+    else:
+        print("file path :" + file_path + "does not exist")
 
 
 @login_required(login_url='projectmanagement:login')
@@ -154,14 +214,22 @@ def new_draw(request, project_id):
 
         for data in datas:
             if data:
-                sub = get_object_or_404(Subcontractor, name=data['subcontractorName'])
+                draw_amount = data['drawAmountSum']
+                description = data['description']
 
-                drawItem = DrawLineItem()
-                drawItem.draw_id = draw
-                drawItem.sub_id = sub
-                drawItem.draw_amount = data['drawAmountSum']
-                drawItem.description = data['description']
-                drawItem.save()
+                for exhibitItem in data['exhibitLineItems']:
+                    print(exhibitItem['lineItemId'])
+                    sub = get_object_or_404(Subcontractor, name=data['subcontractorName'])
+                    exhibit_line_item = get_object_or_404(ExhibitLineItem, pk=exhibitItem['lineItemId'])
+
+                    drawItem = DrawLineItem()
+                    drawItem.draw_id = draw
+                    drawItem.sub_id = sub
+                    drawItem.draw_amount = exhibitItem['lineItemValue'] * (exhibitItem['percentComplete'] / 100) - exhibit_line_item.total_paid
+                    drawItem.description = description
+                    drawItem.exhibit_item_id = exhibit_line_item
+
+                    drawItem.save()
 
         return redirect('projectmanagement:all_draws', project_id=project_id)
 
@@ -200,11 +268,11 @@ def delete_check(request, check_id):
 
         if username == request.user.username:
             # Delete the PDF file from storage
-            if check.check_pdf:
-                if os.path.exists(check.check_pdf.path):
+            if check.pdf:
+                if os.path.exists(check.pdf.path):
                     time.sleep(3)
-                    os.remove(check.check_pdf.path)
-                    check.check_pdf.delete()
+                    os.remove(check.pdf.path)
+                    check.pdf.delete()
             if check.lien_release_pdf:
                 if os.path.exists(check.lien_release_pdf.path):
                     time.sleep(3)
@@ -227,19 +295,21 @@ def delete_check(request, check_id):
 @login_required(login_url='projectmanagement:login')
 def check_view(request, check_id):
     check = get_object_or_404(Check, pk=check_id)
-    pdf_bytes = check.check_pdf.read()
+    pdf_bytes = check.pdf.read()
     pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
     return render(request, 'draws/check_view.html', {'pdf_data': pdf_data, 'check': check})
 
 @login_required(login_url='projectmanagement:login')
 def new_check(request, draw_item_id):
-    draw_item = get_object_or_404(DrawLineItem, pk=draw_item_id)
-    draw = get_object_or_404(Draw, pk=draw_item.draw_id.id)
+    draw_summary_item = get_object_or_404(DrawSummaryLineItem, pk=draw_item_id)
+    draw = get_object_or_404(Draw, pk=draw_summary_item.draw_id.id)
     project = get_object_or_404(Project, pk=draw.project_id.id)
     lr = get_object_or_404(LienRelease, draw_item_id=draw_item_id)
+    draw_items = DrawLineItem.objects.filter(draw_id=draw, sub_id=draw_summary_item.sub_id)
 
     context = {
-        'draw_item': draw_item,
+        'draw_summary_item': draw_summary_item,
+        'draw_items': draw_items,
         'draw': draw,
         'project': project,
         'lr': lr
@@ -260,14 +330,15 @@ def new_check(request, draw_item_id):
 
         check = Check()
         check.date = datetime.now()
-        check.draw_item_id = draw_item
+        check.draw_item_id = draw_summary_item
         check.check_date = check_date
         check.check_num = check_number
 
+
         # Handle check PDF
-        if 'check_pdf' in request.FILES:
-            check.check_pdf = request.FILES['check_pdf']
-            if not check.check_pdf.file.content_type.startswith('application/pdf'):
+        if 'pdf' in request.FILES:
+            check.pdf = request.FILES['pdf']
+            if not check.pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Lien Release PDF"})
                 return render(request, 'draws/new_check.html', context)
 
@@ -325,8 +396,8 @@ def edit_check(request, check_id):
         check.signed = signed
 
         # Handle check PDF
-        if 'check_pdf' in request.FILES:
-            invoice.invoice_pdf = request.FILES['check_pdf']
+        if 'pdf' in request.FILES:
+            invoice.invoice_pdf = request.FILES['pdf']
             if not invoice.invoice_pdf.file.content_type.startswith('application/pdf'):
                 context.update({'error_message': "Only PDFs are allowed for the Check PDF"})
                 return render(request, 'draws/edit_check.html', context)
@@ -357,4 +428,47 @@ def edit_check(request, check_id):
         return redirect('projectmanagement:draw_view', project_id=project.id, draw_id=draw.id)  # Redirect to a success page
 
     return render(request, 'draws/edit_check.html', context)
+
+
+@login_required(login_url='projectmanagement:login')
+def lr_view(request, lr_id):
+    lr = get_object_or_404(LienRelease, pk=lr_id)
+    pdf_bytes = lr.pdf.read()
+    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
+    return render(request, 'draws/lr_view.html', {'pdf_data': pdf_data, 'lr': lr})
+
+@login_required(login_url='projectmanagement:login')
+def edit_draw_summary_item(request, draw_summary_item_id):
+    draw_item = get_object_or_404(DrawSummaryLineItem, pk=draw_summary_item_id)
+
+    amount_remaining = draw_item.contract_total - draw_item.total_paid - draw_item.draw_amount
+    context = {
+        'draw_summary_item': draw_item,
+        'amount_remaining': amount_remaining
+    }
+
+    if request.method == 'POST':
+        draw_amount = request.POST.get('draw_amount')
+        description = request.POST.get('description')
+        percent_complete = request.POST.get('percent_complete')
+
+        print(draw_amount)
+        print(description)
+        print(percent_complete)
+
+        if not draw_amount or not description or not percent_complete:
+            context.update({'error_message': "Please fill out all fields"})
+            return render(request, 'draws/edit_draw_summary_item.html', context)
+
+        draw_item.draw_amount = draw_amount
+        draw_item.description = description
+        draw_item.percent_complete = percent_complete
+        draw_item.save()
+
+        return redirect('projectmanagement:draw_view', draw_id=draw_item.draw_id.id)
+
+    return render(request, 'draws/edit_draw_summary_item.html', context)
+
+
+
 

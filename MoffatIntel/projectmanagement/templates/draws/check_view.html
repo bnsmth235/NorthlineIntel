@@ -3,7 +3,7 @@
 {% block title %}Check: {{ check.name }}{% endblock %}
 
 {% block content %}
-    {% if check.check_pdf %}
+    {% if check.pdf %}
     <h1>Check {{ check.check_num }}:</h1>
     {% elif check.lien_release_pdf %}
     <h1>Lien Release {{ check.check_num }}:</h1>

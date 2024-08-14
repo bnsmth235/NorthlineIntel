@@ -112,17 +112,6 @@ def contract_view(request, project_id, sub_id):
 
     return render(request, 'contracts/contract_view.html', context)
 
-
-
-
-@login_required(login_url='projectmanagement:login')
-def lr_view(request, check_id):
-    check = get_object_or_404(Check, pk=check_id)
-    pdf_bytes = check.lien_release_pdf.read()
-    pdf_data = base64.b64encode(pdf_bytes).decode('utf-8')
-    return render(request, 'draws/check_view.html', {'pdf_data': pdf_data, 'check': check})
-
-
 @login_required(login_url='projectmanagement:login')
 def deductive_change_orders(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
@@ -462,7 +451,6 @@ def new_contract(request, project_id = None, sub_id = None):
                 output_pdf = PyPDF2.PdfWriter()
 
                 fields = input_pdf.get_fields()
-                print(fields)
 
                 for field in fields:
                     default = ''
@@ -810,7 +798,6 @@ def process_form_data(request):
 
     return line_items
 
-
 @login_required(login_url='projectmanagement:login')
 def delete_exhibit(request, exhibit_id):
     exhibit = get_object_or_404(Exhibit, pk=exhibit_id)
@@ -834,38 +821,6 @@ def delete_exhibit(request, exhibit_id):
         exhibit.delete()
 
     return redirect('projectmanagement:contract_view', project_id=project.id, sub_id=sub.id)
-
-
-
-
-@login_required(login_url='projectmanagement:login')
-def delete_invoice(request, project_id, draw_id, invoice_id):
-    project = get_object_or_404(Project, pk=project_id)
-    draw = get_object_or_404(Draw, pk=draw_id)
-    invoice = get_object_or_404(Invoice, pk=invoice_id)
-
-    if request.method == 'POST':
-        print("Attempting to delete invoice")
-        username = request.POST.get('username')
-        print("Attempting to delete")
-
-        if username == request.user.username:
-            # Delete the PDF file from storage
-            if invoice.invoice_pdf:
-                if os.path.exists(invoice.invoice_pdf.path):
-                    time.sleep(3)
-                    os.remove(invoice.invoice_pdf.path)
-                    invoice.invoice_pdf.delete()
-
-            project.date = datetime.now()
-            draw.date = datetime.now()
-            project.save()
-            draw.save()
-            invoice.delete()
-        return redirect('projectmanagement:draw_view', project_id=project_id, draw_id=draw_id)  # Redirect to a success page
-
-    return render(request, 'draws/draw_view.html', {'project': project, 'draw':draw, 'error_message': "Document could not be deleted."})
-
 
 @login_required(login_url='projectmanagement:login')
 def sub_select(request, project_id):

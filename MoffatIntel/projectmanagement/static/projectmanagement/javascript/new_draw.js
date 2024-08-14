@@ -78,6 +78,7 @@ function fetchExhibitsAndGenerateInputs(subcontractors) {
                             lineItems.forEach(lineItem => {
                                 // Create a row for the line item
                                 const lineItemRow = document.createElement('tr');
+                                lineItemRow.id = `exhibitLineItem${lineItem.id}`;
                                 const spacer = document.createElement('td');
                                 lineItemRow.appendChild(spacer);
                                 const scopeCell = document.createElement('td');
@@ -197,6 +198,7 @@ function collectStepTwoData() {
         const subcontractorName = page.querySelector('#subName').textContent;
         const totalSum = parseFloat(page.querySelector('.total-sum').textContent.replace('$', '').replace(',', ''));
         const totalPaid = parseFloat(page.querySelector('.total-paid').textContent.replace('$', '').replace(',', ''));
+        const percentComplete = parseFloat(page.querySelector('.percent-complete').textContent.replace('%', ''));
         const drawAmountSum = parseFloat(page.querySelector('.draw-amount-sum').textContent.replace('$', '').replace(',', ''));
         const remainingAmount = totalSum - drawAmountSum;
         const exhibitInputs = Array.from(page.querySelectorAll('input'));
@@ -204,7 +206,7 @@ function collectStepTwoData() {
             return {
                 lineItemId: input.dataset.lineItemId,
                 lineItemValue: parseFloat(input.dataset.lineItemValue),
-                percentComplete: parseFloat(input.value)
+                percentComplete: parseFloat(input.value),
             };
         });
 
@@ -212,6 +214,7 @@ function collectStepTwoData() {
             subcontractorName,
             totalSum,
             totalPaid,
+            percentComplete,
             drawAmountSum,
             remainingAmount,
             lineItems
@@ -235,14 +238,12 @@ function nextPageOrStepThree() {
         document.getElementById('step3').style.display = 'flex';
 
         const stepTwoData = collectStepTwoData();
-
         stepThree(stepTwoData);
     }
 }
 
 async function stepThree(stepTwoData) {
     const datas = JSON.parse(stepTwoData);
-    console.log(datas)
     let totalContractAmount = 0;
     let totalDrawAmount = 0;
     let totalPreviousPaymentAmount = 0;
@@ -262,15 +263,38 @@ async function stepThree(stepTwoData) {
         const drawAmountSum = sub.drawAmountSum;
         const remainingAmount = sub.remainingAmount;
         // Calculate percent complete based on line items
-        let percentComplete = (totalPaid + totalDrawAmount) / totalSum * 100;
+        let percentComplete = sub.percentComplete;
+        console.log(percentComplete);
 
         totalContractAmount += totalSum;
         totalDrawAmount += drawAmountSum;
         totalPreviousPaymentAmount += totalPaid;
         totalRemainingAmount += remainingAmount;
 
+        const hiddenExhibitData = document.createElement('input');
+        hiddenExhibitData.type = 'hidden';
+        hiddenExhibitData.className = 'exhibitData';
+
+        // Create a new object for the exhibit
+        let exhibitData = {
+            lineItems: [] // Initialize an empty array for the line items
+        };
+
+        // Add each line item to the exhibit's lineItems array
+        sub.lineItems.forEach(lineItem => {
+            exhibitData.lineItems.push({
+                lineItemId: lineItem.lineItemId,
+                lineItemValue: lineItem.lineItemValue,
+                percentComplete: lineItem.percentComplete,
+            });
+        });
+
+        // Convert the exhibit data to a JSON string and set it as the value of the hidden input
+        hiddenExhibitData.value = JSON.stringify(exhibitData);
+
         // Create a new row for this subcontractor's payout info
         const payoutRow = document.createElement('tr');
+        payoutRow.appendChild(hiddenExhibitData);
 
         // Add the Division Code
         const divisionCodeCell = document.createElement('td');
@@ -442,6 +466,9 @@ function compileTableData() {
     const data = rows.map(row => {
         const cells = Array.from(row.querySelectorAll('td'));
         if(cells.length === 10) {
+            console.log(row);
+            const exhibitDataInput = row.querySelector('.exhibitData');
+            const exhibitLineItems = exhibitDataInput ? JSON.parse(exhibitDataInput.value) : [];
             return {
                 divisionCode: cells[0].textContent,
                 subcontractorName: cells[1].textContent,
@@ -452,11 +479,12 @@ function compileTableData() {
                 remainingAmount: parseFloat(cells[6].textContent.replace('$', '')),
                 description: cells[7].textContent,
                 lrType: cells[8].textContent,
-                w9: cells[9].textContent
+                exhibitLineItems: exhibitLineItems.lineItems
             };
         }
     });
-     inputElement.value = JSON.stringify(data);
+    inputElement.value = JSON.stringify(data);
+    console.log(inputElement.value);
 }
 
 function submitForm() {

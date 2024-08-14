@@ -33,7 +33,6 @@ urlpatterns = [
     path('delete_proj/<int:project_id>/', projects.delete_proj, name='delete_proj'),
     path('delete_vendor/<int:vendor_id>/', data.delete_vendor, name='delete_vendor'),
     path('delete_change_order/<int:co_id>/', contracts.delete_change_order, name='delete_change_order'),
-    path('delete_invoice/<int:project_id>/<int:draw_id>/<int:invoice_id>/', contracts.delete_invoice, name='delete_invoice'),
     path('delete_check/<int:check_id>/', draws.delete_check, name='delete_check'),
     path('delete_plan/<int:project_id>', plans.delete_plan, name='delete_plan'),
     path('delete_deductive_change_order/<int:dco_id>/', contracts.delete_deductive_change_order, name='delete_deductive_change_order'),
@@ -51,6 +50,7 @@ urlpatterns = [
     path('edit_vendor/<int:vendor_id>/', data.edit_vendor, name='edit_vendor'),
     path('edit_proj/<int:project_id>/', projects.edit_proj, name='edit_proj'),
     path('edit_estimate/<int:estimate_id>/', estimates.edit_estimate, name='edit_estimate'),
+    path('edit_draw_summary_item/<int:draw_summary_item_id>/', draws.edit_draw_summary_item, name='edit_draw_summary_item'),
 
     path('new_draw/<int:project_id>', draws.new_draw, name='new_draw'),
     path('new_check/<int:draw_item_id>', draws.new_check, name='new_check'),
@@ -67,7 +67,7 @@ urlpatterns = [
     path('draw_view/<int:draw_id>/', draws.draw_view, name='draw_view'),
     path('plan_view/<int:project_id>/<int:plan_id>/', plans.plan_view, name='plan_view'),
     path('check_view/<int:check_id>/', draws.check_view, name='check_view'),
-    path('lr_view/<int:lr_id>/', contracts.lr_view, name='lr_view'),
+    path('lr_view/<int:lr_id>/', draws.lr_view, name='lr_view'),
     path('project_view/<int:project_id>/', projects.project_view, name='project_view'),
     path('sub_select/<int:project_id>/', contracts.sub_select, name='sub_select'),
     path('change_orders/<int:project_id>/<int:sub_id>/', contracts.change_orders, name='change_orders'),
@@ -86,6 +86,8 @@ urlpatterns = [
     path('get_draw_data/<int:draw_id>', misc.get_draw_data, name='get_draw_data'),
     path('get_lr_for_draw_item/<int:draw_item_id>/<str:type>', misc.get_lr_for_draw_item, name='get_lr_for_draw_item'),
     path('get_check_for_draw_item/<int:draw_item_id>', misc.get_check_for_draw_item, name='get_check_for_draw_item'),
+
+    path('webhook/', misc.webhook_handler, name='webhook'),
 ]
 app_name = "projectmanagement"
 

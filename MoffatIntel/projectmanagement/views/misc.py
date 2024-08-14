@@ -4,11 +4,12 @@ from pathlib import Path
 
 from django.contrib.auth.decorators import login_required
 from django.forms import model_to_dict
-from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
-from ..models import Subcontractor, Exhibit, ExhibitLineItem, Draw, DrawLineItem, Check, LienRelease
+from ..models import Subcontractor, Exhibit, ExhibitLineItem, Draw, DrawLineItem, Check, LienRelease, \
+    DrawSummaryLineItem
 from .draws import create_lr
-
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 @login_required(login_url='projectmanagement:login')
 def todo(request):
@@ -70,6 +71,9 @@ def get_draw_data(request, draw_id):
     subs = []
     checks = []
 
+    # Initialize a dictionary to store the draw items and their sum for each subcontractor
+    sub_draw_items = {}
+
     for draw_item in draw_items:
         sub = get_object_or_404(Subcontractor, pk=draw_item.sub_id.id)
         if sub not in subs:
@@ -79,12 +83,44 @@ def get_draw_data(request, draw_id):
             if check not in checks:
                 checks.append(check)
 
+        # Add the draw item to the subcontractor's list and update the sum
+        if sub.id not in sub_draw_items:
+            sub_draw_items[sub.id] = {"draw_item": model_to_dict(draw_item), "sum": 0}
+        sub_draw_items[sub.id]["sum"] += draw_item.draw_amount  # Replace 'draw_amount' with the actual field name
+
+    for sub in subs:
+        draw_summary_item = DrawSummaryLineItem.objects.filter(draw_id=draw, sub_id=sub)
+        if not draw_summary_item:
+            draw_summary_item = DrawSummaryLineItem()
+            draw_summary_item.draw_id = draw
+            draw_summary_item.sub_id = sub
+            draw_summary_item.draw_amount = sub_draw_items[sub.id]['sum']
+            draw_summary_item.description = "Description"
+
+            exhibits = Exhibit.objects.filter(sub_id=sub)
+            contractTotal = 0
+            totalPaid = 0
+            for exhibit in exhibits:
+                for line_item in ExhibitLineItem.objects.filter(exhibit_id=exhibit):
+                    contractTotal += line_item.total
+                    totalPaid += line_item.total_paid
+
+            draw_summary_item.contract_total = contractTotal
+            draw_summary_item.total_paid = totalPaid
+            draw_summary_item.percent_complete = (totalPaid + draw_summary_item.draw_amount) / contractTotal * 100
+            draw_summary_item.save()
+
+    draw_summary_item = [model_to_dict(item) for item in DrawSummaryLineItem.objects.filter(draw_id=draw)]
+
+
     data = {
         'draw': model_to_dict(draw),
-        'draw_items': [model_to_dict(draw_item) for draw_item in draw_items],
+        'draw_items': draw_summary_item,  # Include the draw items and their sum for each subcontractor
         'subs': [model_to_dict(sub) for sub in subs],
         'checks': [model_to_dict(check) for check in checks],
     }
+
+    print(data)
 
     return JsonResponse(data, safe=False)
 
@@ -135,5 +171,17 @@ def check_to_dict(check):
         'check_date': check.check_date.isoformat(),
         'check_num': check.check_num,
         'date': check.date.isoformat(),
-        'pdf': check.check_pdf.url if check.pdf else None,
+        'pdf': check.pdf.url if check.pdf else None,
     }
+
+@csrf_exempt
+def webhook_handler(request):
+    if request.method == 'POST':
+        # Process the webhook payload
+        # You can use request.body or request.POST to get the data
+        data = request.body
+        # Perform necessary actions like pulling the repository
+        # Here you might want to call a script or service
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'method not allowed'}, status=405)
+
