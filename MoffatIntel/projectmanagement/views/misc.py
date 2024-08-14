@@ -148,6 +148,7 @@ def lr_to_dict(lr):
         'type': lr.type,
         'date': lr.date.isoformat(),
         'pdf': lr.pdf.url if lr.pdf else None,
+        'signed': lr.signed
     }
 
 

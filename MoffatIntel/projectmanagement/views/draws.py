@@ -440,35 +440,79 @@ def lr_view(request, lr_id):
 @login_required(login_url='projectmanagement:login')
 def edit_draw_summary_item(request, draw_summary_item_id):
     draw_item = get_object_or_404(DrawSummaryLineItem, pk=draw_summary_item_id)
+    check = Check.objects.filter(draw_item_id=draw_item).first()
+    lr = get_object_or_404(LienRelease, draw_item_id=draw_item)
 
     amount_remaining = draw_item.contract_total - draw_item.total_paid - draw_item.draw_amount
+
     context = {
         'draw_summary_item': draw_item,
-        'amount_remaining': amount_remaining
+        'amount_remaining': amount_remaining,
+        'lr': lr,
+        'check': check,
+        'check_file_url': check.pdf.url if check.pdf else 'No check pdf!',
+        'check_date': check.check_date.strftime('%Y-%m-%d') if check and check.check_date else '',
+        'check_number': check.check_num if check else '',
+        'has_check': check is not None
     }
 
     if request.method == 'POST':
         draw_amount = request.POST.get('draw_amount')
         description = request.POST.get('description')
         percent_complete = request.POST.get('percent_complete')
+        remove_check = request.POST.get('remove_check')
+        lr_signed = 'lr_signed' in request.POST
 
-        print(draw_amount)
-        print(description)
-        print(percent_complete)
+        # Handle file uploads
+        lr_file = request.FILES.get('lr_file')
+        check_file = request.FILES.get('check_file')
 
         if not draw_amount or not description or not percent_complete:
             context.update({'error_message': "Please fill out all fields"})
             return render(request, 'draws/edit_draw_summary_item.html', context)
 
+        # Update draw item details
         draw_item.draw_amount = draw_amount
         draw_item.description = description
         draw_item.percent_complete = percent_complete
         draw_item.save()
 
+        # Handle Lien Release file
+        if lr_file:
+            lr.pdf = lr_file
+
+        lr.signed = lr_signed
+        lr.save()
+
+        # Handle Check file and check removal
+        if remove_check == "delete" and check:
+            check.delete()
+        elif check_file:
+            if check:
+                check.pdf = check_file
+                check.save()
+            else:
+                # Create a new check if it does not exist
+                Check.objects.create(
+                    draw_item_id=draw_item,
+                    pdf=check_file,
+                    check_date=request.POST.get('check_date'),
+                    check_number=request.POST.get('check_number')
+                )
+
         return redirect('projectmanagement:draw_view', draw_id=draw_item.draw_id.id)
+
+
 
     return render(request, 'draws/edit_draw_summary_item.html', context)
 
+
+@login_required(login_url='projectmanagement:login')
+def submit_draw(request, draw_id):
+    draw = get_object_or_404(Draw, pk=draw_id)
+    draw.submitted_date = datetime.now()
+
+    return redirect("projectmanagement:all_draws", project_id=draw.project_id.id)
 
 
 

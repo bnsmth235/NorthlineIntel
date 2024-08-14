@@ -3,6 +3,8 @@
 {% block title %}Check: {{ check.name }}{% endblock %}
 
 {% block content %}
+<h3 style="align-self: flex-start"><a href="{% url 'projectmanagement:draw_view' check.draw_item_id.draw_id.id %}" style="text-decoration: none; color: #000">< Back To Draw</a></h3>
+
     {% if check.pdf %}
     <h1>Check {{ check.check_num }}:</h1>
     {% elif check.lien_release_pdf %}

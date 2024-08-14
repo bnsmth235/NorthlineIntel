@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const lrImageCell = document.createElement('td');
         const lrImage = document.createElement('img');
+        console.log(lr)
         if(lr.signed) {
             lrImage.src = pdfIconUrl;
             lrImage.className = 'lr-image-signed';
@@ -169,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if(check.pdf){
                 checkImage.src = pdfIconUrl;
                 checkImage.className = 'check-image';
-                checkLink.href = "#";
+                checkLink.href = `/projectmanagement/check_view/${check.id}`;
             }else {
                 checkImage.src = pdfIconRedUrl;
                 checkImage.setAttribute('data-bs-toggle', 'tooltip');
@@ -324,6 +325,6 @@ function canDrawBeSubmitted(){
     const lrImages = document.querySelectorAll('.lr-image-signed');
     const drawItems = document.querySelectorAll('.table tbody tr');
 
-    return checkImages.length === lrImages.length && lrImages.length === drawItems.length;
+    return checkImages.length === lrImages.length && lrImages.length === (drawItems.length - 1);
 }
 

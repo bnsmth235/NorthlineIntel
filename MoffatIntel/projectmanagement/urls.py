@@ -63,6 +63,8 @@ urlpatterns = [
     path('new_exhibit/<int:project_id>/<int:sub_id>/', contracts.new_exhibit, name='new_exhibit'),
     path('new_master/<int:project_id>/', estimates.new_master, name='new_master'),
 
+    path('submit_draw/<int:draw_id>', draws.submit_draw, name='submit_draw'),
+
     path('contract_view/<int:project_id>/<int:sub_id>', contracts.contract_view, name='contract_view'),
     path('draw_view/<int:draw_id>/', draws.draw_view, name='draw_view'),
     path('plan_view/<int:project_id>/<int:plan_id>/', plans.plan_view, name='plan_view'),
