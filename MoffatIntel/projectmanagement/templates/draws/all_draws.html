@@ -3,13 +3,13 @@
 {% block title %}{{project.name}}{% endblock %}
 {% load static %}
 {% load custom_filters %}
+
 {% block content %}
 <script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}"></script>
 
 <h3 style="align-self: flex-start"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
 
 <div style="text-align: center; display: flex; width: 100%;">
-    {% load custom_filters %}
     <h2 style="flex: 1;">Contracted Total: {{contract_total|currency}}</h2>
     <h2 style="flex: 1;">Total Paid: {{check_total|currency}}</h2>
     <h2 style="flex: 1;">% Complete: {{percent|floatformat:2}}%</h2>
@@ -20,8 +20,8 @@
     <a href="{% url 'projectmanagement:new_draw' project.id%}">+ New Draw</a>
 </div>
 
-
 {% if draws %}
+    <h2>Draws</h2>
     <div class="reports-list-div">
         <table width="98%" height="98%" align="center" cellpadding="10" border="0">
             <tr class="headers">
@@ -30,23 +30,22 @@
                 <th>Last Edited</th>
             </tr>
         {% for draw in draws %}
-                <tr class="report-item zebra">
-                    <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">Draw {{ draw.num}}</a></td>
-                    <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.edited_by }}</a></td>
-                    <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.date }}</a></td>
-                    <td class="inline-edit-button"><a href="#"><img src="{% static 'projectmanagement/images/pencil.png' %}" height="18px" width="auto">Edit</a></td>
-                    <td style="width: 6.5%; text-align: center">
-                      <form id="delete-form" method="post" data-delete-url="{% url 'projectmanagement:delete_draw' project.id %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="draw_id" value="{{ draw.id }}">
-                        <input type="hidden" name="username" id="username">
-                        <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
-                          <img src="{% static 'projectmanagement/images/trash.png' %}" height="15px" width="auto"> Delete
-                        </button>
-                      </form>
-                    </td>
-                </tr>
-
+            <tr class="report-item zebra">
+                <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">Draw {{ draw.num }}</a></td>
+                <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.edited_by }}</a></td>
+                <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.date }}</a></td>
+                <td class="inline-edit-button"><a href="#"><img src="{% static 'projectmanagement/images/pencil.png' %}" height="18px" width="auto">Edit</a></td>
+                <td style="width: 6.5%; text-align: center">
+                  <form id="delete-form" method="post" data-delete-url="{% url 'projectmanagement:delete_draw' project.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="draw_id" value="{{ draw.id }}">
+                    <input type="hidden" name="username" id="username">
+                    <button class="inline-delete-button" type="button" onclick="deleteConfirmation(this)">
+                      <img src="{% static 'projectmanagement/images/trash.png' %}" height="15px" width="auto"> Delete
+                    </button>
+                  </form>
+                </td>
+            </tr>
         {% endfor %}
         </table>
     </div>
@@ -58,11 +57,36 @@
             </tr>
         </table>
     </div>
-
 {% endif %}
 
-</table>
-
+{% if submitted_draws %}
+    <h2>Submitted Draws</h2>
+    <div class="reports-list-div">
+        <table width="98%" height="98%" align="center" cellpadding="10" border="0">
+            <tr class="headers">
+                <th>Name</th>
+                <th>Edited By</th>
+                <th>Last Edited</th>
+                <th>Submitted Date</th>
+            </tr>
+        {% for draw in submitted_draws %}
+            <tr class="report-item zebra">
+                <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">Draw {{ draw.num }}</a></td>
+                <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.edited_by }}</a></td>
+                <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.date }}</a></td>
+                <td><a href="{% url 'projectmanagement:draw_view' draw.id %}">{{ draw.submitted_date }}</a></td>
+            </tr>
+        {% endfor %}
+        </table>
+    </div>
+{% else %}
+    <div class="reports-list-div">
+        <table>
+            <tr class="report-item">
+                <td>There are currently no submitted draws available.</td>
+            </tr>
+        </table>
+    </div>
+{% endif %}
 
 {% endblock %}
-

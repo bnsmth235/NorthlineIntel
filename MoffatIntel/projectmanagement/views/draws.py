@@ -18,7 +18,8 @@ locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 @login_required(login_url='projectmanagement:login')
 def all_draws(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
-    draws = Draw.objects.order_by('-num').filter(project_id=project)
+    draws = Draw.objects.filter(project_id=project, submitted_date__isnull=True)
+    submitted_draws = Draw.objects.filter(project_id=project, submitted_date__isnull=False)
     groups = Group.objects.filter(project_id=project)
     subgroups = Subgroup.objects.filter(group_id__in=groups)
     exhibits = Exhibit.objects.filter(project_id=project)
@@ -88,6 +89,7 @@ def all_draws(request, project_id):
 
     context = {
         'draws': draws,
+        'submitted_draws': submitted_draws,
         'project': project,
         'groups': groups,
         'subgroups': subgroups,
@@ -502,8 +504,6 @@ def edit_draw_summary_item(request, draw_summary_item_id):
 
         return redirect('projectmanagement:draw_view', draw_id=draw_item.draw_id.id)
 
-
-
     return render(request, 'draws/edit_draw_summary_item.html', context)
 
 
@@ -511,6 +511,11 @@ def edit_draw_summary_item(request, draw_summary_item_id):
 def submit_draw(request, draw_id):
     draw = get_object_or_404(Draw, pk=draw_id)
     draw.submitted_date = datetime.now()
+    draw.save()
+
+    draw_line_items = DrawLineItem.objects.filter(draw_id=draw)
+    for draw_line_item in draw_line_items:
+        draw_line_items = DrawLineItem.objects.filter()
 
     return redirect("projectmanagement:all_draws", project_id=draw.project_id.id)
 
