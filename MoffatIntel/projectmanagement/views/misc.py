@@ -1,7 +1,6 @@
-import json
 import os
 from pathlib import Path
-
+import json
 from django.contrib.auth.decorators import login_required
 from django.forms import model_to_dict
 from django.shortcuts import render, get_object_or_404
@@ -185,4 +184,14 @@ def webhook_handler(request):
         # Here you might want to call a script or service
         return JsonResponse({'status': 'success'})
     return JsonResponse({'status': 'method not allowed'}, status=405)
+
+@login_required(login_url='projectmanagement:login')
+def load_config(request):
+    with open(os.path.join(Path(__file__).resolve().parent.parent, 'static/projectmanagement/data/config.json'), 'r') as config_file:
+        return json.load(config_file)
+
+@login_required(login_url='projectmanagement:login')
+def get_config(request):
+    config = load_config(request)
+    return JsonResponse(config)
 

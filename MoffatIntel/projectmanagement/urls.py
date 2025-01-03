@@ -88,6 +88,7 @@ urlpatterns = [
     path('get_draw_data/<int:draw_id>', misc.get_draw_data, name='get_draw_data'),
     path('get_lr_for_draw_item/<int:draw_item_id>/<str:type>', misc.get_lr_for_draw_item, name='get_lr_for_draw_item'),
     path('get_check_for_draw_item/<int:draw_item_id>', misc.get_check_for_draw_item, name='get_check_for_draw_item'),
+    path('get_config/', misc.get_config, name='get_config'),
 
     path('webhook/', misc.webhook_handler, name='webhook'),
 ]

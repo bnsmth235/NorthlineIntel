@@ -140,10 +140,9 @@ fieldset .errormessage{
     color:#cbcbcb;
 }
 
-hr{
-    color:#560200;
+.hl{
     width:100%;
-    size: 10px;
+    height: 10px;
     margin-top: -10px;
     margin-bottom: 20px;
 }

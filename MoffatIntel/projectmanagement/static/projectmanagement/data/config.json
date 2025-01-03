@@ -1,5 +1,9 @@
 {
-  "company_name": "Moffat Construction",
-  "software_name": "Moffat Intel",
-  "company_logo": "https://moffatcompany.com/wp-content/uploads/2019/08/cropped-clear-back-med-red-border-black-letter-1.png"
+  "company_name": "Northline Construction",
+  "software_name": "Contrackt",
+  "company_address": "488 East 3050 North, Provo, UT 84604",
+  "company_phone": "(801) 851-0606",
+  "company_logo": "https://media.licdn.com/dms/image/v2/C4E0BAQGg_40tWrS0iA/company-logo_200_200/company-logo_200_200/0/1630603205152?e=2147483647&v=beta&t=kMI3OnxNJ_e-_XxLnbZfJXxjBp6yKIg2YmRGfjCgNwE",
+  "primary_color": "#0071b9",
+  "secondary_color": "#1C6C44"
 }
