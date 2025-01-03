@@ -7,6 +7,8 @@
 <script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}" xmlns:v-on="http://www.w3.org/1999/xhtml"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
+<h3 style="align-self: flex-start"><a href="{% url 'projectmanagement:contract_view' project.id sub.id %}" style="text-decoration: none; color: #000">< Back To Contracts</a></h3>
+
 <div id="app">
     <form action="{% url 'projectmanagement:new_exhibit' project.id sub.id %}" method="post">
         {% csrf_token %}
@@ -55,10 +57,9 @@
                         </tr>
                         <tr v-for="(row, rowIndex) in group.rows" :key="rowIndex" class="report-item zebra" style="text-align: center">
                             <td>{{ rowIndex + 1 }}</td>
-                            <td><div><input type="text" :name="`scope[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 90%"></div></td>
-                            <td><input type="number" v-model="row.qty" :name="`qty[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 90%" step="1"></td>
-                            <td>$<input type="number" v-model="row.unitPrice" :name="`unitprice[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 80%" step=".01"></td>
-                            <td>${{ totalPrices[groupIndex][rowIndex] }}</td>
+                            <td><div><input type="text" :name="`scope[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 90%" required></div></td>
+                            <td><input type="number" v-model="row.qty" :name="`qty[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 90%" step="1" required></td>
+                            <td>$<input type="number" v-model="row.unitPrice" :name="`unitprice[${groupIndex}][${rowIndex}]`" class="input-field" style="margin: 0px; width: 80%" step=".01" required></td><td>${{ totalPrices[groupIndex][rowIndex] }}</td>
                             <input type="hidden" v-bind:value="totalPrices[groupIndex][rowIndex]" v-bind:name="`totalprice[${groupIndex}][${rowIndex}]`">
                         </tr>
                         <tr>

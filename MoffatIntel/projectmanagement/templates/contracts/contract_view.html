@@ -129,7 +129,7 @@
 
                     <td style="text-align: center">{{exhibit.name}}</a></td>
                     <td width="75px" style="text-align: center">{{exhibit.date|date:"m/d/y"}}</a></td>
-                    <td style="text-align: center">${{exhibit.total}}</a></td>
+                    <td style="text-align: center">${{exhibit.total|floatformat:2}}</a></td>
 
                     <td width="80px" style="text-align: center">
                       <form id="delete-form3" method="post" data-delete-url="{% url 'projectmanagement:delete_exhibit' exhibit.id %}">
