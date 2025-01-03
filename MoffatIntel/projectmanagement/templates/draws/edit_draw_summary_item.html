@@ -1,0 +1,148 @@
+{% extends "misc/base.html" %}
+
+{% block title %}Edit Draw Item{% endblock %}
+
+{% load static %}
+{% block content %}
+<script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}"></script>
+<script src="{% static 'projectmanagement/javascript/csi-division-codes.js' %}"></script>
+
+<h3 style="align-self: flex-start"><a href="{% url 'projectmanagement:draw_view' draw_summary_item.draw_id.id %}" style="text-decoration: none; color: #000">< Back To Draw</a></h3>
+
+{% if error_message %}
+    <p><strong class="error">{{ error_message }}</strong></p>
+{% endif %}
+
+<span hidden="hidden" id="project_name">{{ draw_summary_item.draw_id.project_id.id }}</span>
+<form action="{% url 'projectmanagement:edit_draw_summary_item' draw_summary_item.id %}" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    <fieldset class="fieldset" style="margin-left: 150px; margin-right: 150px">
+        <legend><h1>Edit {{ draw_summary_item.sub_id.name }}</h1></legend>
+        <div style="display: flex; flex-direction: column">
+            <div style="display: flex; flex-direction: row; flex-wrap: wrap">
+                <div>
+                    <label for="sub">Subcontractor:</label>
+                    <input type="text" id="sub" name="sub" class="input-field" value="{{ draw_summary_item.sub_id.name }}" readonly>
+                </div>
+
+                <div>
+                    <label for="total_sum">Contract Total:</label>
+                    <input type="text" id="total_sum" class="input-field" value="{{ draw_summary_item.contract_total|floatformat:2 }}" readonly>
+                </div>
+
+                <div>
+                    <label for="total_paid">Total Paid:</label>
+                    <input type="text" id="total_paid" class="input-field" value="{{ draw_summary_item.total_paid|floatformat:2 }}" readonly>
+                </div>
+
+                <div>
+                    <label for="percent_complete">Percent Complete:</label>
+                    <input type="number" id="percent_complete" class="input-field" name="percent_complete" value="{{ draw_summary_item.percent_complete }}" min="{{ draw_summary_item.percent_complete }}" max="100">
+                </div>
+
+                <div>
+                    <label for="draw_amount">Draw Amount:</label>
+                    <input type="text" id="draw_amount" name="draw_amount" class="input-field" value="{{ draw_summary_item.draw_amount|floatformat:2 }}" readonly>
+                </div>
+
+                <div>
+                    <label for="remaining_amount">Remaining Amount:</label>
+                    <input type="text" id="remaining_amount" class="input-field" value="{{ amount_remaining|floatformat:2 }}" readonly>
+                </div>
+
+                <div style="width: 90%">
+                    <label for="description">Description:</label>
+                    <input type="text" id="description" class="input-field" name="description" style="width: 75%" value="{{ draw_summary_item.description }}">
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; margin-top: 35px">
+                    <div>
+                    <label for="lr_file">Lien Release:</label>
+                    <input type="file" id="lr_file" name="lr_file" class="file-upload">
+                    {% if lr %}
+                        <p>Current LR: {{ lr.pdf.url }} </p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="lr_signed">LR Signed?</label>
+                    <input type="checkbox" id="lr_signed" name="lr_signed" class="checkbox" {% if lr and lr.signed %}checked{% endif %}>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; margin-top: 35px">
+                <div id="check-container" style="{% if not has_check %}display:none{% endif %}">
+                    <label for="check_file">Check:</label>
+                    <input type="file" id="check_file" name="check_file" class="file-upload">
+                    {% if check %}
+                        <p>Current Check: {{ check_file_url }}</p>
+                        <input type="hidden" id="remove_check" name="remove_check" value="">
+                    {% endif %}
+                    <div>
+                        <label for="check_date">Check Date:</label>
+                        <input type="date" id="check_date" name="check_date" class="input-field" value="{{ check_date }}">
+                    </div>
+
+                    <div>
+                        <label for="check_number">Check #:</label>
+                        <input type="text" id="check_number" name="check_number" class="input-field" value="{{ check_number }}">
+                    </div>
+                    <br>
+                    <button type="button" id="remove-check" class="add-button-small" style="margin: 0">Remove Check</button>
+                </div>
+            </div>
+
+            <div style="align-self: flex-end">
+                <input type="submit" class="input-field-save" value="Save">
+            </div>
+        </div>
+    </fieldset>
+</form>
+
+<script>
+    document.querySelector('form').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const totalSum = {{ draw_summary_item.contract_total }};
+        const totalPaid = {{ draw_summary_item.total_paid }};
+        const initialPercentComplete = {{ draw_summary_item.percent_complete }};
+
+        const percentCompleteInput = document.getElementById("percent_complete");
+        const drawAmountInput = document.getElementById("draw_amount");
+        const remainingAmountInput = document.getElementById("remaining_amount");
+
+        percentCompleteInput.addEventListener("blur", function() {
+            let percentComplete = parseFloat(percentCompleteInput.value);
+
+            // Limit the percent complete between the current value and 100%
+            if (percentComplete < initialPercentComplete) {
+                percentComplete = initialPercentComplete;
+                percentCompleteInput.value = initialPercentComplete;
+            }
+            if (percentComplete > 100) {
+                percentComplete = 100;
+                percentCompleteInput.value = 100;
+            }
+
+            // Calculate the new draw amount
+            const newDrawAmount = (percentComplete / 100) * totalSum - totalPaid;
+            drawAmountInput.value = newDrawAmount.toFixed(2);
+
+            // Calculate the remaining amount
+            const remainingAmount = totalSum - totalPaid - newDrawAmount;
+            remainingAmountInput.value = remainingAmount.toFixed(2);
+        });
+
+        document.getElementById("remove-check")?.addEventListener("click", function() {
+            document.getElementById("check-container").style.display = "none";
+            document.getElementById("remove_check").value = "delete";
+        });
+    });
+</script>
+
+{% endblock %}

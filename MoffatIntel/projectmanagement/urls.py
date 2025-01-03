@@ -33,7 +33,6 @@ urlpatterns = [
     path('delete_proj/<int:project_id>/', projects.delete_proj, name='delete_proj'),
     path('delete_vendor/<int:vendor_id>/', data.delete_vendor, name='delete_vendor'),
     path('delete_change_order/<int:co_id>/', contracts.delete_change_order, name='delete_change_order'),
-    path('delete_invoice/<int:project_id>/<int:draw_id>/<int:invoice_id>/', contracts.delete_invoice, name='delete_invoice'),
     path('delete_check/<int:check_id>/', draws.delete_check, name='delete_check'),
     path('delete_plan/<int:project_id>', plans.delete_plan, name='delete_plan'),
     path('delete_deductive_change_order/<int:dco_id>/', contracts.delete_deductive_change_order, name='delete_deductive_change_order'),
@@ -47,15 +46,14 @@ urlpatterns = [
     path('all_estimates/<int:project_id>', estimates.all_estimates, name='all_estimates'),
 
     path('edit_sub/<int:sub_id>/', data.edit_sub, name='edit_sub'),
-    path('edit_invoice/<int:project_id>/<int:draw_id>/<int:invoice_id>/', draws.edit_invoice, name='edit_invoice'),
     path('edit_check/<int:check_id>/', draws.edit_check, name='edit_check'),
     path('edit_vendor/<int:vendor_id>/', data.edit_vendor, name='edit_vendor'),
     path('edit_proj/<int:project_id>/', projects.edit_proj, name='edit_proj'),
     path('edit_estimate/<int:estimate_id>/', estimates.edit_estimate, name='edit_estimate'),
+    path('edit_draw_summary_item/<int:draw_summary_item_id>/', draws.edit_draw_summary_item, name='edit_draw_summary_item'),
 
     path('new_draw/<int:project_id>', draws.new_draw, name='new_draw'),
-    path('new_invoice/<int:project_id>/<int:draw_id>/', draws.new_invoice, name='new_invoice'),
-    path('new_check/<int:project_id>/<int:draw_id>/<int:invoice_id>', draws.new_check, name='new_check'),
+    path('new_check/<int:draw_item_id>', draws.new_check, name='new_check'),
     path('new_change_order/<int:project_id>/<int:sub_id>/', contracts.new_change_order, name='new_change_order'),
     path('new_change_order/', contracts.new_change_order, name='new_change_order'),
     path('new_deductive_change_order/<int:project_id>/<int:sub_id>/', contracts.new_deductive_change_order, name='new_deductive_change_order'),
@@ -65,12 +63,13 @@ urlpatterns = [
     path('new_exhibit/<int:project_id>/<int:sub_id>/', contracts.new_exhibit, name='new_exhibit'),
     path('new_master/<int:project_id>/', estimates.new_master, name='new_master'),
 
+    path('submit_draw/<int:draw_id>', draws.submit_draw, name='submit_draw'),
+
     path('contract_view/<int:project_id>/<int:sub_id>', contracts.contract_view, name='contract_view'),
-    path('draw_view/<int:project_id>/<int:draw_id>/', draws.draw_view, name='draw_view'),
+    path('draw_view/<int:draw_id>/', draws.draw_view, name='draw_view'),
     path('plan_view/<int:project_id>/<int:plan_id>/', plans.plan_view, name='plan_view'),
-    path('invoice_view/<int:invoice_id>/', draws.invoice_view, name='invoice_view'),
     path('check_view/<int:check_id>/', draws.check_view, name='check_view'),
-    path('lr_view/<int:check_id>/', contracts.lr_view, name='lr_view'),
+    path('lr_view/<int:lr_id>/', draws.lr_view, name='lr_view'),
     path('project_view/<int:project_id>/', projects.project_view, name='project_view'),
     path('sub_select/<int:project_id>/', contracts.sub_select, name='sub_select'),
     path('change_orders/<int:project_id>/<int:sub_id>/', contracts.change_orders, name='change_orders'),
@@ -80,7 +79,17 @@ urlpatterns = [
 
     path('log_out/', registration.log_out, name='logout'),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('get-master-format/', misc.get_master_format, name='get_master_format'),
+
+    #APIs
+    path('get_master_format/', misc.get_master_format, name='get_master_format'),
+    path('get_exhibits/<str:sub_name>/<int:project_id>', misc.get_exhibits, name='get_exhibits'),
+    path('get_exhibit_line_items/<int:exhibit_id>', misc.get_exhibit_line_items, name='get_exhibit_line_items'),
+    path('get_sub_data/<str:sub_name>', misc.get_sub_data, name='get_sub_data'),
+    path('get_draw_data/<int:draw_id>', misc.get_draw_data, name='get_draw_data'),
+    path('get_lr_for_draw_item/<int:draw_item_id>/<str:type>', misc.get_lr_for_draw_item, name='get_lr_for_draw_item'),
+    path('get_check_for_draw_item/<int:draw_item_id>', misc.get_check_for_draw_item, name='get_check_for_draw_item'),
+
+    path('webhook/', misc.webhook_handler, name='webhook'),
 ]
 app_name = "projectmanagement"
 

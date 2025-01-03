@@ -224,7 +224,7 @@ class MasterEstimateLineItem(models.Model):
     def __str__(self):
         return self.scope
 class Estimate(models.Model):
-    master_estimate = models.ForeignKey(MasterEstimate, on_delete=models.CASCADE)
+    master_estimate_id = models.ForeignKey(MasterEstimate, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     date = models.DateTimeField('Last Modified')
     sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
@@ -295,19 +295,16 @@ class Exhibit(models.Model):
         return self.name
 
 class ExhibitLineItem(models.Model):
-    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
-    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
+    exhibit_id = models.ForeignKey(Exhibit, on_delete=models.CASCADE)
     group_id = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
     subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
     scope = models.CharField(max_length=500)
-    qty = models.IntegerField()
+    qty = models.IntegerField(default=1)
     unit_price = models.FloatField()
     total = models.FloatField()
-
+    total_paid = models.FloatField(default=0.00)
     def __str__(self):
         return self.scope
-
 
 class Contract(models.Model):
     date = models.DateTimeField('Last Modified')
@@ -361,81 +358,47 @@ class Draw(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
     edited_by = models.CharField(max_length=20)
     start_date = models.DateTimeField('Start Date')
+    submitted_date = models.DateTimeField('Submitted Date', default=None, null=True)
 
     def __str__(self):
         return str(self.id)
 
-class Invoice(models.Model):
-    date = models.DateTimeField('Last Modified')
+class DrawLineItem(models.Model):
     draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
-    invoice_date = models.DateTimeField('Invoice Date')
-    invoice_num = models.CharField(default="", max_length=20)
-    csi = models.CharField(max_length=6)
-    method = models.CharField(max_length=1, default="I",
-                              choices=[("I", "Invoice"), ("E", "Exhibit"), ("P", "Purchase Order")])
-    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE, blank=True, null=True)
-    vendor_id = models.ForeignKey(Vendor, on_delete=models.CASCADE, blank=True, null=True)
-    group_id = models.ForeignKey(Group, on_delete=models.CASCADE, blank=True, null=True)
-    subgroup_id = models.ForeignKey(Subgroup, on_delete=models.CASCADE, blank=True, null=True)
-    invoice_total = models.FloatField(default=0.00)
-    description = models.TextField()
-    invoice_pdf = models.FileField(default=None, upload_to='projectmanagement/invoices/')
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    exhibit_item_id = models.ForeignKey(ExhibitLineItem, on_delete=models.CASCADE)
+    draw_amount = models.FloatField(default=0.00)
+    description = models.CharField(max_length=250)
 
-    def __str__(self):
-        return self.invoice_num
+class DrawSummaryLineItem(models.Model):
+    draw_id = models.ForeignKey(Draw, on_delete=models.CASCADE)
+    sub_id = models.ForeignKey(Subcontractor, on_delete=models.CASCADE)
+    contract_total = models.FloatField(default=0.00)
+    percent_complete = models.FloatField(default=0.00)
+    draw_amount = models.FloatField(default=0.00)
+    total_paid = models.FloatField(default=0.00)
+    description = models.CharField(max_length=250)
 
-    def get_method_display_long(self):
-        for choice in self._meta.get_field("method").choices:
-            if choice[0] == self.method:
+class LienRelease(models.Model):
+    date = models.DateTimeField('Created Date')
+    draw_item_id = models.ForeignKey(DrawSummaryLineItem, on_delete=models.CASCADE)
+    type = models.CharField(max_length=20, default="C",
+                                         choices=[("F", "Final"), ("C", "Conditional"), ("N", "N/A")])
+    pdf = models.FileField(default=None, null=True, upload_to='projectmanagement/lien_releases')
+    signed = models.BooleanField(default=False)
+
+    def get_LR_type_display_long(self):
+        for choice in self._meta.get_field("type").choices:
+            if choice[0] == self.type:
                 return choice[1]
         return ""
-
-    def get_sub_choices(self):
-        # Retrieve the dynamic choices from the database or any other source
-        # For example, you can query the Subcontractor model to get the choices
-        subs = Subcontractor.objects.all()
-        choices = [(sub.id, sub.name) for sub in subs]
-        return choices
-
-        # Parse the CSI code
-        division = self.csi[:2]
-        section = self.csi[2:4]
-        subsection = self.csi[4:6]
-
-        # Traverse the CSI data
-        description = ''
-        current = csi_data.get(division, None)
-        if current:
-            description += current['name']
-            current = current.get(section, None)
-            if current:
-                description += f" > {current['name']}"
-                current = current.get(subsection, None)
-                if current:
-                    description += f" > {current['name']}"
-
-        return description
 
 class Check(models.Model):
     date = models.DateTimeField('Last Modified')
-    invoice_id = models.ForeignKey(Invoice, on_delete=models.CASCADE)
+    draw_item_id = models.ForeignKey(DrawSummaryLineItem, on_delete=models.CASCADE)
     check_date = models.DateTimeField('Check Date')
-    check_num = models.IntegerField()
-    check_total = models.FloatField(default=0.00)
-    distributed = models.CharField(max_length=50)
-    check_pdf = models.FileField(default=None, upload_to='projectmanagement/checks/')
-    lien_release_type = models.CharField(max_length=20, default="N",
-                                         choices=[("F", "Final"), ("C", "Conditional"), ("N", "N/A")])
-    lien_release_pdf = models.FileField(default=None, upload_to='projectmanagement/lien_releases')
-    signed = models.BooleanField(default=False)
+    check_num = models.CharField(max_length=12)
+    pdf = models.FileField(default=None, null=True, upload_to='projectmanagement/checks/')
 
     def __str__(self):
         return self.check_num.__str__()
-
-    def get_LR_type_display_long(self):
-        for choice in self._meta.get_field("lien_release_type").choices:
-            if choice[0] == self.lien_release_type:
-                return choice[1]
-        return ""
-
-

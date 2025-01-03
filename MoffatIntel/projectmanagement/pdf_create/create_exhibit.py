@@ -1,26 +1,18 @@
 import os
 import tempfile
-
 from django.conf import settings
 from django.core.files.base import ContentFile
 from datetime import datetime
 from fpdf import FPDF
-from ..models import Exhibit, ExhibitLineItem
 
-def create_exhibit(line_items, project, sub):
-    exhibits = Exhibit.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
 
-    exhibit = Exhibit()
-    exhibit.name = "Exhibit " + chr(len(exhibits) + 65)
-    exhibit.date = datetime.now().strftime('%Y-%m-%d')
-    exhibit.sub_id = sub
-    exhibit.project_id = project
-
+def create_exhibit(exhibit, line_items, project, sub):
     group_data = []
     total_total = 0.00
 
     # Loop through line_items to organize data into groups
     for line_item in line_items:
+        line_item.exhibit_id = exhibit
         # Create a dictionary to represent the current row
         row_data = {
             'scope': line_item.scope,
@@ -80,7 +72,7 @@ def create_exhibit(line_items, project, sub):
 
     pdf.set_font("Arial", style="B", size=10)
     pdf.set_line_width(.75)
-    pdf.cell(pdf.w - 20, 5, f"SCOPE & VALUES - EXHIBIT {chr(len(exhibits) + 65)}", 1, 0, align="C")
+    pdf.cell(pdf.w - 20, 5, f"SCOPE & VALUES - {exhibit.name}", 1, 0, align="C")
     pdf.ln(10)
 
     pdf.set_font("Arial", size=10)

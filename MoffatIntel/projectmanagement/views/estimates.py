@@ -19,7 +19,7 @@ def all_estimates(request, project_id):
     masters = MasterEstimate.objects.filter(project_id=project)
     subs = Subcontractor.objects.order_by('name')
     vendors = Vendor.objects.order_by('name')
-    estimates = Estimate.objects.filter(master_estimate__in=masters)
+    estimates = Estimate.objects.filter(master_estimate_id__in=masters)
 
     divisions = {}
     for division_code, division_info in csi_data.items():
@@ -49,7 +49,7 @@ def all_estimates(request, project_id):
         master = get_object_or_404(MasterEstimate, pk=request.POST.get('master'))
 
         estimate = Estimate()
-        estimate.master_estimate = master
+        estimate.master_estimate_id= master
         estimate.name = f"{project.name} {sub.name} {master.csi} Estimate"
         estimate.date = datetime.now()
         estimate.csi = master.csi

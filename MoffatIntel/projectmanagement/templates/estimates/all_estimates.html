@@ -7,7 +7,7 @@
 <script src="{% static 'projectmanagement/javascript/deleteConfirm.js' %}"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-<h3 style="margin-bottom: -10px"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
+<h3 style="align-self: flex-start"><a href="{% url 'projectmanagement:project_view' project.id %}" style="text-decoration: none; color: #000">< Back To Project</a></h3>
 
 <h1 class="section-header">Estimates for {{project.name}}</h1>
 
@@ -72,7 +72,7 @@
                             <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
                         </div>
 
-                        <div style="float: right">
+                        <div style="align-self: flex-end">
                             <div class="add-button"  style="margin-top: 15px"><button type="submit">Upload</button></div>
                         </div>
                     </div>

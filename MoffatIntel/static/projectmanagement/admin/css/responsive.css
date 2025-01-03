@@ -730,7 +730,7 @@ input[type="submit"], button {
     }
 
     .selector ul.selector-chooser li {
-        float: left;
+        align-self: flex-start;
     }
 
     .selector-remove {

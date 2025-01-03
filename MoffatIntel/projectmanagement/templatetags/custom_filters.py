@@ -1,17 +1,13 @@
+import locale
+
 from django import template
-from ..models import Invoice, Check
+from ..models import Check
 
 register = template.Library()
 
 @register.filter
 def sum_values(queryset, attribute):
     return sum(getattr(obj, attribute) for obj in queryset)
-
-@register.simple_tag
-def calculate_invoice_total(group, subgroup, draw):
-    filtered_invoices = Invoice.objects.filter(group_id=group, subgroup_id=subgroup, draw_id=draw)
-    total = sum(filtered_invoices.values_list('invoice_total', flat=True))
-    return format(total, ".2f")
 
 @register.filter
 def make_list(num):
@@ -21,19 +17,11 @@ def make_list(num):
 def sub(a, b):
     return b - a
 
-@register.simple_tag
-def calculate_percentage(group, subgroup, draw):
-    dividend = calculate_checks_total(group, subgroup, draw)
-    divisor = calculate_invoice_total(group, subgroup, draw)
+@register.filter(name='currency')
+def currency(value):
     try:
-        percent = (dividend / divisor) * 100
+        locale.setlocale(locale.LC_ALL,'en_US.UTF-8')
     except:
-        return 0
-    return format(percent , ".2f")
-
-@register.simple_tag
-def calculate_checks_total(group, subgroup, draw):
-    subgroup_invoices = Invoice.objects.filter(group_id=group, subgroup_id=subgroup, draw_id=draw)
-    related_checks = Check.objects.filter(invoice_id__in=subgroup_invoices)
-    total = sum(related_checks.values_list('check_total', flat=True))
-    return format(total, ".2f")
+        locale.setlocale(locale.LC_ALL,'')
+    loc = locale.localeconv()
+    return locale.currency(value, loc['currency_symbol'], grouping=True)

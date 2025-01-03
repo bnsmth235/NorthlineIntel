@@ -33,7 +33,7 @@
 }
 
 .logo{
-    float: left;
+    align-self: flex-start;
     margin-left: 15px;
     margin-top: 15px;
     width: 80px;
@@ -54,7 +54,7 @@
     display: flex;
     text-decoration: none;
     color: #232323;
-    float: right;
+    align-self: flex-end;
     padding: 5px;
     margin-top: 35px;
     margin-right: 20px;
@@ -294,7 +294,7 @@ body{
     color: white;
     border: 2px solid #7c0300;
     background-color: #7c0300;
-    float: right
+    align-self: flex-end
 }
 
 .zebra:nth-child(even){
@@ -384,7 +384,7 @@ a {
     display: block;
     position: relative;
     text-align: center;
-    float: left;
+    align-self: flex-start;
     text-decoration: none;
     color: black;
     padding: 2em;
@@ -403,7 +403,7 @@ a {
 }
 
 .add-button{
-    float: right;
+    align-self: flex-end;
     margin-top: -15px;
     padding: 6px;
     margin-right: 31px;
@@ -448,7 +448,7 @@ button{
 }
 
 .add-new{
-    float: right;
+    align-self: flex-end;
     margin-top: -15px;
     padding: 6px;
     margin-right: 31px;

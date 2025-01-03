@@ -58,9 +58,9 @@
             <br><br>
             <div style="display: inline-block">
                 <label style="position: relative">Check PDF: </label>
-                <input type="file" name="check_pdf" id="check_pdf" class="input-field" value="{{check.check_pdf}}">
-                {% if check.check_pdf %}
-                    <span>Current file: {{check.check_pdf.name}}</span>
+                <input type="file" name="pdf" id="pdf" class="input-field" value="{{check.pdf}}">
+                {% if check.pdf %}
+                    <span>Current file: {{check.pdf.name}}</span>
                 {% endif %}
                 <label style="position: relative">Lien Release PDF: </label>
                 <input type="file" name="lien_release_pdf" id="lien_release_pdf" value="{{check.lien_release_pdf}}">
@@ -72,7 +72,7 @@
                 <input type="checkbox" name="signed" id="signed" {% if check.signed %}checked{% endif %}>
             </div>
 
-            <div style="display: inline-block; float: right">
+            <div style="display: inline-block; align-self: flex-end">
                 <input class="input-field-save" type="submit" name="submit" value="Save">
             </div>
 
