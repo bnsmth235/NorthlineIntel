@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Request Login</title>
+        {% load static %}
+        <link rel="stylesheet" href="{% static 'projectmanagement/style.css' %}">
+        <link rel="shortcut icon" type="image/png" href="{% static 'projectmanagement/images/favicon.ico' %}"/>
+    </head>
+    <body class="loginbg">
+        <div class="bg">
+            <div class="login">
+                <div class="login-block">
+                    <div id="logo">
+                        <img src="{% static 'projectmanagement/images/logo.png' %}" alt="Moffat Logo" width="300px">
+                    </div>
+                    <hr style="margin-top: 10px;">
+                    {% if error_message %}
+                        <div class="errormessage">
+                            <p style="padding: 5px; font-family: Libre Baskerville;">{{error_message}}</p>
+                        </div>
+                    <hr style="margin-top: 10px">
+                    {% endif %}
+                    <form id="request-login-form" action="{% url 'projectmanagement:request_login' %}" method="post" class="form-input">
+                        {% csrf_token %}
+                        <fieldset>
+                            <div class="text-input">
+                                <input name="first-name" id="first-name" required="Required" class="form-input" style="margin-top: 5px" autofocus="autofocus" data-val="true" data-val-required="*" placeholder="First Name" type="text" value="">
+                            </div>
+                            <div class="text-input">
+                                <input name="last-name" id="last-name" required="Required" class="form-input" style="margin-top: 5px" autofocus="autofocus" data-val="true" data-val-required="*" placeholder="Last Name" type="text" value="">
+                            </div>
+                            <div class="text-input">
+                                <input name="username" id="username" required="Required" class="form-input" style="margin-top: 5px" autofocus="autofocus" data-val="true" data-val-required="*" placeholder="Username" type="text" value="">
+                            </div>
+                            <div class="text-input">
+                                <input name="email" id="email" required="Required" class="form-input" data-val="true" data-val-required="*" placeholder="Email" type="email">
+                            </div>
+
+                            <input id="request-login-button" type="submit" name="Command" value="Request Login" class="submit-button">
+                        </fieldset>
+                    </form>
+                    <div id="confirmation-message" style="display: none; opacity: 0; transition: opacity 1s;">
+                        <p>A request for a login has been sent to the administrator's email. Please check your email for a temporary login once the admin approves the request.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        document.getElementById('request-login-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            }).then(response => {
+                if (response.ok) {
+                    form.style.display = 'none';
+                    const confirmationMessage = document.getElementById('confirmation-message');
+                    confirmationMessage.style.display = 'block';
+                    setTimeout(() => {
+                        confirmationMessage.style.opacity = 1;
+                    }, 100);
+                } else {
+                    // Handle error response
+                    console.error('Error:', response.statusText);
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</html>
