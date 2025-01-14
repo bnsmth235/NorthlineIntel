@@ -112,33 +112,7 @@
 
 <h1 class="section-header">Exhibits</h1>
 
-<div class="add-button" v-on:click="showExhibit()" v-if="!isExhibitVisible">
-    <button>+ Upload Exhibit</button>
-</div>
-
-<div class="add-button" v-on:click="showExhibit()" v-if="isExhibitVisible">
-    <button>Cancel</button>
-</div>
-
-<div v-if="isExhibitVisible">
-    <form method="post" enctype="multipart/form-data" action="{% url 'projectmanagement:contract_view' project.id sub.id%}">
-        <fieldset class="fieldset-table">
-            <legend><h2>Upload Exhibit</h2></legend>
-            {% csrf_token %}
-            <input hidden="hidden" name="form-type" value="exhibit">
-
-            <label for="exhibit_pdf">PDF: </label>
-            <input type="file" name="exhibit_pdf" id="exhibit_pdf" class="input-field" required="required">
-
-            <label for="total">Exhibit Total: $</label>
-            <input type="number" step=".01" name="total" id="total" required="required" class="input-field">
-
-            <div class="add-new"><a href="{% url 'projectmanagement:new_exhibit' project.id sub.id %}">+ New Exhibit</a></div>
-
-            <div class="add-button"><button type="submit">Upload</button></div>
-        </fieldset>
-    </form>
-</div>
+<div class="add-new" style="float:right;"><a href="{% url 'projectmanagement:new_exhibit' project.id sub.id %}">+ New Exhibit</a></div>
 
 {% if exhibits %}
     <div class="reports-list-div">
@@ -155,7 +129,7 @@
 
                     <td style="text-align: center">{{exhibit.name}}</a></td>
                     <td width="75px" style="text-align: center">{{exhibit.date|date:"m/d/y"}}</a></td>
-                    <td style="text-align: center">${{exhibit.total}}</a></td>
+                    <td style="text-align: center">${{exhibit.total|floatformat:2}}</a></td>
 
                     <td width="80px" style="text-align: center">
                       <form id="delete-form3" method="post" data-delete-url="{% url 'projectmanagement:delete_exhibit' exhibit.id %}">

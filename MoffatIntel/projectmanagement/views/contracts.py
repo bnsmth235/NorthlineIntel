@@ -701,20 +701,11 @@ def exhibit_pdf_view(request, exhibit_id):
 @login_required(login_url='projectmanagement:login')
 def new_exhibit(request, project_id, sub_id):
     project = get_object_or_404(Project, pk=project_id)
-    exhibit = Exhibit()
-
-    exhibit.date = datetime.now().strftime('%Y-%m-%d')
 
     try:
         sub = get_object_or_404(Subcontractor, pk=sub_id)
     except:
         sub = get_object_or_404(Vendor, pk=sub_id)
-
-    exhibits = Exhibit.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
-    exhibit.name = "Exhibit " + chr(len(exhibits) + 65)
-    exhibit.sub_id = sub
-    exhibit.project_id = project
-    exhibit.save()
 
     groups = Group.objects.filter(project_id=project)
     subgroups = Subgroup.objects.filter(group_id__in=groups)
@@ -725,6 +716,15 @@ def new_exhibit(request, project_id, sub_id):
          groups])
 
     if request.method == 'POST':
+        exhibit = Exhibit()
+
+        exhibit.date = datetime.now().strftime('%Y-%m-%d')
+        exhibits = Exhibit.objects.order_by("-date").filter(project_id=project).filter(sub_id=sub)
+        exhibit.name = "Exhibit " + chr(len(exhibits) + 65)
+        exhibit.sub_id = sub
+        exhibit.project_id = project
+        exhibit.save()
+
         line_items = process_form_data(request)
         for line_item in line_items:
             line_item.project_id = project

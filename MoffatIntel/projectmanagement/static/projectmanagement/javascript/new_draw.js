@@ -54,106 +54,96 @@ function stepTwo() {
         });
 }
 
-function fetchExhibitsAndGenerateInputs(subcontractors) {
-    const promises = subcontractors.map((subcontractor, index) => {
-        // Get project id from url
-        const projectId = window.location.pathname.split('/')[3];
-        return fetch(`/projectmanagement/get_exhibits/${subcontractor}/${projectId}`)
-            .then(response => response.json())
-            .then(exhibits => {
-                const tableBody = subcontractorPages[index].querySelector('tbody'); // Get the tbody of the correct page
+async function fetchExhibitsAndGenerateInputs(subcontractors) {
+    const projectId = window.location.pathname.split('/')[3];
 
-                const exhibitPromises = exhibits.map(exhibit => {
-                    // Create a row for the exhibit
-                    const exhibitRow = document.createElement('tr');
-                    const exhibitCell = document.createElement('td');
-                    exhibitCell.textContent = exhibit.name;
-                    exhibitCell.colSpan = '6';
-                    exhibitRow.appendChild(exhibitCell);
-                    tableBody.appendChild(exhibitRow);
+    for (const [index, subcontractor] of subcontractors.entries()) {
+        const response = await fetch(`/projectmanagement/get_exhibits/${subcontractor}/${projectId}`);
+        const exhibits = await response.json();
+        const tableBody = subcontractorPages[index].querySelector('tbody');
 
-                    return fetch(`/projectmanagement/get_exhibit_line_items/${exhibit.id}`)
-                        .then(response => response.json())
-                        .then(lineItems => {
-                            lineItems.forEach(lineItem => {
-                                // Create a row for the line item
-                                const lineItemRow = document.createElement('tr');
-                                lineItemRow.id = `exhibitLineItem${lineItem.id}`;
-                                const spacer = document.createElement('td');
-                                lineItemRow.appendChild(spacer);
-                                const scopeCell = document.createElement('td');
-                                scopeCell.textContent = lineItem.scope;
-                                lineItemRow.appendChild(scopeCell);
+        for (const exhibit of exhibits) {
+            const exhibitRow = document.createElement('tr');
+            const exhibitCell = document.createElement('td');
+            exhibitCell.textContent = exhibit.name;
+            exhibitCell.colSpan = '6';
+            exhibitRow.appendChild(exhibitCell);
+            tableBody.appendChild(exhibitRow);
 
-                                const totalCell = document.createElement('td');
-                                totalCell.textContent = `$${parseFloat(lineItem.total).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                                lineItemRow.appendChild(totalCell);
+            const lineItemsResponse = await fetch(`/projectmanagement/get_exhibit_line_items/${exhibit.id}`);
+            const lineItems = await lineItemsResponse.json();
 
-                                const totalPaidCell = document.createElement('td');
-                                totalPaidCell.textContent = `$${parseFloat(lineItem.total_paid).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-                                lineItemRow.appendChild(totalPaidCell);
+            for (const lineItem of lineItems) {
+                const lineItemRow = document.createElement('tr');
+                lineItemRow.id = `exhibitLineItem${lineItem.id}`;
+                const spacer = document.createElement('td');
+                lineItemRow.appendChild(spacer);
+                const scopeCell = document.createElement('td');
+                scopeCell.textContent = lineItem.scope;
+                lineItemRow.appendChild(scopeCell);
 
-                                const inputCell = document.createElement('td');
-                                const input = document.createElement('input');
-                                input.type = 'number';
-                                input.min = (lineItem.total_paid / lineItem.total).toFixed(3) * 100; // Set the min value to the percentage already paid
-                                input.max = '100';
-                                input.step = '.01';
-                                input.value = (lineItem.total_paid / lineItem.total).toFixed(3) * 100;
-                                input.dataset.subcontractor = subcontractor;
-                                input.dataset.lineItemId = lineItem.id;
-                                input.dataset.lineItemValue = lineItem.total; // Store the line item amount in a data attribute
-                                inputCell.appendChild(input);
+                const totalCell = document.createElement('td');
+                totalCell.textContent = `$${parseFloat(lineItem.total).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                lineItemRow.appendChild(totalCell);
 
-                                const percentSign = document.createElement('strong'); // Create a new span element
-                                percentSign.textContent = ' %'; // Set its text content to "%"
+                const totalPaidCell = document.createElement('td');
+                totalPaidCell.textContent = `$${parseFloat(lineItem.total_paid).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                lineItemRow.appendChild(totalPaidCell);
 
-                                inputCell.appendChild(percentSign); // Append it to the inputCell
+                const inputCell = document.createElement('td');
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = (lineItem.total_paid / lineItem.total).toFixed(3) * 100;
+                input.max = '100';
+                input.step = '.01';
+                input.value = (lineItem.total_paid / lineItem.total).toFixed(3) * 100;
+                input.dataset.subcontractor = subcontractor;
+                input.dataset.lineItemId = lineItem.id;
+                input.dataset.lineItemValue = lineItem.total;
+                inputCell.appendChild(input);
 
-                                lineItemRow.appendChild(inputCell);
+                const percentSign = document.createElement('strong');
+                percentSign.textContent = ' %';
+                inputCell.appendChild(percentSign);
 
-                                const payoutCell = document.createElement('td'); // Create a cell for the Draw Amount
-                                payoutCell.classList.add('payout'); // Add a class to the cell for easy selection later
-                                lineItemRow.appendChild(payoutCell); // Append the cell to the row
+                lineItemRow.appendChild(inputCell);
 
-                                tableBody.appendChild(lineItemRow);
+                const payoutCell = document.createElement('td');
+                payoutCell.classList.add('payout');
+                lineItemRow.appendChild(payoutCell);
 
-                                input.addEventListener('change', function() {
-                                    let value = parseFloat(input.value);
-                                    if (value < input.min) {
-                                        input.value = input.min;
-                                    } else if (value > 100) {
-                                        input.value = '100';
-                                    }
-                                    calculateAndDisplayPayouts(subcontractorPages[index]);
-                                });
+                tableBody.appendChild(lineItemRow);
 
-                                input.addEventListener('keydown', function(event) {
-                                    if (event.key === 'Enter') {
-                                        event.preventDefault();
-                                        const inputs = Array.from(subcontractorPages[index].querySelectorAll('input'));
-                                        const nextInputIndex = inputs.indexOf(input) + 1;
-                                        if (nextInputIndex < inputs.length) {
-                                            inputs[nextInputIndex].focus();
-                                        }
-                                    }
-                                });
-
-                                input.addEventListener('focus', function() {
-                                    input.select();
-                                });
-                            });
-                        });
+                input.addEventListener('change', function() {
+                    let value = parseFloat(input.value);
+                    if (value < input.min) {
+                        input.value = input.min;
+                    } else if (value > 100) {
+                        input.value = '100';
+                    }
+                    calculateAndDisplayPayouts(subcontractorPages[index]);
                 });
 
-                return Promise.all(exhibitPromises).then(() => {
-                    generateTotalRow(subcontractorPages[index]);
-                    calculateAndDisplayPayouts(subcontractorPages[index]); // Calculate and display the totals
+                input.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const inputs = Array.from(subcontractorPages[index].querySelectorAll('input'));
+                        const nextInputIndex = inputs.indexOf(input) + 1;
+                        if (nextInputIndex < inputs.length) {
+                            inputs[nextInputIndex].focus();
+                        }
+                    }
                 });
-            });
-    });
 
-    return Promise.all(promises);
+                input.addEventListener('focus', function() {
+                    input.select();
+                });
+            }
+        }
+
+        generateTotalRow(subcontractorPages[index]);
+        calculateAndDisplayPayouts(subcontractorPages[index]);
+    }
 }
 
 document.querySelector('.add-button').addEventListener('click', function() {

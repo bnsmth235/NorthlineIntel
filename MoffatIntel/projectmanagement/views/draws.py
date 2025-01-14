@@ -26,7 +26,12 @@ def all_draws(request, project_id):
     cos = ChangeOrder.objects.filter(project_id=project)
     dcos = DeductiveChangeOrder.objects.filter(project_id=project)
     pos = PurchaseOrder.objects.filter(project_id=project)
-    checks = Check.objects.filter(draw_item_id=None)
+    draw_summary_items = DrawSummaryLineItem.objects.filter(draw_id__in=submitted_draws)
+    checks = Check.objects.filter(draw_item_id__in=draw_summary_items)
+
+    print(submitted_draws)
+    print(draw_summary_items)
+    print(checks)
 
     contract_total = 0
     for exhibit in exhibits:
@@ -40,7 +45,9 @@ def all_draws(request, project_id):
 
     check_total = 0
     for check in checks:
-        check_total += check.check_total
+        draw_item = get_object_or_404(DrawSummaryLineItem, pk=check.draw_item_id.id)
+        check_total += draw_item.draw_amount
+
 
     try:
         percent = (check_total / contract_total) * 100
