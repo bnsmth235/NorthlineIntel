@@ -35,8 +35,8 @@ def create_purchase_order(project, vendor, rows):
     pdf.add_page()
 
     # Add image at the top center
-    pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\logo_onlyM.png'),
-              x=(pdf.w - 20) / 2, y=10, w=20, h=20)
+    pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\\NL_logo.png'),
+              x=(pdf.w - 20) / 2, y=10, w=25, h=20)
     pdf.ln(23)
 
     pdf.set_font("Arial", style="B", size=16)
@@ -49,11 +49,10 @@ def create_purchase_order(project, vendor, rows):
     # Define table data
 
     table_data = [
-        ["MOFFAT CONSTRUCTION", ""],
-        ["a Moffat Company", "          Purchase Order No.:   " + "PO" + str(datetime.now().strftime("%y")) + str(
+        ["NORTHLINE CONSTRUCTION", "          Purchase Order No.:   " + "PO" + str(datetime.now().strftime("%y")) + str(
         "{:03d}".format(len(PurchaseOrder.objects.all()) + 1))],
-        ["519 W. STATE STREET SUITE #202", "          Date:   " + str(datetime.now().strftime("%B-%d-%Y"))],
-        ["PLEASANT GROVE, UTAH 84062", ""]
+        ["488 E 3050 N", "          Date:   " + str(datetime.now().strftime("%B-%d-%Y"))],
+        ["PROVO, UTAH 84604", ""]
     ]
 
     # Set column widths
@@ -95,11 +94,11 @@ def create_purchase_order(project, vendor, rows):
 
     table_data = [
         ["BUYER", "SELLER"],
-        ["Moffat Construction", "Vendor: " + vendor.name],
-        ["Address: 519 West State St., Pleasant Grove, UT 84062", "Address: " + vendor.address],
-        ["Email: g60moffat@gmail.com; william@moffatcompany.com", "Contact Name: " + vendor.cname],
-        ["Phone: c. 804.851.0606 o. 801.769.0745", "Contact Phone: " + vendor.cphone],
-        ["", "Contact Email: " + vendor.cemail]
+        ["Northline Construction", "Vendor: " + vendor.name],
+        ["Address: 488 E 3050 N, Provo, UT 84062", "Address: " + vendor.address],
+        ["Email: g60moffat@gmail.com; 05.smith.james@gmail.com", "Contact Name: " + (getattr(vendor, 'cname', vendor.name))],
+        ["Phone: c. 804.851.0606", "Contact Phone: " + (getattr(vendor, 'cphone', vendor.phone))],
+        ["", "Contact Email: " + (getattr(vendor, 'cemail', vendor.email))]
     ]
 
     col_width = pdf.w / 2 - 10
@@ -171,14 +170,12 @@ def create_purchase_order(project, vendor, rows):
          " apply in all aspects for the the Seller to perform for fulfillment of this Purchase Order.", 1, "L", True)
     pdf.ln(5)
 
-    pdf.set_xy(pdf.w * .875 - 7.5, pdf.get_y())
-    pdf.multi_cell((pdf.w - 20) * .125, 5, "Draw: " + str(len(draws)) + "\nDate: " + str(datetime.now().strftime("%m-%d-%Y")), 1, "L", True)
     pdf.cell((pdf.w - 20) * .05, 5, 'No.', 1, 0, 'C', True)
-    pdf.cell((pdf.w - 20) * .45, 5, 'Scope of Work', 1, 0, 'C', True)
+    pdf.cell((pdf.w - 20) * .575, 5, 'Scope of Work', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .1, 5, 'Qty', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .125, 5, 'Unit Price', 1, 0, 'C', True)
     pdf.cell((pdf.w - 20) * .15, 5, 'Total', 1, 0, 'C', True)
-    pdf.cell((pdf.w - 20) * .125, 5, 'Earned Value', 1, 1, 'C', True)
+    pdf.ln()
 
     subtotal = 0.00
     # Iterate over rows for the current group
@@ -191,19 +188,18 @@ def create_purchase_order(project, vendor, rows):
         pdf.set_fill_color(255 if index % 2 == 0 else 240)
         pdf.set_font('Arial', size=10)
         pdf.cell((pdf.w - 20) * .05, 5, str(index + 1), 1, 0, 'C', True)
-        pdf.cell((pdf.w - 20) * .45, 5, scope, 1, 0, 'L', True)
+        pdf.cell((pdf.w - 20) * .575, 5, scope, 1, 0, 'L', True)
         pdf.cell((pdf.w - 20) * .1, 5, " $" + "{:.2f}".format(unit_price), 1, 0, 'L', True)
         pdf.cell((pdf.w - 20) * .125, 5, str(qty), 1, 0, 'C', True)
         pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(total_price), 1, 0, 'L', True)
-        pdf.cell((pdf.w - 20) * .125, 5, "", 1, 1, 'C', True)
         subtotal += total_price
+        pdf.ln()
 
     pdf.set_fill_color(217, 225, 242)
     pdf.set_font('Arial', style='B', size=10)
-    pdf.cell((pdf.w - 20) * .725, 5, "TOTAL PURCHASE ORDER AMOUNT: ", 1, 0, 'R', True)
+    pdf.cell((pdf.w - 20) * .85, 5, "TOTAL PURCHASE ORDER AMOUNT: ", 1, 0, 'R', True)
     pdf.cell((pdf.w - 20) * .15, 5, " $" + "{:.2f}".format(subtotal), 1, 0, 'L', True)
     pdf.set_fill_color(242, 235, 23)
-    pdf.cell((pdf.w - 20) * .125, 5, '', 1, 1, 'C', True)
 
     if pdf.get_y() + 65 > pdf.page_break_trigger:
         pdf.add_page()
@@ -214,9 +210,9 @@ def create_purchase_order(project, vendor, rows):
     pdf.cell(pdf.w - 20, 5, "Signatures", 1, 1, "C", True)
     pdf.set_fill_color(256)
     table_data = [
-        ["Moffat Construction", vendor.name],
+        ["Northline Construction", vendor.name],
         ["Signature:", "Signature:"],
-        ["Print Name:          Gregory Moffat", "Print Name:"],
+        ["Print Name:          Greg Moffat", "Print Name:"],
         ["Date:          " + str(datetime.now().strftime("%B-%d-%Y")), "Date: "]
     ]
 
@@ -263,7 +259,10 @@ def create_purchase_order(project, vendor, rows):
     po.order_number = "PO" + str(datetime.now().strftime("%y")) + str(
         "{:03d}".format(len(PurchaseOrder.objects.all()) + 1))
     po.date = datetime.now()
-    po.vendor_id = vendor
+    try:
+        po.vendor_id = vendor
+    except:
+        po.sub_id = vendor
     po.project_id = project
     po.pdf.save(file_name, file_data)
     po.total = subtotal

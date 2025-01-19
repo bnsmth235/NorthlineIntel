@@ -559,7 +559,7 @@ def new_contract(request, project_id = None, sub_id = None):
 def new_purchase_order(request, project_id=None):
     projectselect = get_object_or_404(Project, pk=project_id) if project_id else None
     projects = Project.objects.order_by('name')
-    vendors = Vendor.objects.order_by('name')
+    vendors = list(Vendor.objects.order_by('name')) + list(Subcontractor.objects.order_by('name'))
 
     context = {
         'projectselect': projectselect,
@@ -569,7 +569,11 @@ def new_purchase_order(request, project_id=None):
 
     if request.method == 'POST':
         project = get_object_or_404(Project, pk=request.POST.get('project'))
-        vendor = get_object_or_404(Vendor, pk=request.POST.get('vendor'))
+
+        try:
+            vendor = get_object_or_404(Vendor, pk=request.POST.get('vendor'))
+        except:
+            vendor = get_object_or_404(Subcontractor, pk=request.POST.get('vendor'))
         rows = []
         for key, value in request.POST.items():
             if key.startswith('scope'):

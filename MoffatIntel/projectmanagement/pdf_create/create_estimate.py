@@ -61,7 +61,7 @@ def create_estimate(line_items, project, master):
 
     # Set up the PDF document
     pdf.set_title("Scope & Values - Estimate")
-    pdf.set_author("Moffat Construction")
+    pdf.set_author("Northline Construction")
     pdf.set_font("Arial", size=10)
 
     # Set margins (3/4 inch margins)
@@ -72,7 +72,7 @@ def create_estimate(line_items, project, master):
     pdf.add_page()
 
     # Add image at the top center
-    pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\logo_onlyM.png'),
+    pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\\NL_logo.png'),
               x=(pdf.w - 20) / 2, y=10, w=20, h=20)
     pdf.ln(23)
 
@@ -85,10 +85,10 @@ def create_estimate(line_items, project, master):
 
     # Define table data
     table_data = [
-        ["MOFFAT CONSTRUCTION", "Contract No.:"],
-        ["a Moffat Company", "Contract Date:"],
-        ["519 W. STATE STREET SUITE #202", "Subproject:"],
-        ["PLEASANT GROVE, UTAH 84062", ""]
+        ["NORTHLINE CONSTRUCTION", "Contract No.:"],
+        ["", "Contract Date:"],
+        ["488 E 3050 N", "Subproject:"],
+        ["PROVO, UTAH 84604", ""]
     ]
 
     # Set column widths

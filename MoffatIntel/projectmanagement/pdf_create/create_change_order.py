@@ -47,7 +47,7 @@ def create_change_order(POST, type, rows):
 
     # Set up the PDF document
     pdf.set_title(project.name + " " + sub.name + " " + type + " " + str(datetime.now().strftime("%B-%d-%Y")))
-    pdf.set_author("Moffat Construction")
+    pdf.set_author("Northline Construction")
     pdf.set_font("Arial", size=10)
 
     # Set margins (3/4 inch margins)
@@ -58,7 +58,7 @@ def create_change_order(POST, type, rows):
     pdf.add_page()
 
     # Add image at the top center
-    pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\logo_onlyM.png'),
+    pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\\NL_logo.png'),
               x=(pdf.w - 20) / 2, y=10, w=20, h=20)
     pdf.ln(23)
 
@@ -105,7 +105,7 @@ def create_change_order(POST, type, rows):
     pdf.ln(3)
 
     table_data = [
-        ["General Contractor:", "Moffat Construction"],
+        ["General Contractor:", "Northline Construction"],
         ["Trade:", ""],
         ["Subcontractor:", sub.name],
         ["Project: ", project.name],
@@ -202,7 +202,7 @@ def create_change_order(POST, type, rows):
     pdf.cell(pdf.w - 20, 5, "Signatures", 1, 1, "C", True)
 
     table_data = [
-        ["Moffat Construction", sub.name],
+        ["Northline Construction", sub.name],
         ["Signature", "Signature"],
         ["Date", "Date"]
     ]

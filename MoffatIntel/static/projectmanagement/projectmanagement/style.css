@@ -78,7 +78,7 @@
 }
 
 .form-input fieldset{
-    background: #5602006b;
+    background: #0071b96b;
     -webkit-border-radius: 8px;
     -moz-border-radius: 8px;
     border-radius: 10px;
@@ -141,7 +141,7 @@ fieldset .errormessage{
 }
 
 hr{
-    color:#560200;
+    color:#0071b9;
     width:100%;
     size:10;
     margin-top: -10px;
@@ -185,7 +185,7 @@ hr{
     height: 100%;
     margin-left: -3px;
     width: 6px;
-    background: linear-gradient(#560200, #d5d5d5);
+    background: linear-gradient(#0071b9, #d5d5d5);
 }
 
 .menu-icon{

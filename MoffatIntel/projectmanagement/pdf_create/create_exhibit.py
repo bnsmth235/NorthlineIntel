@@ -17,7 +17,7 @@ def create_exhibit(exhibit, line_items, project, sub):
         row_data = {
             'scope': line_item.scope,
             'qty': line_item.qty,
-            'unit_price': line_item.unit_price,
+            'unit_price': "{:,.2f}".format(float(line_item.unit_price)),
             'total_price': line_item.total
         }
 
@@ -55,7 +55,7 @@ def create_exhibit(exhibit, line_items, project, sub):
 
     # Set up the PDF document
     pdf.set_title("Scope & Values - Exhibit")
-    pdf.set_author("Moffat Construction")
+    pdf.set_author("Northline Construction")
     pdf.set_font("Arial", size=10)
 
     # Set margins (3/4 inch margins)
@@ -66,8 +66,8 @@ def create_exhibit(exhibit, line_items, project, sub):
     pdf.add_page()
 
     # Add image at the top center
-    pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\logo_onlyM.png'),
-              x=(pdf.w - 20) / 2, y=10, w=20, h=20)
+    pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\\NL_logo.png'),
+              x=(pdf.w - 20) / 2, y=10, w=25, h=20)
     pdf.ln(23)
 
     pdf.set_font("Arial", style="B", size=10)
@@ -79,10 +79,9 @@ def create_exhibit(exhibit, line_items, project, sub):
 
     # Define table data
     table_data = [
-        ["MOFFAT CONSTRUCTION", "Contract No.:"],
-        ["a Moffat Company", "Contract Date:"],
-        ["519 W. STATE STREET SUITE #202", "Subproject:"],
-        ["PLEASANT GROVE, UTAH 84062", ""]
+        ["NORTHLINE CONSTRUCTION", "Contract No.:"],
+        ["488 E 3050 N", "Contract Date:"],
+        ["PROVO, UTAH 84604", "Subproject:"]
     ]
 
     # Set column widths
@@ -98,11 +97,6 @@ def create_exhibit(exhibit, line_items, project, sub):
     for row in table_data:
         print("***********Check 5**********")
         for col, cell_data in enumerate(row):
-            # Apply formatting for "a Moffat Company" cell
-            if "a Moffat Company" in cell_data:
-                pdf.set_font("Arial", style="I", size=10)
-                pdf.set_text_color(255, 0, 0)
-
             # Add cell without borders
             pdf.set_xy(x + (col * col_width), pdf.get_y())
             pdf.cell(col_width, 5, cell_data, 0, 0, "C")
@@ -200,7 +194,7 @@ def create_exhibit(exhibit, line_items, project, sub):
         pdf.set_fill_color(217, 225, 242)
         pdf.set_font('Arial', style='B', size=10)
         pdf.cell((pdf.w - 20) * .8, 5, group_name + " Subtotal: ", 1, 0, 'R', True)
-        pdf.cell((pdf.w - 20) * .2, 5, " $" + str(group_subtotal), 1, 1, 'L', True)
+        pdf.cell((pdf.w - 20) * .2, 5, " $" + "{:.2f}".format(group_subtotal), 1, 1, 'L', True)
         total_total += group_subtotal
         pdf.ln(5)
 
@@ -209,7 +203,7 @@ def create_exhibit(exhibit, line_items, project, sub):
     pdf.set_fill_color(192)
     pdf.set_font('Arial', style='B', size=10)
     pdf.cell((pdf.w - 20) * .8, 5, group_name + " Total Contracted Amount: ", 1, 0, 'R', True)
-    pdf.cell((pdf.w - 20) * .2, 5, " $" + str(total_total), 1, 1, 'L', True)
+    pdf.cell((pdf.w - 20) * .2, 5, " $" + "{:.2f}".format(total_total), 1, 1, 'L', True)
 
     pdf.ln(15)
 
@@ -220,9 +214,9 @@ def create_exhibit(exhibit, line_items, project, sub):
     pdf.cell(pdf.w - 20, 5, "Signatures", 1, 1, "C", True)
 
     table_data = [
-        ["Moffat Construction", sub.name],
+        ["Northline Construction", sub.name],
         ["Signature", "Signature"],
-        ["Date", "Date"],
+        ["Date                                  " + datetime.today().strftime("%m/%d/%Y"), "Date"],
         ["Printed Name", "Printed Name"],
         ["Greg Moffat", ""],
         ["Title/Position", "Title/Position"],
