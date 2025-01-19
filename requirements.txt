@@ -1,4 +1,4 @@
-Django==5.1.4
+Django==4.2.18
 django-axes==6.1.1
 PyPDF2==3.0.1
 fpdf==1.7.2
