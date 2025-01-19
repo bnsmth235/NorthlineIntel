@@ -59,7 +59,7 @@ def create_change_order(POST, type, rows):
 
     # Add image at the top center
     pdf.image(os.path.join(settings.BASE_DIR, 'projectmanagement\static\\projectmanagement\images\\NL_logo.png'),
-              x=(pdf.w - 20) / 2, y=10, w=20, h=20)
+              x=(pdf.w - 20) / 2, y=10, w=25, h=20)
     pdf.ln(23)
 
     pdf.set_font("Arial", style="B", size=16)
@@ -238,7 +238,8 @@ def create_change_order(POST, type, rows):
         pdf.ln()
 
     # Generate the full file path
-    ex_file_path = os.path.join(settings.STATIC_ROOT, "deductive_change_orders", file_name)
+    ex_file_path = os.path.join(settings.STATIC_ROOT, type.lower().replace(" ", "_") + "s", file_name)
+    os.makedirs(os.path.dirname(ex_file_path), exist_ok=True)
     pdf.output(ex_file_path)
     with open(ex_file_path, 'rb') as file:
         file_content = file.read()
