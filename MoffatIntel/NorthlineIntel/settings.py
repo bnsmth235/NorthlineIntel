@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,7 +41,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'axes'
+    'axes',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -49,14 +56,39 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'axes.middleware.AxesMiddleware'
+    'axes.middleware.AxesMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # Default Django authentication backend
     'axes.backends.AxesStandaloneBackend',         # Axes standalone backend for login attempts tracking
+    'allauth.account.auth_backends.AuthenticationBackend',
 )
 
+SITE_ID = 1
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+            'https://www.googleapis.com/auth/gmail.send',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'offline',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+        'CLIENT_ID': os.getenv('CLIENT_ID'),
+        'CLIENT_SECRET': os.getenv('CLIENT_SECRET'),
+        'REDIRECT_URIS': ['http://localhost:64166/', 'https://www.moffatintel.com/projectmanagement']
+    }
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 
 AXES_LOCKOUT_CALLABLE = "projectmanagement.views.registration.lockout"
 
@@ -154,5 +186,12 @@ AXES_COOLOFF_TIME = 1
 
 # Block by Username only (i.e.: Same user different IP is still blocked, but different user same IP is not)
 AXES_LOCKOUT_PARAMETERS = ["username"]
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Replace with your SMTP server
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email@example.com'  # Replace with your email
+EMAIL_HOST_PASSWORD = 'your_password'  # Replace with your email password
 
 
